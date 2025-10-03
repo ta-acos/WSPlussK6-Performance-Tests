@@ -517,7 +517,7 @@ export function generateHtmlReport(data, options = {}) {
     /* ignored */
   }
 
-  return `<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\" />
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />
   <title>k6 Performance Report</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
@@ -675,7 +675,7 @@ export function generateHtmlReport(data, options = {}) {
   body.dark .legend-dot.bad { background:#ff6b81; }
   body.dark .status-badge { filter:brightness(1.1); }
   @media print { #btn-dark-mode,#btn-print,.legend-tile,.export-bar { display:none !important;} body { background:#fff; } }
-  </style></head><body${startDark ? ' class=\"dark\"' : ''}>
+  </style></head><body${startDark ? ' class="dark"' : ''}>
   <header><h1>Performance Report</h1><small>Generated ${new Date().toISOString()}</small></header>
   <main>
     <div class="alert ${overallClass}" aria-label="Executive Summary">
@@ -752,13 +752,13 @@ export function generateHtmlReport(data, options = {}) {
     </div>
 
     <h2>Endpoint / Group Breakdown <button class="toggle-btn" data-target="sec-groups">Toggle</button></h2>
-    <div id="sec-groups" class="panel section-body">${typeof groupBreakdown !== 'undefined' ? groupBreakdown : '<div class=\"notes\"><em>Group breakdown unavailable.</em></div>'}</div>
+    <div id="sec-groups" class="panel section-body">${typeof data.groupBreakdown !== 'undefined' ? data.groupBreakdown : '<div class="notes"><em>Group breakdown unavailable.</em></div>'}</div>
 
     <h2>Error Samples <button class="toggle-btn" data-target="sec-error-samples">Toggle</button></h2>
-    <div id="sec-error-samples" class="panel section-body">${data.errorSamples && data.errorSamples.length ? `<table class=\"compact\"><thead><tr><th>Status</th><th>Endpoint</th><th>Method</th><th>Snippet</th></tr></thead><tbody>${data.errorSamples.map((s) => `<tr><td>${s.status}</td><td>${s.endpoint || ''}</td><td>${s.method || ''}</td><td><code>${(s.body || '').replace(/`/g, '&#96;')}</code></td></tr>`).join('')}</tbody></table><div class=\"notes\"><em>Showing up to ${(data.errorSamples || []).length} captured failures (limit).</em></div>` : '<div class="notes"><em>No error samples captured.</em></div>'}</div>
+    <div id="sec-error-samples" class="panel section-body">${data.errorSamples && data.errorSamples.length ? `<table class="compact"><thead><tr><th>Status</th><th>Endpoint</th><th>Method</th><th>Snippet</th></tr></thead><tbody>${data.errorSamples.map((s) => `<tr><td>${s.status}</td><td>${s.endpoint || ''}</td><td>${s.method || ''}</td><td><code>${(s.body || '').replace(/`/g, '&#96;')}</code></td></tr>`).join('')}</tbody></table><div class="notes"><em>Showing up to ${(data.errorSamples || []).length} captured failures (limit).</em></div>` : '<div class="notes"><em>No error samples captured.</em></div>'}</div>
 
     <h2>Top Failing Endpoints</h2>
-    <div class="panel">${data.topFailingEndpoints && data.topFailingEndpoints.length ? `<table class=\"compact\"><thead><tr><th>Endpoint</th><th>Failures</th></tr></thead><tbody>${data.topFailingEndpoints.map((e) => `<tr><td>${e.endpoint}</td><td>${e.count}</td></tr>`).join('')}</tbody></table>` : '<div class="notes"><em>No failing endpoints recorded.</em></div>'}</div>
+    <div class="panel">${data.topFailingEndpoints && data.topFailingEndpoints.length ? `<table class="compact"><thead><tr><th>Endpoint</th><th>Failures</th></tr></thead><tbody>${data.topFailingEndpoints.map((e) => `<tr><td>${e.endpoint}</td><td>${e.count}</td></tr>`).join('')}</tbody></table>` : '<div class="notes"><em>No failing endpoints recorded.</em></div>'}</div>
 
     <h2>Environment / Metadata</h2>
     <table class="compact"><tbody>
