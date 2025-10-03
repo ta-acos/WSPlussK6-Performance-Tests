@@ -1,0 +1,52 @@
+{
+  "api": {
+    "protocol": "https",
+    "host": "autotest01.acoscloud.no",
+    "port": 443,
+    "referer": "https://autotest01.acoscloud.no/",
+    "oauth": {
+      "tokenPath": "/identityserver/connect/token",
+      "grantType": "client_credentials",
+      "scope": "",
+      "useBasicAuth": false
+    },
+    "endpoints": {
+      "sakmaler": "/api/websak/api/register/sakmaler",
+      "sak": "/api/websak/api/sak/ny",
+      "jpmaler": "/api/websak/api/register/sak",
+      "jpny": "/api/websak/api/jp/ny",
+      "innholdJp": "/api/websak/api/jp/",
+      "tekstmal": "/api/websak/api/jp",
+      "flett": "/api/websak/api/dokument/flett",
+      "jpAttach": "/api/websak/api/jp/uploadfiletodokument/",
+      "jpAttachEmbedId": true,
+      "jpDocuments": "/api/websak/api/jp/{jpId}/dokumenter",
+      "soek": "/api/websak/api/soek",
+      "sakstyper": "/api/websak/api/register/sakstyper",
+      "avgjorelsekoder": "/api/websak/api/register/avgjorelsekoder",
+      "ordningsprinsipper": "/api/websak/api/register/ordningsprinsipper",
+      "ordningsverdierPattern": "/api/websak/api/register/ordningsprinsipper/{prinsipp}/sakstype/{sakstype}/ordningsverdier",
+      "noekkelord": "/api/websak/api/register/noekkelord/sas_arkivsak",
+      "nymalsak": "/api/websak/api/sak/nymalsak/"
+    }
+  },
+  "standardTemplate": {
+    "sakType": "Ny sak",
+    "sakTypeName": "Generell sak",
+    "malName": "Generell sak",
+    "avgjkodeName": "PV - På vent"
+  },
+  "jpDefaults": {
+    "jpTypeOutgoing": "Utgående dokument",
+    "jpTypeIncoming": "Inngående dokument",
+    "dokTypeId": 4,
+    "dokStatusId": 6,
+    "saksbehandlerId": 31,
+    "admEnhet": 4,
+    "standardTexterId": 42
+  },
+  "kurv": {
+    "bucketId": 99,
+    "kurvId": "sql"
+  }
+}
