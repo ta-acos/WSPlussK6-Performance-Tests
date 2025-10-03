@@ -13,10 +13,25 @@
  */
 
 import { randomSleep } from '../utils/pacing.js';
-import { loadTestConfig, getK6OptionsWithScenarios, getK6Options, printConfigSummary } from '../utils/modules/config-manager.js';
+import {
+  loadTestConfig,
+  getK6OptionsWithScenarios,
+  getK6Options,
+  printConfigSummary
+} from '../utils/modules/config-manager.js';
 import { authenticate, createAuthHeaders } from '../utils/modules/auth-module.js';
-import { getTemplates as getCaseTemplates, createCase, generateCaseTestData } from '../utils/modules/case-module.js';
-import { getJpTemplates, createJournalPost, generateJpTestData, attachDocument, attachDocumentsBatch } from '../utils/modules/jp-module.js';
+import {
+  getTemplates as getCaseTemplates,
+  createCase,
+  generateCaseTestData
+} from '../utils/modules/case-module.js';
+import {
+  getJpTemplates,
+  createJournalPost,
+  generateJpTestData,
+  attachDocument,
+  attachDocumentsBatch
+} from '../utils/modules/jp-module.js';
 import { generateHtmlReport } from '../utils/report-generator.js';
 import { group, check, sleep } from 'k6';
 import http from 'k6/http';
@@ -263,13 +278,13 @@ export default function () {
   if (ENABLE_ATTACH) {
     // WebSak API supports multiple documents using dokuments[] array structure!
     // We can upload all documents in a single batch request OR one by one
-    
+
     const USE_BATCH_UPLOAD = (__ENV.USE_BATCH_UPLOAD || 'true').toLowerCase() === 'true';
-    
+
     if (USE_BATCH_UPLOAD && DOC_COUNT > 1) {
       // Batch upload: Send all documents in one request
       console.log(`📦 ${vuId}: Preparing batch upload of ${DOC_COUNT} documents`);
-      
+
       const documentsArray = [];
       for (let i = 0; i < DOC_COUNT; i++) {
         let docData;
@@ -292,7 +307,7 @@ export default function () {
         }
         documentsArray.push(docData);
       }
-      
+
       // Perform batch upload
       const batchSuccess = attachDocumentsBatch(testConfig, authHeaders, jpData.id, documentsArray, vuId, 0);
       if (batchSuccess) {
@@ -300,11 +315,10 @@ export default function () {
       } else {
         console.error(`❌ ${vuId}: Batch upload failed`);
       }
-      
     } else {
       // Individual upload: Send documents one by one
       console.log(`📄 ${vuId}: Uploading ${DOC_COUNT} document(s) individually`);
-      
+
       for (let i = 0; i < DOC_COUNT; i++) {
         let docData;
         if (preloadedFileAttachments.length > 0) {
@@ -324,8 +338,8 @@ export default function () {
             vuId
           });
         }
-        
-        const isMainDocument = (i === 0);
+
+        const isMainDocument = i === 0;
         const attached = attachDocument(testConfig, authHeaders, jpData.id, docData, vuId, i, isMainDocument);
         if (!attached) {
           const suppressWarn = (__ENV.SUPPRESS_JP_ATTACH_WARN || '').toLowerCase() === 'true';
@@ -345,38 +359,41 @@ export default function () {
     if (attachedCount > 0) {
       // Small delay to allow backend to process attachments
       sleep(0.5);
-      
+
       group('Verify JP Documents', () => {
-        const listTemplate = testConfig.apiConfig.endpoints.jpDocuments || `${testConfig.apiConfig.endpoints.innholdJp}{jpId}/dokumenter`;
+        const listTemplate =
+          testConfig.apiConfig.endpoints.jpDocuments ||
+          `${testConfig.apiConfig.endpoints.innholdJp}{jpId}/dokumenter`;
         const listPath = listTemplate.replace(/\{jpId\}/g, jpData.id);
         const listUrl = `${testConfig.baseUrl}${listPath}`;
-        
+
         console.log(`🔍 ${vuId}: Verifying documents at: ${listUrl}`);
-        
+
         const listResp = http.get(listUrl, {
           headers: authHeaders,
           timeout: '30s',
           tags: { name: '📄 List JP Documents', endpoint: 'jp:listDocuments', jp_id: jpData.id, url: listUrl }
         });
-        
+
         // Log response details before check (check might suppress errors)
         if (listResp.status !== 200) {
           console.error(`🔥 ${vuId}: Document list request failed - Status: ${listResp.status}`);
           console.error(`📥 Response Body: ${listResp.body?.slice(0, 500)}`);
         }
-        
+
         const ok = check(listResp, {
           'list_docs: status 200': (r) => r.status === 200,
           'list_docs: has parseable response': (r) => {
             try {
               const body = JSON.parse(r.body);
               // Accept various response structures: array, { data: [] }, { documents: [] }, { dokumenter: [] }, etc.
-              const isValid = Array.isArray(body) || 
-                             Array.isArray(body?.data) || 
-                             Array.isArray(body?.documents) ||
-                             Array.isArray(body?.dokumenter) ||  // Norwegian: "documents"
-                             Array.isArray(body?.items) ||
-                             Array.isArray(body?.result);
+              const isValid =
+                Array.isArray(body) ||
+                Array.isArray(body?.data) ||
+                Array.isArray(body?.documents) ||
+                Array.isArray(body?.dokumenter) || // Norwegian: "documents"
+                Array.isArray(body?.items) ||
+                Array.isArray(body?.result);
               return isValid;
             } catch (e) {
               console.error(`🔥 ${vuId}: Document list parse error: ${e.message}`);
@@ -384,23 +401,30 @@ export default function () {
             }
           }
         });
-        
+
         if (ok) {
           try {
             const parsed = JSON.parse(listResp.body);
             // Try multiple possible array locations (including Norwegian "dokumenter")
-            const docs = Array.isArray(parsed) ? parsed : 
-                        (parsed.data || parsed.documents || parsed.dokumenter || parsed.items || parsed.result || []);
-            
+            const docs = Array.isArray(parsed)
+              ? parsed
+              : parsed.data || parsed.documents || parsed.dokumenter || parsed.items || parsed.result || [];
+
             if (Array.isArray(docs)) {
               const expectedCount = attachedCount; // Expect the number of documents we uploaded
               if (docs.length === expectedCount) {
-                console.log(`✅ ${vuId}: Verified ${docs.length} document(s) (attached ${attachedCount}) - Perfect match!`);
+                console.log(
+                  `✅ ${vuId}: Verified ${docs.length} document(s) (attached ${attachedCount}) - Perfect match!`
+                );
               } else if (docs.length < expectedCount) {
-                console.error(`❌ ${vuId}: Document list (${docs.length}) less than expected (${expectedCount})`);
+                console.error(
+                  `❌ ${vuId}: Document list (${docs.length}) less than expected (${expectedCount})`
+                );
                 console.error(`   Some documents may have failed to upload. Check API response and logs.`);
               } else if (docs.length > expectedCount) {
-                console.log(`ℹ️ ${vuId}: Found ${docs.length} documents (expected ${expectedCount}) - may include pre-existing documents`);
+                console.log(
+                  `ℹ️ ${vuId}: Found ${docs.length} documents (expected ${expectedCount}) - may include pre-existing documents`
+                );
               }
             } else {
               console.warn(`⚠️ ${vuId}: Could not find document array in response`);
@@ -409,7 +433,9 @@ export default function () {
             console.warn(`⚠️ ${vuId}: Could not parse document listing response: ${e.message}`);
           }
         } else {
-          console.warn(`⚠️ ${vuId}: Could not verify documents for JP ${jpData.id}. Check the endpoint configuration.`);
+          console.warn(
+            `⚠️ ${vuId}: Could not verify documents for JP ${jpData.id}. Check the endpoint configuration.`
+          );
         }
       });
     }

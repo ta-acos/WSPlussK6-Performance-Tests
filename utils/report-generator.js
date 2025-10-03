@@ -106,7 +106,16 @@ function thresholdsBenchmarkTable(metrics) {
       const primary = rule.split('&&')[0].trim();
       const match = primary.match(opRegex);
       if (!match) {
-        rows.push({ metricName, rule: primary, stat: 'n/a', target: 'n/a', actual: 'n/a', delta: 'n/a', ok: !!status.ok, cls: '' });
+        rows.push({
+          metricName,
+          rule: primary,
+          stat: 'n/a',
+          target: 'n/a',
+          actual: 'n/a',
+          delta: 'n/a',
+          ok: !!status.ok,
+          cls: ''
+        });
         return;
       }
       const op = match[0];
@@ -115,25 +124,49 @@ function thresholdsBenchmarkTable(metrics) {
       const rightRaw = (parts[1] || '').trim();
       const target = parseFloat(rightRaw);
       const statKey = left;
-      const actual = values[statKey] !== undefined ? values[statKey] : (values[left] !== undefined ? values[left] : undefined);
+      const actual =
+        values[statKey] !== undefined
+          ? values[statKey]
+          : values[left] !== undefined
+            ? values[left]
+            : undefined;
       let deltaDisplay = 'n/a';
       let improvement = null;
       let pct = null;
       if (actual !== undefined && !isNaN(actual) && !isNaN(target)) {
-        if (op === '<' || op === '<=') improvement = target - actual; else if (op === '>' || op === '>=') improvement = actual - target; else if (op === '==') improvement = target - actual;
+        if (op === '<' || op === '<=') improvement = target - actual;
+        else if (op === '>' || op === '>=') improvement = actual - target;
+        else if (op === '==') improvement = target - actual;
         pct = target !== 0 ? (improvement / target) * 100 : 0;
         const sign = improvement > 0 ? '+' : improvement < 0 ? '' : '';
         deltaDisplay = `${sign}${improvement.toFixed(2)} (${sign}${pct.toFixed(1)}%)`;
       }
       let severityClass = '';
       if (improvement !== null) {
-        if (!status.ok) severityClass = 'cell-bad'; else if (pct >= 10) severityClass = 'cell-good'; else if (pct >= 0) severityClass = 'cell-warn'; else severityClass = 'cell-bad';
+        if (!status.ok) severityClass = 'cell-bad';
+        else if (pct >= 10) severityClass = 'cell-good';
+        else if (pct >= 0) severityClass = 'cell-warn';
+        else severityClass = 'cell-bad';
       } else if (!status.ok) severityClass = 'cell-bad';
-      rows.push({ metricName, rule: primary, stat: statKey, target: isNaN(target) ? rightRaw : target, actual: actual !== undefined && !isNaN(actual) ? (statKey.includes('rate') ? actual : actual.toFixed(2)) : 'n/a', delta: deltaDisplay, ok: !!status.ok, cls: severityClass });
+      rows.push({
+        metricName,
+        rule: primary,
+        stat: statKey,
+        target: isNaN(target) ? rightRaw : target,
+        actual:
+          actual !== undefined && !isNaN(actual)
+            ? statKey.includes('rate')
+              ? actual
+              : actual.toFixed(2)
+            : 'n/a',
+        delta: deltaDisplay,
+        ok: !!status.ok,
+        cls: severityClass
+      });
     });
   });
   if (!rows.length) return { html: '', rows: [] };
-  const html = `<table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr class="${r.cls}"><td>${r.metricName}</td><td><code>${r.rule}</code></td><td>${r.actual}</td><td>${r.target}</td><td class="${r.cls}">${r.delta}</td><td class="${r.ok ? 'cell-good' : 'cell-bad'}">${r.ok ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`).join('')}</tbody></table>`;
+  const html = `<table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody>${rows.map((r) => `<tr class="${r.cls}"><td>${r.metricName}</td><td><code>${r.rule}</code></td><td>${r.actual}</td><td>${r.target}</td><td class="${r.cls}">${r.delta}</td><td class="${r.ok ? 'cell-good' : 'cell-bad'}">${r.ok ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`).join('')}</tbody></table>`;
   return { html, rows };
 }
 
@@ -213,7 +246,10 @@ function buildAllMetricsTable(metrics) {
       let rowClass = '';
       // Latency-focused metrics (trend durations)
       const p95 = vals['p(95)'];
-      const isLatencyMetric = /duration|http_req_(duration|waiting|blocked|connecting|tls_handshaking|sending|receiving)/.test(name);
+      const isLatencyMetric =
+        /duration|http_req_(duration|waiting|blocked|connecting|tls_handshaking|sending|receiving)/.test(
+          name
+        );
       if (isLatencyMetric && typeof p95 === 'number') {
         if (p95 <= 800) rowClass = 'cell-good';
         else if (p95 <= 2000) rowClass = 'cell-warn';
@@ -255,7 +291,7 @@ export function generateHtmlReport(data, options = {}) {
   const env = (typeof __ENV !== 'undefined' && __ENV) || {};
   const cfg = options.thresholds || {};
   // Initial dark mode preference: default true if not explicitly set to false
-  const startDark = (function(){
+  const startDark = (function () {
     // Default is LIGHT mode now; require explicit opt-in for dark.
     if (env.ENABLE_DARK_MODE === undefined) return false; // default off
     const v = String(env.ENABLE_DARK_MODE).toLowerCase();
@@ -285,21 +321,44 @@ export function generateHtmlReport(data, options = {}) {
 
   // KPI severity classification
   const p95Latency = dur['p(95)'];
-  const successKpiClass = successRate >= THRESH.KPI_SUCCESS_GOOD ? 'kpi-good' : successRate >= THRESH.KPI_SUCCESS_WARN ? 'kpi-warn' : 'kpi-bad';
-  const durationKpiClass = typeof p95Latency === 'number'
-    ? (p95Latency <= 800 ? 'kpi-good' : p95Latency <= 2000 ? 'kpi-warn' : 'kpi-bad')
-    : 'kpi-neutral';
+  const successKpiClass =
+    successRate >= THRESH.KPI_SUCCESS_GOOD
+      ? 'kpi-good'
+      : successRate >= THRESH.KPI_SUCCESS_WARN
+        ? 'kpi-warn'
+        : 'kpi-bad';
+  const durationKpiClass =
+    typeof p95Latency === 'number'
+      ? p95Latency <= 800
+        ? 'kpi-good'
+        : p95Latency <= 2000
+          ? 'kpi-warn'
+          : 'kpi-bad'
+      : 'kpi-neutral';
   const maxDurKpiClass = durationKpiClass; // reuse same classification for max duration for simplicity
   const neutralKpi = 'kpi-neutral';
 
   const donut = buildDonut(successRate);
   const latArtifacts = latencyBar(dur.min, dur.med, dur['p(90)'], dur['p(95)'], dur.max, THRESH);
-  function spark(d){
-    if(!d||!d['p(95)']) return '';
-    const pts=[d.med||d['p(50)'], d['p(75)'], d['p(90)'], d['p(95)'], d.max].filter(v=>typeof v==='number');
-    if(pts.length<3) return '';
-    const mx=Math.max(...pts), mn=Math.min(...pts), rg=mx-mn||1, w=120, h=34, step=w/(pts.length-1);
-    const path=pts.map((v,i)=>{const y=h-((v-mn)/rg)*(h-4)-2; const x=i*step; return (i?'L':'M')+x+','+y;}).join(' ');
+  function spark(d) {
+    if (!d || !d['p(95)']) return '';
+    const pts = [d.med || d['p(50)'], d['p(75)'], d['p(90)'], d['p(95)'], d.max].filter(
+      (v) => typeof v === 'number'
+    );
+    if (pts.length < 3) return '';
+    const mx = Math.max(...pts),
+      mn = Math.min(...pts),
+      rg = mx - mn || 1,
+      w = 120,
+      h = 34,
+      step = w / (pts.length - 1);
+    const path = pts
+      .map((v, i) => {
+        const y = h - ((v - mn) / rg) * (h - 4) - 2;
+        const x = i * step;
+        return (i ? 'L' : 'M') + x + ',' + y;
+      })
+      .join(' ');
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="spark"><path d="${path}" fill="none" stroke="#1B873F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
   const latencySpark = spark(dur);
@@ -319,25 +378,32 @@ export function generateHtmlReport(data, options = {}) {
       if (m && m.thresholds) {
         Object.entries(m.thresholds).forEach(([rule, status]) => {
           total++;
-            if (!status.ok) {
-              failed++;
-              if (failedItems.length < 5) failedItems.push(`${name} :: ${rule}`);
-            }
+          if (!status.ok) {
+            failed++;
+            if (failedItems.length < 5) failedItems.push(`${name} :: ${rule}`);
+          }
         });
       }
     });
     return { total, failed, failedItems };
   })();
 
-  const overallStatus = thresholdSummary.failed > 0 ? (thresholdSummary.failed / (thresholdSummary.total || 1) > 0.3 ? 'bad' : 'warn') : 'good';
-  const overallBadgeText = overallStatus === 'good' ? 'Healthy' : overallStatus === 'warn' ? 'Attention' : 'Action Needed';
-  const overallClass = overallStatus === 'good' ? 'alert-good' : overallStatus === 'warn' ? 'alert-warn' : 'alert-bad';
+  const overallStatus =
+    thresholdSummary.failed > 0
+      ? thresholdSummary.failed / (thresholdSummary.total || 1) > 0.3
+        ? 'bad'
+        : 'warn'
+      : 'good';
+  const overallBadgeText =
+    overallStatus === 'good' ? 'Healthy' : overallStatus === 'warn' ? 'Attention' : 'Action Needed';
+  const overallClass =
+    overallStatus === 'good' ? 'alert-good' : overallStatus === 'warn' ? 'alert-warn' : 'alert-bad';
   const p95Text = dur['p(95)'] !== undefined ? `${fmt(dur['p(95)'])} ms p95` : 'p95 n/a';
-  const successRateText = `${fmt(successRate,2)}% success (${fmt(100 - successRate,2)}% fail)`;
+  const successRateText = `${fmt(successRate, 2)}% success (${fmt(100 - successRate, 2)}% fail)`;
   const failedThresholdLine = thresholdSummary.total
-    ? (thresholdSummary.failed === 0
-        ? 'All thresholds passed.'
-        : `${thresholdSummary.failed}/${thresholdSummary.total} thresholds failed${thresholdSummary.failedItems.length ? ': ' + thresholdSummary.failedItems.join('; ') + (thresholdSummary.failed > thresholdSummary.failedItems.length ? '…' : '') : ''}`)
+    ? thresholdSummary.failed === 0
+      ? 'All thresholds passed.'
+      : `${thresholdSummary.failed}/${thresholdSummary.total} thresholds failed${thresholdSummary.failedItems.length ? ': ' + thresholdSummary.failedItems.join('; ') + (thresholdSummary.failed > thresholdSummary.failedItems.length ? '…' : '') : ''}`
     : 'No thresholds defined.';
 
   // Derive potential SLO target for p95 latency from thresholds
@@ -359,27 +425,48 @@ export function generateHtmlReport(data, options = {}) {
 
   // Risk detection
   const risks = [];
-  if (p95Val && (p95Val > (p95Target || 2000))) risks.push({ level: 'high', msg: `High p95 latency ${fmt(p95Val)} ms${p95Target ? ' (target ' + p95Target + ' ms)' : ''}` });
-  if (failedRate > 0.05) risks.push({ level: 'high', msg: `Error rate ${(failedRate*100).toFixed(2)}% above 5%` });
-  else if (failedRate > 0.01) risks.push({ level: 'med', msg: `Error rate ${(failedRate*100).toFixed(2)}% above 1%` });
+  if (p95Val && p95Val > (p95Target || 2000))
+    risks.push({
+      level: 'high',
+      msg: `High p95 latency ${fmt(p95Val)} ms${p95Target ? ' (target ' + p95Target + ' ms)' : ''}`
+    });
+  if (failedRate > 0.05)
+    risks.push({ level: 'high', msg: `Error rate ${(failedRate * 100).toFixed(2)}% above 5%` });
+  else if (failedRate > 0.01)
+    risks.push({ level: 'med', msg: `Error rate ${(failedRate * 100).toFixed(2)}% above 1%` });
   if (checks.fails) risks.push({ level: 'med', msg: `${checks.fails} check failure(s)` });
-  if (thresholdSummary.failed) risks.push({ level: 'med', msg: `${thresholdSummary.failed} failing threshold(s)` });
+  if (thresholdSummary.failed)
+    risks.push({ level: 'med', msg: `${thresholdSummary.failed} failing threshold(s)` });
   const topRisks = risks.slice(0, 3);
 
   // Narrative & recommendations
   function buildNarrative() {
     const parts = [];
-    parts.push(`Test achieved a ${fmt(successRate,2)}% success rate with p95 latency ${p95Val ? fmt(p95Val) + ' ms' : 'n/a'}.`);
-    if (thresholdSummary.failed === 0 && risks.length === 0) parts.push('All monitored objectives were met with no notable performance risks.');
-    else parts.push(`${thresholdSummary.failed} of ${thresholdSummary.total || 0} thresholds failed; ${risks.length ? 'key risks identified below' : 'review threshold definitions'}.`);
+    parts.push(
+      `Test achieved a ${fmt(successRate, 2)}% success rate with p95 latency ${p95Val ? fmt(p95Val) + ' ms' : 'n/a'}.`
+    );
+    if (thresholdSummary.failed === 0 && risks.length === 0)
+      parts.push('All monitored objectives were met with no notable performance risks.');
+    else
+      parts.push(
+        `${thresholdSummary.failed} of ${thresholdSummary.total || 0} thresholds failed; ${risks.length ? 'key risks identified below' : 'review threshold definitions'}.`
+      );
     return parts.join(' ');
   }
   function buildRecommendations() {
     const recs = [];
-    if (p95Target && p95Val && p95Val > p95Target) recs.push('Investigate slow endpoints contributing to p95 latency; profile DB calls or external dependencies.');
-    if (failedRate > 0.01) recs.push('Analyze failed request samples (enable HTTP debug logging or trace IDs).');
-    if (checks.fails) recs.push('Review failing functional checks for correctness vs environment configuration.');
-    if (!recs.length) recs.push('No immediate action required. Continue monitoring and consider setting stricter SLOs as confidence grows.');
+    if (p95Target && p95Val && p95Val > p95Target)
+      recs.push(
+        'Investigate slow endpoints contributing to p95 latency; profile DB calls or external dependencies.'
+      );
+    if (failedRate > 0.01)
+      recs.push('Analyze failed request samples (enable HTTP debug logging or trace IDs).');
+    if (checks.fails)
+      recs.push('Review failing functional checks for correctness vs environment configuration.');
+    if (!recs.length)
+      recs.push(
+        'No immediate action required. Continue monitoring and consider setting stricter SLOs as confidence grows.'
+      );
     return recs;
   }
   const narrative = buildNarrative();
@@ -395,18 +482,31 @@ export function generateHtmlReport(data, options = {}) {
       const bSuccess = (1 - bFailedRate) * 100;
       const bP95 = bDur['p(95)'];
       const rows = [];
-      if (p95Val && bP95) rows.push({ label: 'p95 Latency (ms)', current: fmt(p95Val), baseline: fmt(bP95), delta: (p95Val - bP95).toFixed(2), better: p95Val < bP95 });
-      rows.push({ label: 'Success Rate (%)', current: fmt(successRate,2), baseline: fmt(bSuccess,2), delta: (successRate - bSuccess).toFixed(2), better: successRate > bSuccess });
+      if (p95Val && bP95)
+        rows.push({
+          label: 'p95 Latency (ms)',
+          current: fmt(p95Val),
+          baseline: fmt(bP95),
+          delta: (p95Val - bP95).toFixed(2),
+          better: p95Val < bP95
+        });
+      rows.push({
+        label: 'Success Rate (%)',
+        current: fmt(successRate, 2),
+        baseline: fmt(bSuccess, 2),
+        delta: (successRate - bSuccess).toFixed(2),
+        better: successRate > bSuccess
+      });
       if (rows.length) {
-        baselineHtml = `<h3>Baseline Comparison</h3><table class="compact" id="baseline-table"><thead><tr><th>Metric</th><th>Current</th><th>Baseline</th><th>Delta</th><th>Direction</th></tr></thead><tbody>${rows.map(r => `<tr class="${r.better ? 'cell-good' : 'cell-warn'}"><td>${r.label}</td><td>${r.current}</td><td>${r.baseline}</td><td>${r.delta}</td><td>${r.better ? 'Improved' : 'Regressed'}</td></tr>`).join('')}</tbody></table>`;
+        baselineHtml = `<h3>Baseline Comparison</h3><table class="compact" id="baseline-table"><thead><tr><th>Metric</th><th>Current</th><th>Baseline</th><th>Delta</th><th>Direction</th></tr></thead><tbody>${rows.map((r) => `<tr class="${r.better ? 'cell-good' : 'cell-warn'}"><td>${r.label}</td><td>${r.current}</td><td>${r.baseline}</td><td>${r.delta}</td><td>${r.better ? 'Improved' : 'Regressed'}</td></tr>`).join('')}</tbody></table>`;
       }
     } else {
-      baselineHtml = '<div class="notes"><em>No baseline provided. Supply a previous summary JSON as data.baseline to enable comparison.</em></div>';
+      baselineHtml =
+        '<div class="notes"><em>No baseline provided. Supply a previous summary JSON as data.baseline to enable comparison.</em></div>';
     }
   } catch (_) {
     baselineHtml = '<div class="notes"><em>Baseline comparison unavailable (parse error).</em></div>';
   }
-
 
   // Ensure reports dir exists when running locally (defensive; k6 usually handles serialization path only)
   try {
@@ -596,10 +696,10 @@ export function generateHtmlReport(data, options = {}) {
     <div class="notes" id="narrative"><p>${narrative}</p></div>
 
     <h3>Top Risks</h3>
-    ${topRisks.length ? `<div class="risks">${topRisks.map(r => `<div class="risk ${r.level === 'high' ? 'high pattern-bad' : 'med pattern-warn'}">${r.level === 'high' ? '⚠️' : '❕'} ${r.msg}</div>`).join('')}</div>` : '<div class="notes"><em>No major risks detected.</em></div>'}
+    ${topRisks.length ? `<div class="risks">${topRisks.map((r) => `<div class="risk ${r.level === 'high' ? 'high pattern-bad' : 'med pattern-warn'}">${r.level === 'high' ? '⚠️' : '❕'} ${r.msg}</div>`).join('')}</div>` : '<div class="notes"><em>No major risks detected.</em></div>'}
 
     <h3>Recommended Actions</h3>
-    <div class="notes"><ul>${recommendations.map(r => `<li>${r}</li>`).join('')}</ul></div>
+    <div class="notes"><ul>${recommendations.map((r) => `<li>${r}</li>`).join('')}</ul></div>
 
     <div class="export-bar" aria-label="Export and share tools">
       <button id="btn-copy-summary" type="button">📋 Copy Summary</button>
@@ -652,13 +752,13 @@ export function generateHtmlReport(data, options = {}) {
     </div>
 
     <h2>Endpoint / Group Breakdown <button class="toggle-btn" data-target="sec-groups">Toggle</button></h2>
-    <div id="sec-groups" class="panel section-body">${typeof groupBreakdown!=='undefined'?groupBreakdown:'<div class=\"notes\"><em>Group breakdown unavailable.</em></div>'}</div>
+    <div id="sec-groups" class="panel section-body">${typeof groupBreakdown !== 'undefined' ? groupBreakdown : '<div class=\"notes\"><em>Group breakdown unavailable.</em></div>'}</div>
 
     <h2>Error Samples <button class="toggle-btn" data-target="sec-error-samples">Toggle</button></h2>
-    <div id="sec-error-samples" class="panel section-body">${(data.errorSamples && data.errorSamples.length) ? `<table class=\"compact\"><thead><tr><th>Status</th><th>Endpoint</th><th>Method</th><th>Snippet</th></tr></thead><tbody>${data.errorSamples.map(s=>`<tr><td>${s.status}</td><td>${s.endpoint||''}</td><td>${s.method||''}</td><td><code>${(s.body||'').replace(/`/g,'&#96;')}</code></td></tr>`).join('')}</tbody></table><div class=\"notes\"><em>Showing up to ${(data.errorSamples||[]).length} captured failures (limit).</em></div>` : '<div class="notes"><em>No error samples captured.</em></div>'}</div>
+    <div id="sec-error-samples" class="panel section-body">${data.errorSamples && data.errorSamples.length ? `<table class=\"compact\"><thead><tr><th>Status</th><th>Endpoint</th><th>Method</th><th>Snippet</th></tr></thead><tbody>${data.errorSamples.map((s) => `<tr><td>${s.status}</td><td>${s.endpoint || ''}</td><td>${s.method || ''}</td><td><code>${(s.body || '').replace(/`/g, '&#96;')}</code></td></tr>`).join('')}</tbody></table><div class=\"notes\"><em>Showing up to ${(data.errorSamples || []).length} captured failures (limit).</em></div>` : '<div class="notes"><em>No error samples captured.</em></div>'}</div>
 
     <h2>Top Failing Endpoints</h2>
-    <div class="panel">${(data.topFailingEndpoints && data.topFailingEndpoints.length) ? `<table class=\"compact\"><thead><tr><th>Endpoint</th><th>Failures</th></tr></thead><tbody>${data.topFailingEndpoints.map(e=>`<tr><td>${e.endpoint}</td><td>${e.count}</td></tr>`).join('')}</tbody></table>` : '<div class="notes"><em>No failing endpoints recorded.</em></div>'}</div>
+    <div class="panel">${data.topFailingEndpoints && data.topFailingEndpoints.length ? `<table class=\"compact\"><thead><tr><th>Endpoint</th><th>Failures</th></tr></thead><tbody>${data.topFailingEndpoints.map((e) => `<tr><td>${e.endpoint}</td><td>${e.count}</td></tr>`).join('')}</tbody></table>` : '<div class="notes"><em>No failing endpoints recorded.</em></div>'}</div>
 
     <h2>Environment / Metadata</h2>
     <table class="compact"><tbody>
@@ -682,13 +782,13 @@ export function generateHtmlReport(data, options = {}) {
     (function(){
       const payload = {
         generated: new Date().toISOString(),
-        successRate: ${fmt(successRate,2)},
+        successRate: ${fmt(successRate, 2)},
         p95: ${p95Val !== undefined ? JSON.stringify(p95Val) : 'null'},
         p95Target: ${p95Target !== null ? JSON.stringify(p95Target) : 'null'},
         thresholdsFailed: ${thresholdSummary.failed},
         thresholdsTotal: ${thresholdSummary.total},
         benchmarks: ${JSON.stringify(thresholdsBenchmarks.rows || [])},
-        classificationThresholds: ${typeof THRESH!=='undefined'?JSON.stringify(THRESH):'{}'}
+        classificationThresholds: ${typeof THRESH !== 'undefined' ? JSON.stringify(THRESH) : '{}'}
       };
       window.__reportPayload__ = payload;
       function download(filename, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); }

@@ -20,10 +20,24 @@
  */
 
 import { randomSleep } from '../utils/pacing.js';
-import { loadTestConfig, getK6OptionsWithScenarios, getK6Options, printConfigSummary } from '../utils/modules/config-manager.js';
+import {
+  loadTestConfig,
+  getK6OptionsWithScenarios,
+  getK6Options,
+  printConfigSummary
+} from '../utils/modules/config-manager.js';
 import { authenticate, createAuthHeaders } from '../utils/modules/auth-module.js';
-import { getTemplates as getCaseTemplates, createCase, generateCaseTestData } from '../utils/modules/case-module.js';
-import { getJpTemplates, createJournalPost, attachDocumentsBatch, attachDocument } from '../utils/modules/jp-module.js';
+import {
+  getTemplates as getCaseTemplates,
+  createCase,
+  generateCaseTestData
+} from '../utils/modules/case-module.js';
+import {
+  getJpTemplates,
+  createJournalPost,
+  attachDocumentsBatch,
+  attachDocument
+} from '../utils/modules/jp-module.js';
 import { generateHtmlReport } from '../utils/report-generator.js';
 import { group, check, sleep } from 'k6';
 import http from 'k6/http';
@@ -87,7 +101,7 @@ let preloadedTestDocuments = [];
 
 if (USE_TEST_DOCS) {
   console.log('📂 Preloading test documents from testDocuments folder...');
-  
+
   const testDocPaths = [
     '../utils/modules/data/testDocuments/1mb.pdf',
     '../utils/modules/data/testDocuments/1mb.docx',
@@ -105,7 +119,7 @@ if (USE_TEST_DOCS) {
     try {
       const fileData = open(filePath, 'b'); // Open as binary
       const fileName = filePath.split('/').pop();
-      
+
       // Determine MIME type based on file extension
       let mimeType = 'application/octet-stream';
       if (fileName.endsWith('.pdf')) {
@@ -117,7 +131,7 @@ if (USE_TEST_DOCS) {
       } else if (fileName.endsWith('.csv')) {
         mimeType = 'text/csv';
       }
-      
+
       preloadedTestDocuments.push({
         name: fileName,
         binaryData: fileData,
@@ -125,26 +139,26 @@ if (USE_TEST_DOCS) {
         tittel: fileName.replace(/\.[^/.]+$/, ''), // Remove extension for title
         size: fileData.length || 0
       });
-      
+
       console.log(`   ✅ Loaded: ${fileName} (${mimeType})`);
     } catch (e) {
       console.warn(`   ⚠️  Failed to load ${filePath}: ${e.message}`);
     }
   });
-  
+
   console.log(`📦 Preloaded ${preloadedTestDocuments.length} test documents`);
 }
 
 export function setup() {
   console.log('🚀 Starting Create Multiple JPs with Multiple Documents Test');
   console.log(`📥 Incoming JPs: ${INCOMING_COUNT}, 📤 Outgoing JPs: ${OUTGOING_COUNT}`);
-  
+
   if (USE_TEST_DOCS) {
     console.log(`📎 Using ${preloadedTestDocuments.length} large test documents from testDocuments folder`);
   } else {
     console.log(`📎 Generating ${DOC_COUNT} synthetic documents per JP`);
   }
-  
+
   console.log(`📦 Batch upload mode: ${USE_BATCH_UPLOAD}`);
   printConfigSummary(config);
   return { started: true };
@@ -156,11 +170,11 @@ export function setup() {
  */
 function generateIncomingJpPayload(caseId, selectedTemplate, testData, config) {
   const jpConfig = config?.apiConfig?.jpConfig || {};
-  
+
   // Get current date in ISO format with timezone
   const currentDate = new Date();
   const brevDato = currentDate.toISOString().split('T')[0] + 'T00:00:00+02:00';
-  
+
   // Calculate forfallsDato (21 days from now)
   const forfallsDate = new Date(currentDate);
   forfallsDate.setDate(forfallsDate.getDate() + 21);
@@ -172,8 +186,8 @@ function generateIncomingJpPayload(caseId, selectedTemplate, testData, config) {
     tekstMalId: -1, // As per user's incoming payload
     journalpost: {
       id: -1,
-      tittel1: testData.jpName || "test incoming tit",
-      tittel2: testData.jpDescription || "incoming document test",
+      tittel1: testData.jpName || 'test incoming tit',
+      tittel2: testData.jpDescription || 'incoming document test',
       dokTypeId: 1, // Incoming document type
       dokStatusId: 7, // Incoming status
       brevDato: brevDato,
@@ -185,18 +199,18 @@ function generateIncomingJpPayload(caseId, selectedTemplate, testData, config) {
           id: jpConfig.kopiMottakerId || 33,
           sdmId: -1,
           erIdentitet: true,
-          navn: jpConfig.kopiMottakerNavn || "TestAutomation - Saksbehandler",
-          epost: jpConfig.kopiMottakerEpost || "testautomation_u3@acosdemo.onmicrosoft.com",
+          navn: jpConfig.kopiMottakerNavn || 'TestAutomation - Saksbehandler',
+          epost: jpConfig.kopiMottakerEpost || 'testautomation_u3@acosdemo.onmicrosoft.com',
           gidId: jpConfig.kopiMottakerId || 33,
-          offentligNummer: "",
-          telefon: "12345678",
-          adresse: "",
-          adresse2: "",
-          adresse3: "",
-          adresse4: "",
-          postnr: "",
-          poststed: "",
-          landId: "",
+          offentligNummer: '',
+          telefon: '12345678',
+          adresse: '',
+          adresse2: '',
+          adresse3: '',
+          adresse4: '',
+          postnr: '',
+          poststed: '',
+          landId: '',
           erPersonNavn: true,
           attention: null,
           referanse: null,
@@ -210,18 +224,18 @@ function generateIncomingJpPayload(caseId, selectedTemplate, testData, config) {
           id: jpConfig.mottakerId || 31,
           sdmId: -1,
           erIdentitet: true,
-          navn: jpConfig.mottakerNavn || "TestAutomation - Arkivar",
-          epost: jpConfig.mottakerEpost || "testcomplete4@acosdemo.onmicrosoft.com",
+          navn: jpConfig.mottakerNavn || 'TestAutomation - Arkivar',
+          epost: jpConfig.mottakerEpost || 'testcomplete4@acosdemo.onmicrosoft.com',
           gidId: jpConfig.mottakerId || 31,
-          offentligNummer: "",
-          telefon: "",
-          adresse: "",
-          adresse2: "",
-          adresse3: "",
-          adresse4: "",
-          postnr: "",
-          poststed: "",
-          landId: "",
+          offentligNummer: '',
+          telefon: '',
+          adresse: '',
+          adresse2: '',
+          adresse3: '',
+          adresse4: '',
+          postnr: '',
+          poststed: '',
+          landId: '',
           erPersonNavn: true,
           attention: null,
           referanse: null,
@@ -248,7 +262,7 @@ function generateIncomingJpPayload(caseId, selectedTemplate, testData, config) {
  */
 function generateOutgoingJpPayload(caseId, selectedTemplate, testData, config) {
   const jpConfig = config?.apiConfig?.jpConfig || {};
-  
+
   const currentDate = new Date();
   const brevDato = currentDate.toISOString().split('T')[0] + 'T00:00:00+02:00';
 
@@ -382,7 +396,7 @@ function generateDocumentData(baseName, index, jpType, testMeta) {
     // Use preloaded test documents (cycle through them)
     const docIndex = index % preloadedTestDocuments.length;
     const testDoc = preloadedTestDocuments[docIndex];
-    
+
     return {
       name: testDoc.name,
       binaryData: testDoc.binaryData,
@@ -408,22 +422,22 @@ function generateDocumentData(baseName, index, jpType, testMeta) {
  */
 function attachDocumentsToJp(config, authHeaders, jpId, jpType, vuId) {
   const testMeta = { testId: Date.now().toString(), vuId };
-  
+
   // Determine number of documents to attach
   const docCount = USE_TEST_DOCS ? preloadedTestDocuments.length : DOC_COUNT;
-  
+
   group('Attach Documents to JP', () => {
     if (USE_BATCH_UPLOAD && docCount > 1) {
       // Batch upload mode
       console.log(`📦 ${vuId}: Preparing batch upload of ${docCount} documents for ${jpType} JP ${jpId}`);
-      
+
       const documentsArray = [];
       for (let i = 0; i < docCount; i++) {
         documentsArray.push(generateDocumentData('PerfTest', i, jpType, testMeta));
       }
-      
+
       const success = attachDocumentsBatch(config, authHeaders, jpId, documentsArray, vuId, 0);
-      
+
       if (success) {
         console.log(`✅ ${vuId}: ${docCount} documents attached to ${jpType} JP ${jpId}`);
       } else {
@@ -432,17 +446,17 @@ function attachDocumentsToJp(config, authHeaders, jpId, jpType, vuId) {
     } else {
       // Individual upload mode
       console.log(`📎 ${vuId}: Attaching ${docCount} documents individually to ${jpType} JP ${jpId}`);
-      
+
       let attachedCount = 0;
       for (let i = 0; i < docCount; i++) {
         const docData = generateDocumentData('PerfTest', i, jpType, testMeta);
         const success = attachDocument(config, authHeaders, jpId, docData, vuId, i, i === 0);
-        
+
         if (success) {
           attachedCount++;
         }
       }
-      
+
       console.log(`✅ ${vuId}: ${attachedCount}/${docCount} documents attached to ${jpType} JP ${jpId}`);
     }
   });
@@ -492,7 +506,7 @@ export default function () {
   // Step 3: Create New Case
   const caseTestData = generateCaseTestData(`PerfTest-${testId}`, vuId);
   const caseData = createCase(testConfig, authHeaders, caseTemplates, caseTestData, vuId);
-  
+
   if (!caseData || !caseData.id) {
     console.error(`❌ ${vuId}: Case creation failed`);
     return;
@@ -524,14 +538,22 @@ export default function () {
       jpName: `Incoming JP ${i + 1} - ${testId}`,
       jpDescription: `Performance test incoming JP ${i + 1}`
     };
-    
+
     const jpPayload = generateIncomingJpPayload(caseData.id, selectedTemplate, jpTestData, testConfig);
-    const jpData = createJournalPostWithPayload(testConfig, authHeaders, caseData.id, jpPayload, 'Incoming', jpTestData, vuId);
-    
+    const jpData = createJournalPostWithPayload(
+      testConfig,
+      authHeaders,
+      caseData.id,
+      jpPayload,
+      'Incoming',
+      jpTestData,
+      vuId
+    );
+
     if (jpData && jpData.id) {
       incomingJPs.push(jpData);
     }
-    
+
     randomSleep(testConfig);
   }
 
@@ -542,14 +564,22 @@ export default function () {
       jpName: `Outgoing JP ${i + 1} - ${testId}`,
       jpDescription: `Performance test outgoing JP ${i + 1}`
     };
-    
+
     const jpPayload = generateOutgoingJpPayload(caseData.id, selectedTemplate, jpTestData, testConfig);
-    const jpData = createJournalPostWithPayload(testConfig, authHeaders, caseData.id, jpPayload, 'Outgoing', jpTestData, vuId);
-    
+    const jpData = createJournalPostWithPayload(
+      testConfig,
+      authHeaders,
+      caseData.id,
+      jpPayload,
+      'Outgoing',
+      jpTestData,
+      vuId
+    );
+
     if (jpData && jpData.id) {
       outgoingJPs.push(jpData);
     }
-    
+
     randomSleep(testConfig);
   }
 
@@ -575,7 +605,9 @@ export default function () {
   console.log(`🏁 ${vuId}: Test Complete`);
   console.log(`   📥 Incoming JPs created: ${incomingJPs.length}/${INCOMING_COUNT}`);
   console.log(`   📤 Outgoing JPs created: ${outgoingJPs.length}/${OUTGOING_COUNT}`);
-  console.log(`   📎 Documents per JP: ${docCountPerJp}${USE_TEST_DOCS ? ' (test documents)' : ' (synthetic)'}`);
+  console.log(
+    `   📎 Documents per JP: ${docCountPerJp}${USE_TEST_DOCS ? ' (test documents)' : ' (synthetic)'}`
+  );
   console.log(`   📦 Total documents attached: ${(incomingJPs.length + outgoingJPs.length) * docCountPerJp}`);
   console.log(`${'='.repeat(80)}\n`);
 

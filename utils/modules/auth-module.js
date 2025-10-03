@@ -63,7 +63,13 @@ export function authenticate(config, user, vuId) {
     const authResponse = http.post(endpoint, authPayload, {
       headers,
       timeout: '30s',
-      tags: { name: '🔐 OAuth Token Request', endpoint: 'auth:token', group: 'auth', method: 'POST', url: endpoint }
+      tags: {
+        name: '🔐 OAuth Token Request',
+        endpoint: 'auth:token',
+        group: 'auth',
+        method: 'POST',
+        url: endpoint
+      }
     });
     recordErrorSample(authResponse, { endpoint: 'auth:token', name: 'OAuth Token Request' });
 

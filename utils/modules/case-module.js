@@ -65,13 +65,13 @@ export function getTemplates(config, authHeaders, vuId) {
   group('Get Case Templates', () => {
     console.log(`📋 ${vuId}: Retrieving available case templates`);
 
-      const endpoint = `${config.baseUrl}${config.apiConfig.endpoints.sakmaler}`;
-      const templatesResponse = http.get(endpoint, { 
+    const endpoint = `${config.baseUrl}${config.apiConfig.endpoints.sakmaler}`;
+    const templatesResponse = http.get(endpoint, {
       headers: authHeaders,
       timeout: '30s',
       tags: { name: '📋 Get Case Templates', url: endpoint }
     });
-      recordErrorSample(templatesResponse, { endpoint: 'templates:list', name: 'getTemplates' });
+    recordErrorSample(templatesResponse, { endpoint: 'templates:list', name: 'getTemplates' });
 
     // Validate templates response
     const templatesSuccess = check(templatesResponse, {
@@ -185,8 +185,8 @@ export function createCase(
     // Generate case payload using centralized function with resolved IDs
     const casePayload = generateCasePayload(selectedTemplate, testData, config, resolvedIds);
 
-      const endpoint = `${config.baseUrl}${config.apiConfig.endpoints.sak}`;
-      const createResponse = http.post(endpoint, JSON.stringify(casePayload), {
+    const endpoint = `${config.baseUrl}${config.apiConfig.endpoints.sak}`;
+    const createResponse = http.post(endpoint, JSON.stringify(casePayload), {
       headers: authHeaders,
       timeout: '30s',
       tags: {
@@ -195,7 +195,7 @@ export function createCase(
         url: endpoint
       }
     });
-      recordErrorSample(createResponse, { endpoint: 'cases:create', name: 'createCase' });
+    recordErrorSample(createResponse, { endpoint: 'cases:create', name: 'createCase' });
 
     // Validate case creation response
     const createSuccess = check(createResponse, {

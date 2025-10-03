@@ -90,7 +90,7 @@ export function setup() {
     useDataFileConfig: USE_DATA_FILE_CONFIG,
     configSource: USE_DATA_FILE_CONFIG ? 'configFile' : 'inlineConfig',
     totalUsers: Array.isArray(config.users) ? config.users.length : 0,
-    scenario: SCENARIO_OVERRIDE || (config.activeScenario || '')
+    scenario: SCENARIO_OVERRIDE || config.activeScenario || ''
   };
 }
 
@@ -212,7 +212,8 @@ export default function (data) {
 export function teardown(data) {
   console.log('🏁 Create-Sak LOAD TEST completed!');
   const cfgEnv = data?.configEnvironment || CONFIG_ENVIRONMENT;
-  const cfgSource = data?.configSource || (data?.useDataFileConfig ? 'Performance Test Data File' : 'inlineConfig');
+  const cfgSource =
+    data?.configSource || (data?.useDataFileConfig ? 'Performance Test Data File' : 'inlineConfig');
   const totalUsers = data?.totalUsers ?? (Array.isArray(config.users) ? config.users.length : 'n/a');
   const scenarioName = data?.scenario || SCENARIO_OVERRIDE || 'n/a';
   console.log(`📈 Configuration used: ${cfgSource} (${cfgEnv})`);
@@ -243,7 +244,11 @@ export function teardown(data) {
  */
 export function handleSummary(data) {
   // Attach error sampling data (if any)
-  try { injectErrorAnalyticsIntoSummary(data); } catch (e) { /* no-op */ }
+  try {
+    injectErrorAnalyticsIntoSummary(data);
+  } catch (e) {
+    /* no-op */
+  }
   const m = data.metrics || {};
   const dur = m.http_req_duration?.values || {};
   const checks = m.checks?.values || {};

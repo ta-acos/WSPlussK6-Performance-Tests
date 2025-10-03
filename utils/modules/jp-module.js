@@ -8,7 +8,7 @@
  * import { getJpTemplates, createJournalPost } from '../utils/modules/jp-module.js';
  * const jpTemplates = getJpTemplates(config, authHeaders, caseId, vuId);
  * const jpData = createJournalPost(config, authHeaders, caseId, jpTemplates, testData, vuId);
- * 
+ *
  * Note: Document attachment endpoints are automatically detected as either:
  * - multipart/form-data (for endpoints containing 'uploadfile' or 'upload')
  * - application/json (for other endpoints)
@@ -88,7 +88,14 @@ export function getJpTemplates(config, authHeaders, caseId, vuId) {
     const templatesResponse = http.get(templatesUrl, {
       headers: authHeaders,
       timeout: '30s',
-      tags: { name: '📎 Get JP Templates', endpoint: 'jp:templates', group: 'jp', method: 'GET', case_id: caseId, url: templatesUrl }
+      tags: {
+        name: '📎 Get JP Templates',
+        endpoint: 'jp:templates',
+        group: 'jp',
+        method: 'GET',
+        case_id: caseId,
+        url: templatesUrl
+      }
     });
     recordErrorSample(templatesResponse, { endpoint: 'jp:templates', name: 'Get JP Templates' });
 
@@ -158,7 +165,7 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
     // Generate JP payload using centralized function (with dokTypeId, dokStatusId, saksbehandlerId from CSV)
     const jpPayload = generateJpPayload(caseId, selectedTemplate, testData, config);
 
-  const createUrl = `${config.baseUrl}${config.apiConfig.endpoints.jpny}`; // Centralized in config
+    const createUrl = `${config.baseUrl}${config.apiConfig.endpoints.jpny}`; // Centralized in config
     console.log(`🔗 ${vuId}: JP create URL: ${createUrl}`);
 
     const createResponse = http.post(createUrl, JSON.stringify(jpPayload), {
@@ -271,11 +278,11 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
 
 /**
  * Attach a document to a Journal Post
- * 
+ *
  * NOTE: WebSak JP document attachment workflow:
  * - First document: Use /uploadfiletodokument/ to set the main JP document
  * - Additional documents: Use /jp/{jpId}/dokumenter or similar endpoints to add attachments
- * 
+ *
  * @param {Object} config - Test configuration object
  * @param {Object} authHeaders - Authenticated headers
  * @param {string} jpId - Journal Post ID
@@ -287,7 +294,7 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
 /**
  * CENTRALIZED DOCUMENT PAYLOAD BUILDER - Common function for all document operations
  * Use this function whenever you need to prepare document data for API requests
- * 
+ *
  * @param {Object} documentData - Raw document data
  * @param {string} documentData.name - Document filename
  * @param {string} documentData.content - Document text content (for text files)
@@ -301,30 +308,31 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
 export function buildJpDocumentPayload(documentData, jpId = null) {
   const payload = {
     navn: documentData.name,
-    innhold: documentData.content || (documentData.base64Content ? null : 'Performance test document content'),
+    innhold:
+      documentData.content || (documentData.base64Content ? null : 'Performance test document content'),
     innholdBase64: documentData.base64Content || undefined,
     mimeType: documentData.mimeType || 'text/plain',
     storrelse: documentData.size || 1024,
     kilde: documentData.originalPath || undefined
   };
-  
+
   // Add JP ID if provided (for endpoints that require it in payload)
   if (jpId) {
     payload.jpId = Number(jpId);
     payload.journalpostId = Number(jpId);
   }
-  
+
   return payload;
 }
 
 /**
  * CENTRALIZED MULTIPART FORM DATA BUILDER - Common function for file uploads
  * Use this function for any endpoint that requires multipart/form-data file uploads
- * 
+ *
  * Supports WebSak API structure:
  * - Single document: Legacy format with file + jpId
  * - Multiple documents: Array format with dokuments[index] fields
- * 
+ *
  * @param {Object} documentData - Document data to upload
  * @param {string} jpId - Journal Post ID (required)
  * @param {number} documentIndex - Document index in array (0-based, optional, default 0)
@@ -333,35 +341,40 @@ export function buildJpDocumentPayload(documentData, jpId = null) {
  */
 export function buildMultipartFormData(documentData, jpId = null, documentIndex = 0, isMainDocument = false) {
   const formData = {};
-  
+
   // Add JP ID (required)
   if (jpId) {
     formData.jpId = jpId;
   }
-  
+
   // WebSak API requires array-based structure: dokuments[index].field
   const prefix = `dokuments[${documentIndex}]`;
-  
+
   // Add document metadata
   formData[`${prefix}.isMainDocument`] = String(isMainDocument);
   formData[`${prefix}.orderIndex`] = String(documentIndex + 1); // 1-based order
-  formData[`${prefix}.tittel`] = documentData.tittel || documentData.title || documentData.name?.replace(/\.[^/.]+$/, '') || 'Document';
-  
+  formData[`${prefix}.tittel`] =
+    documentData.tittel || documentData.title || documentData.name?.replace(/\.[^/.]+$/, '') || 'Document';
+
   // Add the file - support both binary data and text content
-  const fileContent = documentData.binaryData || documentData.content || documentData.base64Content || 'Performance test document content';
+  const fileContent =
+    documentData.binaryData ||
+    documentData.content ||
+    documentData.base64Content ||
+    'Performance test document content';
   formData[`${prefix}.file`] = http.file(
     fileContent,
     documentData.name || 'document.txt',
     documentData.mimeType || 'text/plain'
   );
-  
+
   return formData;
 }
 
 /**
  * BATCH MULTIPART FORM DATA BUILDER - Upload multiple documents at once
  * Combines multiple documents into a single multipart form data payload
- * 
+ *
  * @param {Array<Object>} documentsArray - Array of document data objects
  * @param {string} jpId - Journal Post ID (required)
  * @param {number} mainDocumentIndex - Index of main document (optional, default 0)
@@ -369,33 +382,38 @@ export function buildMultipartFormData(documentData, jpId = null, documentIndex 
  */
 export function buildBatchMultipartFormData(documentsArray, jpId, mainDocumentIndex = 0) {
   const formData = { jpId };
-  
+
   documentsArray.forEach((docData, index) => {
     const prefix = `dokuments[${index}]`;
-    const isMain = (index === mainDocumentIndex);
-    
+    const isMain = index === mainDocumentIndex;
+
     formData[`${prefix}.isMainDocument`] = String(isMain);
     formData[`${prefix}.orderIndex`] = String(index + 1);
-    formData[`${prefix}.tittel`] = docData.tittel || docData.title || docData.name?.replace(/\.[^/.]+$/, '') || `Document ${index + 1}`;
-    
+    formData[`${prefix}.tittel`] =
+      docData.tittel || docData.title || docData.name?.replace(/\.[^/.]+$/, '') || `Document ${index + 1}`;
+
     // Support both binary data and text content
-    const fileContent = docData.binaryData || docData.content || docData.base64Content || `Performance test document ${index + 1}`;
+    const fileContent =
+      docData.binaryData ||
+      docData.content ||
+      docData.base64Content ||
+      `Performance test document ${index + 1}`;
     formData[`${prefix}.file`] = http.file(
       fileContent,
       docData.name || `document${index + 1}.txt`,
       docData.mimeType || 'text/plain'
     );
   });
-  
+
   return formData;
 }
 
 /**
  * Attach a document to a Journal Post
- * 
+ *
  * UPDATED: Now supports WebSak API array structure for multiple documents
  * Uses dokuments[index] format with isMainDocument, orderIndex, tittel, and file fields
- * 
+ *
  * @param {Object} config - Test configuration object
  * @param {Object} authHeaders - Authenticated headers
  * @param {string} jpId - Journal Post ID
@@ -405,24 +423,32 @@ export function buildBatchMultipartFormData(documentsArray, jpId, mainDocumentIn
  * @param {boolean} isMainDocument - Whether this is the main document (default false)
  * @returns {boolean} Success status of document attachment
  */
-export function attachDocument(config, authHeaders, jpId, documentData, vuId, documentIndex = 0, isMainDocument = false) {
+export function attachDocument(
+  config,
+  authHeaders,
+  jpId,
+  documentData,
+  vuId,
+  documentIndex = 0,
+  isMainDocument = false
+) {
   let success = false;
 
   group('Attach Document to JP', () => {
     const docType = isMainDocument ? 'main document' : `document #${documentIndex + 1}`;
     console.log(`📎 ${vuId}: Attaching ${docType} "${documentData.name}" to JP ${jpId}`);
-    
+
     // WebSak API endpoint for document upload
     const uploadPath = config.apiConfig.endpoints.jpAttach || '/api/websak/api/jp/uploadfiletodokument/';
     const uploadUrl = `${config.baseUrl}${uploadPath}`;
-    
+
     // Build multipart form data using correct WebSak API structure
     const formData = buildMultipartFormData(documentData, jpId, documentIndex, isMainDocument);
-    
+
     // Prepare headers (remove Content-Type to let K6 set it with boundary)
     const multipartHeaders = { ...authHeaders };
     delete multipartHeaders['Content-Type'];
-    
+
     console.log(`🔗 ${vuId}: Uploading to: ${uploadUrl}`);
 
     const silent = (__ENV.JP_ATTACH_SILENT || '').toLowerCase() === 'true';
@@ -440,7 +466,7 @@ export function attachDocument(config, authHeaders, jpId, documentData, vuId, do
         url: uploadUrl
       }
     });
-    
+
     recordErrorSample(attachResponse, { endpoint: 'jp:attachDocument', name: 'Attach JP Document' });
 
     // Validate response
@@ -476,9 +502,9 @@ export function attachDocument(config, authHeaders, jpId, documentData, vuId, do
 
 /**
  * Attach multiple documents to a Journal Post in a single request
- * 
+ *
  * Uses WebSak API batch upload with dokuments[] array structure
- * 
+ *
  * @param {Object} config - Test configuration object
  * @param {Object} authHeaders - Authenticated headers
  * @param {string} jpId - Journal Post ID
@@ -492,18 +518,18 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
 
   group('Attach Multiple Documents to JP', () => {
     console.log(`📎 ${vuId}: Attaching ${documentsArray.length} documents to JP ${jpId}`);
-    
+
     // WebSak API endpoint for document upload
     const uploadPath = config.apiConfig.endpoints.jpAttach || '/api/websak/api/jp/uploadfiletodokument/';
     const uploadUrl = `${config.baseUrl}${uploadPath}`;
-    
+
     // Build batch multipart form data
     const formData = buildBatchMultipartFormData(documentsArray, jpId, mainDocumentIndex);
-    
+
     // Prepare headers
     const multipartHeaders = { ...authHeaders };
     delete multipartHeaders['Content-Type'];
-    
+
     console.log(`🔗 ${vuId}: Batch uploading to: ${uploadUrl}`);
 
     // Perform the batch upload
@@ -520,8 +546,11 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
         url: uploadUrl
       }
     });
-    
-    recordErrorSample(attachResponse, { endpoint: 'jp:attachDocumentsBatch', name: 'Attach JP Documents Batch' });
+
+    recordErrorSample(attachResponse, {
+      endpoint: 'jp:attachDocumentsBatch',
+      name: 'Attach JP Documents Batch'
+    });
 
     // Validate response
     const attemptOk = check(attachResponse, {
