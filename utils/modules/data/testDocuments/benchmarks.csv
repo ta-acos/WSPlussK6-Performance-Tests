@@ -1,0 +1,6 @@
+metric,rule,actual,target,delta,status
+iteration_duration,p(95)<30000,1378.54,30000,+28621.46 (+95.4%),PASS
+http_req_failed,rate<0.05,0,0.05,+0.05 (+100.0%),PASS
+http_req_duration,p(95)<2000,792.84,2000,+1207.16 (+60.4%),PASS
+http_req_duration,p(99)<5000,n/a,5000,n/a,PASS
+http_reqs,rate>0.5,3.6020786587357536,0.5,+3.10 (+620.4%),PASS

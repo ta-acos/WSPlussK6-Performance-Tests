@@ -1,0 +1,131 @@
+{
+  "name": "websak-k6-performance-tests",
+  "version": "1.1.1",
+  "description": "K6 performance tests for WebSak Plus (modular Create Sak & Journal Post scenarios)",
+  "scripts": {
+    "__comment_sak": "=== Create Sak (Case) Tests ===",
+    "__comment_sak_desc": "Tests for creating WebSak cases with various load patterns",
+    "test:create-sak": "k6 run tests/create-sak.js",
+
+    "__comment_sak_smoke": "Smoke test: Quick validation with 1 user, 1 case creation",
+    "test:create-sak:smoke": "k6 run -e SCENARIO=smoke_test tests/create-sak.js",
+
+    "__comment_sak_load": "Load test: Sustained load with multiple users creating cases",
+    "test:create-sak:load": "k6 run -e SCENARIO=load_test tests/create-sak.js",
+
+    "__comment_sak_stress": "Stress test: Push system beyond normal capacity to find breaking points",
+    "test:create-sak:stress": "k6 run -e SCENARIO=stress_test tests/create-sak.js",
+
+    "__comment_sak_spike": "Spike test: Sudden traffic spikes to test system resilience",
+    "test:create-sak:spike": "k6 run -e SCENARIO=spike_test tests/create-sak.js",
+
+  "__comment_sak_endurance": "Endurance test: Extended duration test to check for memory leaks and stability",
+  "test:create-sak:endurance": "k6 run -e SCENARIO=endurance_test tests/create-sak.js",
+
+  "__comment_sak_nopace": "No-pacing variants: Run tests without think time (maximum throughput)",
+  "test:create-sak:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/create-sak.js\"",
+  "test:create-sak:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/create-sak.js\"",
+  "test:create-sak:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/create-sak.js\"",
+  "test:create-sak:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/create-sak.js\"",
+  "test:create-sak:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/create-sak.js\"",
+
+    "__comment_jp": "=== Create JP (Journal Post) Tests ===",
+    "__comment_jp_desc": "Tests for creating single Journal Posts with various load patterns",
+    "test:create-jp": "k6 run tests/create-jp.js",
+
+    "__comment_jp_smoke": "Smoke test: Quick validation with 1 user, 1 JP creation",
+    "test:create-jp:smoke": "k6 run -e SCENARIO=smoke_test tests/create-jp.js",
+
+    "__comment_jp_load": "Load test: Sustained load with multiple users creating JPs",
+    "test:create-jp:load": "k6 run -e SCENARIO=load_test tests/create-jp.js",
+
+    "__comment_jp_stress": "Stress test: Push system beyond normal capacity for JP creation",
+    "test:create-jp:stress": "k6 run -e SCENARIO=stress_test tests/create-jp.js",
+
+    "__comment_jp_spike": "Spike test: Sudden traffic spikes for JP creation",
+    "test:create-jp:spike": "k6 run -e SCENARIO=spike_test tests/create-jp.js",
+
+  "__comment_jp_endurance": "Endurance test: Extended JP creation to check stability",
+  "test:create-jp:endurance": "k6 run -e SCENARIO=endurance_test tests/create-jp.js",
+
+  "__comment_jp_nopace": "No-pacing variants: JP tests without think time (maximum throughput)",
+  "test:create-jp:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/create-jp.js\"",
+  "test:create-jp:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/create-jp.js\"",
+  "test:create-jp:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/create-jp.js\"",
+  "test:create-jp:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/create-jp.js\"",
+  "test:create-jp:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/create-jp.js\"",
+
+  "__comment_jp_multidoc": "=== Create Single JP with Multiple Documents Tests ===",
+  "__comment_jp_multidoc_desc": "Tests for creating a single Journal Post with multiple document attachments",
+  "test:create-jp-with-multiple-document": "k6 run tests/create-jp-with-multiple-document.js",
+
+  "__comment_jp_multidoc_smoke": "Smoke test: 1 JP with multiple documents attached",
+  "test:create-jp-with-multiple-document:smoke": "k6 run -e SCENARIO=smoke_test tests/create-jp-with-multiple-document.js",
+
+  "__comment_jp_multidoc_load": "Load test: Multiple users creating JPs with document attachments",
+  "test:create-jp-with-multiple-document:load": "k6 run -e SCENARIO=load_test tests/create-jp-with-multiple-document.js",
+
+  "__comment_jp_multidoc_stress": "Stress test: High volume JP+documents creation",
+  "test:create-jp-with-multiple-document:stress": "k6 run -e SCENARIO=stress_test tests/create-jp-with-multiple-document.js",
+
+  "__comment_jp_multidoc_spike": "Spike test: Sudden spikes in JP+documents creation",
+  "test:create-jp-with-multiple-document:spike": "k6 run -e SCENARIO=spike_test tests/create-jp-with-multiple-document.js",
+
+  "__comment_jp_multidoc_endurance": "Endurance test: Extended JP+documents creation for stability",
+  "test:create-jp-with-multiple-document:endurance": "k6 run -e SCENARIO=endurance_test tests/create-jp-with-multiple-document.js",
+
+  "__comment_jp_multidoc_nopace": "No-pacing variants: JP+documents tests without think time",
+  "test:create-jp-with-multiple-document:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/create-jp-with-multiple-document.js\"",
+  "test:create-jp-with-multiple-document:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/create-jp-with-multiple-document.js\"",
+  "test:create-jp-with-multiple-document:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/create-jp-with-multiple-document.js\"",
+  "test:create-jp-with-multiple-document:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/create-jp-with-multiple-document.js\"",
+  "test:create-jp-with-multiple-document:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/create-jp-with-multiple-document.js\"",
+
+  "__comment_multiplejp": "=== Create Multiple JPs (Incoming & Outgoing) with Multiple Documents Tests ===",
+  "test:create-multiplejp-with-multiple-document": "k6 run tests/create-multiplejp-with-multiple-document.js",
+
+  "__comment_multiplejp_smoke": "Smoke test: 2 incoming + 2 outgoing JPs with 10 large test documents each (1MB-10MB files)",
+  "test:create-multiplejp-with-multiple-document:smoke": "k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true tests/create-multiplejp-with-multiple-document.js",
+
+  "__comment_multiplejp_synthetic": "Smoke test: 2 incoming + 2 outgoing JPs with 3 synthetic documents each (fast, lightweight)",
+  "test:create-multiplejp-with-multiple-document:smoke:synthetic": "k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e DOC_COUNT=3 -e USE_TEST_DOCS=false tests/create-multiplejp-with-multiple-document.js",
+
+  "__comment_multiplejp_load": "Load test: Multiple incoming/outgoing JPs with large test documents (realistic performance testing)",
+  "test:create-multiplejp-with-multiple-document:load": "k6 run -e SCENARIO=load_test -e USE_TEST_DOCS=true tests/create-multiplejp-with-multiple-document.js",
+
+  "__comment_multiplejp_stress": "Stress test: High volume JPs creation with large documents to test system limits",
+  "test:create-multiplejp-with-multiple-document:stress": "k6 run -e SCENARIO=stress_test -e USE_TEST_DOCS=true tests/create-multiplejp-with-multiple-document.js",
+
+    "__comment_reports": "=== Report Management ===",
+    "__comment_reports_desc": "Commands for viewing and managing test reports",
+    "report:open": "powershell -Command \"if (Test-Path reports/create-sak-report.html) { Start-Process reports/create-sak-report.html } else { Write-Host 'Report not found. Run a test first.' }\"",
+
+    "report:open:jp": "powershell -Command \"if (Test-Path reports/create-jp-report.html) { Start-Process reports/create-jp-report.html } else { Write-Host 'JP Report not found. Run a test first.' }\"",
+    "report:list": "Get-ChildItem reports/*-report.html -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object Name,LastWriteTime",
+
+    "__comment_dev": "=== Development Tools ===",
+    "__comment_dev_desc": "Linting, formatting, and project setup commands",
+    "lint": "eslint \"tests/**/*.js\" \"utils/**/*.js\" --quiet",
+
+  "format": "prettier --write \"tests/**/*.js\" \"utils/**/*.js\"",
+  "prepare": "husky install"
+  },
+  "keywords": [
+    "k6",
+    "performance",
+    "testing",
+    "websak",
+    "load-testing"
+  ],
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.0.10"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
