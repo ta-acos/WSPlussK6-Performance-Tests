@@ -9,14 +9,28 @@
  * const jpTemplates = getJpTemplates(config, authHeaders, caseId, vuId);
  * const jpData = createJournalPost(config, authHeaders, caseId, jpTemplates, testData, vuId);
  *
- * Note: Document attachment endpoints are automatically detected as either:
- * - multipart/form-data (for endpoints containing 'uploadfile' or 'upload')
+ * Note: Document attachment endpoints are automatically detected     } else {
+      console.error(`❌ ${vuId}: Failed to attach documents to JP ${jpId}`);
+      console.error(`   Status: ${attachResponse.status}`);
+      
+      // Record error using NEW k6 metrics-based tracker (will appear in report!)
+      recordError(attachResponse, {
+        endpoint: `/api/websak/api/jp/uploadfiletodokument/`,
+        errorType: 'document_attach_timeout',
+        message: `Got ${attachResponse.status} from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: Document attachment timeout: ${attachResponse.timings.duration.toFixed(2)}ms > 5000ms threshold. JP ID: ${jpId}`,
+        failed: true,
+        jpId: jpId,
+        duration: attachResponse.timings.duration.toFixed(2),
+        responseBody: attachResponse.body ? attachResponse.body.slice(0, 200) : 'No response body'
+      });
+    } * - multipart/form-data (for endpoints containing 'uploadfile' or 'upload')
  * - application/json (for other endpoints)
  */
 
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 import { recordErrorSample } from '../error-sampler.js';
+import { recordError } from '../error-tracker.js';
 import { generateRandomString } from '../validation.js';
 
 /**
@@ -547,11 +561,6 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
       }
     });
 
-    recordErrorSample(attachResponse, {
-      endpoint: 'jp:attachDocumentsBatch',
-      name: 'Attach JP Documents Batch'
-    });
-
     // Validate response
     const attemptOk = check(attachResponse, {
       'attach_docs_batch: status is 200/201': (r) => {
@@ -570,6 +579,25 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
     } else {
       console.error(`❌ ${vuId}: Failed to attach documents to JP ${jpId}`);
       console.error(`   Status: ${attachResponse.status}`);
+      
+      // Record error using NEW k6 metrics-based tracker (will appear in report!)
+      recordError(attachResponse, {
+        endpoint: `/api/websak/api/jp/uploadfiletodokument/`,
+        errorType: 'document_attach_timeout',
+        message: `Got ${attachResponse.status} from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: Document attachment timeout: ${attachResponse.timings.duration.toFixed(2)}ms > 5000ms threshold. JP ID: ${jpId}`,
+        failed: true,
+        jpId: jpId,
+        duration: attachResponse.timings.duration.toFixed(2),
+        responseBody: attachResponse.body ? attachResponse.body.slice(0, 200) : 'No response body'
+      });
+      
+      // Also keep old method for backward compatibility
+      recordErrorSample(attachResponse, {
+        endpoint: 'jp:attachDocumentsBatch',
+        name: 'Attach JP Documents Batch',
+        failed: true,
+        error: `Check failed: attemptOk=${attemptOk}, status=${attachResponse.status}`
+      });
     }
   });
 

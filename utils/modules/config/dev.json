@@ -46,5 +46,20 @@
       "duration": "30s",
       "env": { "TEST_TYPE": "templates_only" }
     }
+  },
+  "testDocuments": {
+    "basePath": "../utils/modules/data/testDocuments",
+    "files": [
+      "1mb.pdf",
+      "1mb.docx",
+      "3-mb.pdf",
+      "5mb.docx",
+      "6mb.pdf",
+      "10mb.pdf",
+      "10mb.docx",
+      "PerfTestingGuide.docx",
+      "PerfTestScenarios.xlsx",
+      "benchmarks.csv"
+    ]
   }
 }
