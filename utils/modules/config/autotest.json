@@ -30,7 +30,7 @@
       "load_test": {
         "executor": "constant-vus",
         "vus": 7,
-        "duration": "5m",
+        "duration": "2m",
         "gracefulStop": "30s"
       },
       "stress_test": {
@@ -88,5 +88,22 @@
   "options": {
     "noConnectionReuse": false,
     "userAgent": "K6-LoadTest-AutoTest/1.0"
+  },
+
+  "_comment_testDocuments": "TEST DOCUMENT PATHS: File paths for test documents used in performance tests",
+  "testDocuments": {
+    "basePath": "../utils/modules/data/testDocuments",
+    "files": [
+      "1mb.pdf",
+      "1mb.docx",
+      "3-mb.pdf",
+      "5mb.docx",
+      "6mb.pdf",
+      "10mb.pdf",
+      "10mb.docx",
+      "PerfTestingGuide.docx",
+      "PerfTestScenarios.xlsx",
+      "benchmarks.csv"
+    ]
   }
 }

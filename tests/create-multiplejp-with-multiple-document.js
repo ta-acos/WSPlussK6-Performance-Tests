@@ -39,6 +39,8 @@ import {
   attachDocument
 } from '../utils/modules/jp-module.js';
 import { generateHtmlReport } from '../utils/report-generator.js';
+import { injectErrorAnalyticsIntoSummary } from '../utils/error-sampler.js';
+import { injectErrorAnalytics } from '../utils/error-tracker.js';
 import { group, check, sleep } from 'k6';
 import http from 'k6/http';
 import encoding from 'k6/encoding';
@@ -102,18 +104,26 @@ let preloadedTestDocuments = [];
 if (USE_TEST_DOCS) {
   console.log('📂 Preloading test documents from testDocuments folder...');
 
-  const testDocPaths = [
-    '../utils/modules/data/testDocuments/1mb.pdf',
-    '../utils/modules/data/testDocuments/1mb.docx',
-    '../utils/modules/data/testDocuments/3-mb.pdf',
-    '../utils/modules/data/testDocuments/5mb.docx',
-    '../utils/modules/data/testDocuments/6mb.pdf',
-    '../utils/modules/data/testDocuments/10mb.pdf',
-    '../utils/modules/data/testDocuments/10mb.docx',
-    '../utils/modules/data/testDocuments/PerfTestingGuide.docx',
-    '../utils/modules/data/testDocuments/PerfTestScenarios.xlsx',
-    '../utils/modules/data/testDocuments/benchmarks.csv'
-  ];
+  // Get test document paths from config
+  const testDocConfig = config?.testDocuments || {
+    basePath: '../utils/modules/data/testDocuments',
+    files: [
+      '1mb.pdf',
+      '1mb.docx',
+      '3-mb.pdf',
+      '5mb.docx',
+      '6mb.pdf',
+      '10mb.pdf',
+      '10mb.docx',
+      'PerfTestingGuide.docx',
+      'PerfTestScenarios.xlsx',
+      'benchmarks.csv'
+    ]
+  };
+
+  const testDocPaths = testDocConfig.files.map(
+    (fileName) => `${testDocConfig.basePath}/${fileName}`
+  );
 
   testDocPaths.forEach((filePath) => {
     try {
@@ -161,7 +171,22 @@ export function setup() {
 
   console.log(`📦 Batch upload mode: ${USE_BATCH_UPLOAD}`);
   printConfigSummary(config);
-  return { started: true };
+
+  // Return metadata for HTML report
+  return {
+    started: true,
+    configEnvironment: CONFIG_ENVIRONMENT,
+    useDataFileConfig: USE_DATA_FILE_CONFIG,
+    testName: 'create-multiplejp-with-multiple-document',
+    incomingCount: INCOMING_COUNT,
+    outgoingCount: OUTGOING_COUNT,
+    docCount: DOC_COUNT,
+    useBatchUpload: USE_BATCH_UPLOAD,
+    useTestDocs: USE_TEST_DOCS,
+    preloadedDocsCount: preloadedTestDocuments.length,
+    scenarioOverride: SCENARIO_OVERRIDE,
+    baseUrl: config.baseUrl
+  };
 }
 
 /**
@@ -619,6 +644,13 @@ export function teardown(data) {
 }
 
 export function handleSummary(data) {
+  // Call old method first (for group breakdown, but returns empty error arrays due to k6 limitation)
+  injectErrorAnalyticsIntoSummary(data);
+  
+  // Then inject error analytics using NEW k6 metrics-based tracker
+  // This WILL capture errors because it uses k6 Custom Metrics and will OVERWRITE the empty arrays!
+  injectErrorAnalytics(data);
+
   const apdexEnv = __ENV.APDEX_T || __ENV.APDex_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
   const html = generateHtmlReport(data, { apdexT });
