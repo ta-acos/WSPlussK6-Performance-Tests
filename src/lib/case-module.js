@@ -14,10 +14,10 @@
  *   const caseInfo = createCase(config, authHeaders, templates, testData, vuId);
  */
 
-import { check, group, sleep } from 'k6';
+import { check, group } from 'k6';
 import http from 'k6/http';
-import { recordErrorSample } from '../error-sampler.js';
-import { generateRandomString } from '../validation.js';
+import { recordError } from '../utils/error-tracker.js';
+import { generateRandomString } from '../utils/validation.js';
 
 /**
  * Generate case creation payload
@@ -69,9 +69,9 @@ export function getTemplates(config, authHeaders, vuId) {
     const templatesResponse = http.get(endpoint, {
       headers: authHeaders,
       timeout: '30s',
-      tags: { name: '📋 Get Case Templates', url: endpoint }
+      tags: { name: 'getTemplates', group: 'case' }
     });
-    recordErrorSample(templatesResponse, { endpoint: 'templates:list', name: 'getTemplates' });
+    recordError(templatesResponse, { endpoint: 'templates:list', errorType: 'http_error', message: 'Get Templates failed' });
 
     // Validate templates response
     const templatesSuccess = check(templatesResponse, {
@@ -195,7 +195,7 @@ export function createCase(
         url: endpoint
       }
     });
-    recordErrorSample(createResponse, { endpoint: 'cases:create', name: 'createCase' });
+    recordError(createResponse, { endpoint: 'cases:create', errorType: 'http_error', message: 'Create Case failed' });
 
     // Validate case creation response
     const createSuccess = check(createResponse, {

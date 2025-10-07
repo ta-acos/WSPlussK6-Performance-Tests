@@ -27,11 +27,17 @@
  * - application/json (for other endpoints)
  */
 
-import { check, group, sleep } from 'k6';
+import { check, group } from 'k6';
 import http from 'k6/http';
-import { recordErrorSample } from '../error-sampler.js';
-import { recordError } from '../error-tracker.js';
-import { generateRandomString } from '../validation.js';
+import { recordError } from '../utils/error-tracker.js';
+import { generateRandomString } from '../utils/validation.js';
+import { getPathsConfig } from './config-manager.js';
+
+// Get JP attachment endpoint from configuration
+function getJpAttachEndpoint() {
+  const pathsConfig = getPathsConfig();
+  return pathsConfig.apiEndpoints?.websak?.endpoints?.jpAttach || '/api/websak/api/jp/uploadfiletodokument/';
+}
 
 /**
  * Generate Journal Post creation payload
@@ -111,7 +117,7 @@ export function getJpTemplates(config, authHeaders, caseId, vuId) {
         url: templatesUrl
       }
     });
-    recordErrorSample(templatesResponse, { endpoint: 'jp:templates', name: 'Get JP Templates' });
+    recordError(templatesResponse, { endpoint: 'jp:templates', errorType: 'http_error', message: 'Get JP Templates failed' });
 
     // Validate JP templates response
     const templatesSuccess = check(templatesResponse, {
@@ -196,7 +202,7 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
         url: createUrl
       }
     });
-    recordErrorSample(createResponse, { endpoint: 'jp:create', name: 'Create Journal Post' });
+    recordError(createResponse, { endpoint: 'jp:create', errorType: 'http_error', message: 'Create Journal Post failed' });
 
     // Validate JP creation response
     const createSuccess = check(createResponse, {
@@ -481,7 +487,7 @@ export function attachDocument(
       }
     });
 
-    recordErrorSample(attachResponse, { endpoint: 'jp:attachDocument', name: 'Attach JP Document' });
+    recordError(attachResponse, { endpoint: 'jp:attachDocument', errorType: 'http_error', message: 'Attach JP Document failed' });
 
     // Validate response
     const attemptOk = check(attachResponse, {
@@ -589,14 +595,6 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
         jpId: jpId,
         duration: attachResponse.timings.duration.toFixed(2),
         responseBody: attachResponse.body ? attachResponse.body.slice(0, 200) : 'No response body'
-      });
-      
-      // Also keep old method for backward compatibility
-      recordErrorSample(attachResponse, {
-        endpoint: 'jp:attachDocumentsBatch',
-        name: 'Attach JP Documents Batch',
-        failed: true,
-        error: `Check failed: attemptOk=${attemptOk}, status=${attachResponse.status}`
       });
     }
   });

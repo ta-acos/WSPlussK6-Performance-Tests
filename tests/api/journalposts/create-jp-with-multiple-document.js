@@ -12,27 +12,29 @@
  *  k6 run tests/create-jp-with-multiple-document.js --vus 1 --duration 10s
  */
 
-import { randomSleep } from '../utils/pacing.js';
+import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
-  getK6OptionsWithScenarios,
   getK6Options,
-  printConfigSummary
-} from '../utils/modules/config-manager.js';
-import { authenticate, createAuthHeaders } from '../utils/modules/auth-module.js';
+  getK6OptionsWithScenarios,
+  printConfigSummary,
+  getEnvironmentMetadata,
+  getReportPaths
+} from '../../../src/lib/config-manager.js';
+import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
 import {
   getTemplates as getCaseTemplates,
   createCase,
   generateCaseTestData
-} from '../utils/modules/case-module.js';
+} from '../../../src/lib/case-module.js';
 import {
   getJpTemplates,
   createJournalPost,
   generateJpTestData,
   attachDocument,
   attachDocumentsBatch
-} from '../utils/modules/jp-module.js';
-import { generateHtmlReport } from '../utils/report-generator.js';
+} from '../../../src/lib/jp-module.js';
+import { generateHtmlReport } from '../../../src/utils/report-generator.js';
 import { group, check, sleep } from 'k6';
 import http from 'k6/http';
 import encoding from 'k6/encoding';
@@ -453,11 +455,19 @@ export function teardown() {
 export function handleSummary(data) {
   const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
+  // Add environment and metadata information for reporting
+  const testConfig = loadTestConfig('create-jp-with-multiple-document', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const envMetadata = getEnvironmentMetadata(testConfig);
+  data.setup_data = {
+    ...envMetadata
+  };
+
   const html = generateHtmlReport(data, { apdexT });
   // Relative paths that work when running from repo root or k6-tests directory
+  const reportPaths = getReportPaths('create-jp-with-multiple-document');
   return {
-    'reports/create-jp-with-multiple-document-summary.json': JSON.stringify(data, null, 2),
-    'reports/create-jp-with-multiple-document-report.html': html,
+    [reportPaths.json]: JSON.stringify(data, null, 2),
+    [reportPaths.html]: html,
     stdout: ''
   };
 }

@@ -6,10 +6,10 @@ import { open } from 'k6';
  * @returns {Object} Configuration object
  */
 export function loadConfig(environment = 'dev') {
-  // Config JSON files reside at utils/modules/config relative to project root.
-  // When executed from test scripts (in ../tests), K6 resolves open paths from the CWD (script root).
-  // Use a relative path that works when imported from tests (../utils/modules/config/...)
-  const configFile = `./utils/modules/config/${environment}.json`;
+  // Config JSON files reside at src/config relative to project root.
+  // When executed from test scripts, K6 resolves open paths from the CWD (script root).
+  // Use a relative path that works when imported from tests (./src/config/...)
+  const configFile = `./src/config/${environment}.json`;
 
   try {
     const configContent = open(configFile);

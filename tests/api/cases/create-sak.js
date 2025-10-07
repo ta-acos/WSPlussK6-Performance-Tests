@@ -11,25 +11,25 @@
  *  k6 run tests/create-sak.js --vus 3 --duration 15s
  */
 
-import { sleep } from 'k6';
-import { randomSleep } from '../utils/pacing.js';
+import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
   getK6Options,
   getK6OptionsWithScenarios,
-  getAvailableScenarios,
-  printConfigSummary
-} from '../utils/modules/config-manager.js';
-import { authenticate, createAuthHeaders } from '../utils/modules/auth-module.js';
+  printConfigSummary,
+  getEnvironmentMetadata,
+  getReportPaths
+} from '../../../src/lib/config-manager.js';
+import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
 import {
   getTemplates,
   createCase,
   generateCaseTestData,
   getSakstyper,
   getAvgjorelsekoder
-} from '../utils/modules/case-module.js';
-import { generateHtmlReport } from '../utils/report-generator.js';
-import { injectErrorAnalyticsIntoSummary } from '../utils/error-sampler.js';
+} from '../../../src/lib/case-module.js';
+import { generateHtmlReport } from '../../../src/utils/report-generator.js';
+import { injectErrorAnalytics } from '../../../src/utils/error-tracker.js';
 
 // ========================================
 // CONFIGURATION FLAGS - MODIFY THESE TO CONTROL BEHAVIOR
@@ -245,18 +245,10 @@ export function teardown(data) {
 export function handleSummary(data) {
   // Attach error sampling data (if any)
   try {
-    injectErrorAnalyticsIntoSummary(data);
+    injectErrorAnalytics(data);
   } catch (e) {
     /* no-op */
   }
-  const m = data.metrics || {};
-  const dur = m.http_req_duration?.values || {};
-  const checks = m.checks?.values || {};
-  const failedRate = m.http_req_failed?.values?.rate || 0;
-  const totalReqs = m.http_reqs?.values?.count || 0;
-  const passChecks = checks.passes || 0;
-  const failChecks = checks.fails || 0;
-  const runSecs = (data.state?.testRunDurationMs || 0) / 1000;
   // Markdown summary intentionally disabled (user request to avoid .md artifact)
 
   const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T; // allow both spellings
@@ -279,11 +271,19 @@ export function handleSummary(data) {
     data.baseline = baseline; // attach for report generator
   }
 
+  // Add environment and metadata information for reporting
+  const testConfig = loadTestConfig('create-sak', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const envMetadata = getEnvironmentMetadata(testConfig);
+  data.setup_data = {
+    ...envMetadata
+  };
+
   const html = generateHtmlReport(data, { apdexT });
 
+  const reportPaths = getReportPaths('create-sak');
   return {
-    'reports/create-sak-summary.json': JSON.stringify(data, null, 2),
-    'reports/create-sak-report.html': html,
+    [reportPaths.json]: JSON.stringify(data, null, 2),
+    [reportPaths.html]: html,
     stdout: '' // keep console summary clean (k6 still prints its default)
   };
 }

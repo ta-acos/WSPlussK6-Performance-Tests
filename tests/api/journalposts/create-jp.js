@@ -8,21 +8,23 @@
  */
 
 import { sleep } from 'k6';
-import { randomSleep } from '../utils/pacing.js';
+import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
-  getK6OptionsWithScenarios,
   getK6Options,
-  printConfigSummary
-} from '../utils/modules/config-manager.js';
-import { authenticate, createAuthHeaders } from '../utils/modules/auth-module.js';
+  getK6OptionsWithScenarios,
+  printConfigSummary,
+  getEnvironmentMetadata,
+  getReportPaths
+} from '../../../src/lib/config-manager.js';
+import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
 import {
   getTemplates as getCaseTemplates,
   createCase,
   generateCaseTestData
-} from '../utils/modules/case-module.js';
-import { getJpTemplates, createJournalPost, generateJpTestData } from '../utils/modules/jp-module.js';
-import { generateHtmlReport } from '../utils/report-generator.js';
+} from '../../../src/lib/case-module.js';
+import { getJpTemplates, createJournalPost, generateJpTestData } from '../../../src/lib/jp-module.js';
+import { generateHtmlReport } from '../../../src/utils/report-generator.js';
 
 // ========================================
 // CONFIGURATION FLAGS
@@ -177,11 +179,19 @@ export function handleSummary(data) {
 
   const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
+  // Add environment and metadata information for reporting
+  const testConfig = loadTestConfig('create-jp', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const envMetadata = getEnvironmentMetadata(testConfig);
+  data.setup_data = {
+    ...envMetadata
+  };
+
   const html = generateHtmlReport(data, { apdexT });
 
+  const reportPaths = getReportPaths('create-jp');
   return {
-    'reports/create-jp-summary.json': JSON.stringify(data, null, 2),
-    'reports/create-jp-report.html': html,
+    [reportPaths.json]: JSON.stringify(data, null, 2),
+    [reportPaths.html]: html,
     stdout: ''
   };
 }

@@ -10,12 +10,14 @@
  */
 
 import { SharedArray } from 'k6/data';
+// Note: External URL import must be resolved at init time, so we use the configured URL
+// This could be made dynamic in the future by loading the config in a separate init phase
 import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js';
 
 // Load API Configuration from JSON (simpler maintenance) - INIT PHASE
 const apiConfigData = new SharedArray('apiConfigJson', function () {
   try {
-    const jsonRaw = open('./data/websak-api-config.json');
+    const jsonRaw = open('../data/websak-api-config.json');
     const parsed = JSON.parse(jsonRaw);
     return [parsed]; // keep array form for compatibility
   } catch (e) {
@@ -27,7 +29,7 @@ const apiConfigData = new SharedArray('apiConfigJson', function () {
 // Load Users from JSON - INIT PHASE
 const usersData = new SharedArray('usersJson', function () {
   try {
-    const jsonRaw = open('./data/users-config.json');
+    const jsonRaw = open('../data/users-config.json');
     const parsed = JSON.parse(jsonRaw);
     const list = Array.isArray(parsed) ? parsed : parsed.users || [];
     const normalized = list.filter((u) => (u.userName || u.UserName) && (u.clientId || u.ClientID));
@@ -48,10 +50,9 @@ let autoTestConfig, devConfig;
 // Support multiple candidate paths in case k6 resolves open() relative to the entry script
 // (expected behavior: relative to this file's directory). We'll try a small ordered list.
 const autotestCandidates = [
-  './config/autotest.json', // expected (./utils/modules/config/ relative to this file)
-  'utils/modules/config/autotest.json', // if resolution is relative to project root/test entry
-  '../modules/config/autotest.json', // defensive (if this file is moved one level deeper later)
-  '../../utils/modules/config/autotest.json' // extreme fallback
+  '../config/autotest.json', // expected (./src/config/ relative to this file)
+  './src/config/autotest.json', // if resolution is relative to project root
+  'src/config/autotest.json' // alternative project root resolution
 ];
 
 for (const p of autotestCandidates) {
@@ -73,6 +74,38 @@ if (!autoTestConfig) {
 
 // Only load dev.json if it exists (optional)
 devConfig = {}; // Initialize as empty object since dev.json doesn't exist
+
+// Load paths configuration
+let pathsConfig;
+const pathsCandidates = [
+  '../config/paths-config.json', // expected (./src/config/ relative to this file)
+  './src/config/paths-config.json', // if resolution is relative to project root
+  'src/config/paths-config.json' // alternative project root resolution
+];
+
+for (const p of pathsCandidates) {
+  try {
+    pathsConfig = JSON.parse(open(p));
+    console.log(`✅ Loaded paths configuration from: ${p}`);
+    break;
+  } catch (e) {
+    // try next
+  }
+}
+if (!pathsConfig) {
+  console.warn(
+    '⚠️ Warning: Could not load paths-config.json from any known path (tried: ' +
+      pathsCandidates.join(', ') +
+      '). Using fallback default paths.'
+  );
+  // Fallback default paths
+  pathsConfig = {
+    paths: {
+      reports: { baseDir: "src/reports", htmlSuffix: "-report.html", jsonSuffix: "-summary.json" },
+      testData: { baseDir: "src/data", testDocuments: "src/data/testDocuments" }
+    }
+  };
+}
 
 /**
  * Get configuration data for specified config file
@@ -381,4 +414,116 @@ export function printConfigSummary(config) {
     console.log(`⚡ VUs: ${config.vus || 'default'}`);
     console.log(`⏱️  Duration: ${config.duration || 'default'}`);
   }
+}
+
+/**
+ * Get paths configuration
+ * @returns {Object} Paths configuration object
+ */
+export function getPathsConfig() {
+  return pathsConfig;
+}
+
+/**
+ * Get report paths for a specific test
+ * @param {string} testName - Name of the test (e.g., 'create-sak')
+ * @returns {Object} Report file paths
+ */
+export function getReportPaths(testName) {
+  const paths = pathsConfig.paths.reports;
+  return {
+    html: `${paths.baseDir}/${testName}${paths.htmlSuffix}`,
+    json: `${paths.baseDir}/${testName}${paths.jsonSuffix}`
+  };
+}
+
+/**
+ * Get test data paths
+ * @returns {Object} Test data paths
+ */
+export function getTestDataPaths() {
+  return pathsConfig.paths.testData;
+}
+
+/**
+ * Get API endpoint paths with fallback to defaults
+ * @param {Object} apiConfig - API configuration from websak-api-config.json
+ * @returns {Object} Complete API endpoint paths
+ */
+export function getApiEndpoints(apiConfig = null) {
+  const defaultEndpoints = pathsConfig.apiEndpoints.websak.endpoints;
+  const configEndpoints = apiConfig?.endpoints || {};
+  
+  // Merge default endpoints with configuration overrides
+  const endpoints = { ...defaultEndpoints };
+  
+  // Override with configuration values if provided
+  Object.keys(configEndpoints).forEach(key => {
+    if (configEndpoints[key]) {
+      endpoints[key] = configEndpoints[key];
+    }
+  });
+  
+  // Prefix websak endpoints with base path if not already absolute
+  Object.keys(endpoints).forEach(key => {
+    if (endpoints[key] && !endpoints[key].startsWith('/api/')) {
+      endpoints[key] = pathsConfig.apiEndpoints.websak.base + '/' + endpoints[key].replace(/^\//, '');
+    }
+  });
+  
+  return endpoints;
+}
+
+/**
+ * Get external library URLs
+ * @returns {Object} External URLs
+ */
+export function getExternalUrls() {
+  return pathsConfig.paths.external;
+}
+
+/**
+ * Get environment and metadata information for reporting
+ * @param {Object} testConfig - The test configuration object from loadTestConfig
+ * @returns {Object} Environment and metadata object
+ */
+export function getEnvironmentMetadata(testConfig = null) {
+  const apiConfig = buildApiConfig();
+  
+  // If no testConfig provided, try to determine environment from available data
+  let environment = 'Unknown';
+  let useDataFileConfig = 'No';
+  let configFile = 'autotest';
+  
+  if (testConfig) {
+    useDataFileConfig = testConfig.configSource === 'dataFile' ? 'Yes' : 'No';
+    configFile = testConfig.environment || testConfig.configFile || 'autotest';
+    
+    if (testConfig.configSource === 'dataFile') {
+      environment = configFile === 'dev' ? 'Development' : 'Auto Test';
+    }
+  }
+  
+  // Check API host to refine environment detection
+  if (apiConfig.host) {
+    if (apiConfig.host.includes('autotest')) {
+      environment = 'Auto Test';
+    } else if (apiConfig.host.includes('dev')) {
+      environment = 'Development';
+    } else if (apiConfig.host.includes('test')) {
+      environment = 'Test';
+    } else if (apiConfig.host.includes('prod')) {
+      environment = 'Production';
+    }
+  }
+  
+  return {
+    configEnvironment: environment,
+    useDataFileConfig: useDataFileConfig,
+    configFile: configFile,
+    apiHost: apiConfig.host || 'Not configured',
+    totalUsers: usersData?.length || 0,
+    scenarioOverride: __ENV.SCENARIO || 'None',
+    testExecutionTime: new Date().toISOString()
+  };
 }

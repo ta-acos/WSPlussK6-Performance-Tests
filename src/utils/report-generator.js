@@ -42,17 +42,20 @@ function buildDonut(successRate) {
   const successStroke = (sr / 100) * circ;
   const failureStroke = (fr / 100) * circ;
   
+  // Only render failure ring if there are actual failures (avoid red dot at 100%)
+  const failureRing = fr > 0 ? `
+    <!-- Failure ring (red) - starts where success ends -->
+    <circle cx="55" cy="55" r="42" fill="none" stroke="#DC3545" stroke-width="14" 
+            stroke-dasharray="${failureStroke} ${circ - failureStroke}" 
+            stroke-linecap="round" 
+            transform="rotate(${-90 + (sr / 100) * 360} 55 55)" />` : '';
+  
   return `<svg width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Success/Failure Donut">
     <circle cx="55" cy="55" r="42" fill="none" stroke="#eee" stroke-width="14" />
     <!-- Success ring (green) -->
     <circle cx="55" cy="55" r="42" fill="none" stroke="#1B873F" stroke-width="14" 
             stroke-dasharray="${successStroke} ${circ - successStroke}" 
-            stroke-linecap="round" transform="rotate(-90 55 55)" />
-    <!-- Failure ring (red) - starts where success ends -->
-    <circle cx="55" cy="55" r="42" fill="none" stroke="#DC3545" stroke-width="14" 
-            stroke-dasharray="${failureStroke} ${circ - failureStroke}" 
-            stroke-linecap="round" 
-            transform="rotate(${-90 + (sr / 100) * 360} 55 55)" />
+            stroke-linecap="round" transform="rotate(-90 55 55)" />${failureRing}
     <text x="55" y="50" text-anchor="middle" font-size="18" font-weight="600" fill="#333">${fmt(sr, 0)}%</text>
     <text x="55" y="68" text-anchor="middle" font-size="11" fill="#666">Success</text>
   </svg>`;
@@ -291,7 +294,7 @@ function buildAllMetricsTable(metrics) {
     })
     .join('');
 
-  const legend = `<div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">Good</span> <span class="legend-box cell-warn">Watch</span> <span class="legend-box cell-bad">Investigate</span> &mdash; Heuristics: latency p(95) &le; 800ms (good) / &le; 2000ms (watch) / > 2000ms (investigate); http_req_failed rate &le;1% / &le;5% / >5%; checks fail rate 0 / &le;2% / >2%.</div>`;
+  const legend = `<div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">✓ Good</span> <span class="legend-box cell-warn">⚠ Watch</span> <span class="legend-box cell-bad">✗ Investigate</span><br><strong style="margin-top:8px; display:inline-block;">Color Meanings:</strong><br>• <strong style="color:#1B873F;">Green (Good):</strong> Performance is within acceptable limits<br>• <strong style="color:#FF8B00;">Yellow (Watch):</strong> Performance is degraded but acceptable - monitor closely, may need optimization soon<br>• <strong style="color:#B00020;">Red (Investigate):</strong> Performance is poor - requires immediate attention and optimization<br><strong style="margin-top:8px; display:inline-block;">Thresholds:</strong> Response time p(95) ≤ 800ms (good) / ≤ 2000ms (watch) / > 2000ms (investigate); HTTP errors ≤1% / ≤5% / >5%; Check failures 0 / ≤2% / >2%</div>`;
 
   return `${legend}<table class="compact"><thead><tr><th>Metric</th>${ordered
     .map((k) => `<th>${k}</th>`)
@@ -324,11 +327,14 @@ export function generateHtmlReport(data, options = {}) {
   const failedRate = safe(metrics, 'http_req_failed.values.rate', 0) || 0;
   const checks = safe(metrics, 'checks.values', {});
   
-  // Calculate success rate based on CHECKS (not just HTTP success)
-  // This includes threshold checks like response time, so it's more accurate for stakeholders
+  // Calculate overall success rate based on checks (includes HTTP + thresholds)
+  // This provides a complete picture: HTTP success + performance thresholds
   const totalChecks = (checks.passes || 0) + (checks.fails || 0);
   const checkSuccessRate = totalChecks > 0 ? ((checks.passes || 0) / totalChecks) * 100 : 100;
-  const successRate = checkSuccessRate; // Use check success rate instead of HTTP success rate
+  
+  // Use check success rate for donut - shows both HTTP success AND threshold compliance
+  // Red portion = any failures (HTTP errors OR slow responses)
+  const successRate = checkSuccessRate;
   const dataRecv = safe(metrics, 'data_received.values.count', 0);
   const dataSent = safe(metrics, 'data_sent.values.count', 0);
   const iterationDur = safe(metrics, 'iteration_duration.values', {});
@@ -353,6 +359,29 @@ export function generateHtmlReport(data, options = {}) {
       : 'kpi-neutral';
   const maxDurKpiClass = durationKpiClass; // reuse same classification for max duration for simplicity
   const neutralKpi = 'kpi-neutral';
+
+  // Generate explanatory text for why metrics have specific colors
+  function getColorExplanation(metricType, value, className, extraData = {}) {
+    if (className === 'kpi-neutral' || className === 'kpi-good') return '';
+    
+    const explanations = {
+      'overall-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed/extraData.total)*100, 0)}% failure rate, less than 30%). <strong>Ideal:</strong> 0% failures<br>Some performance goals were not met. Review the failed thresholds below and consider optimizations. <strong>Action:</strong> Check "Thresholds (Pass/Fail)" section for specific failures.</div>`,
+      'overall-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed/extraData.total)*100, 0)}% failure rate, 30% or more). <strong>Ideal:</strong> 0% failures<br>Critical: Many performance goals were not met. <strong>Action required:</strong> Review all failed thresholds in the "Thresholds (Pass/Fail)" section, prioritize fixing the most critical ones (response time and error rates first), and re-test after optimizations.</div>`,
+      'success-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Success rate is ${fmt(value,2)}% (between 95-99%). <strong>Ideal:</strong> ≥99%<br>This is acceptable but below optimal. Consider investigating occasional failures to improve reliability.</div>`,
+      'success-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Success rate is ${fmt(value,2)}% (below 95%). <strong>Ideal:</strong> ≥99%<br>This indicates significant failures. <strong>Action required:</strong> Check error logs, validate API endpoints, review authentication, and verify server capacity.</div>`,
+      'duration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>p95 latency is ${fmt(value)}ms (between 800-2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are slower than ideal. <strong>Consider:</strong> Optimizing database queries, adding caching, or reviewing API logic.</div>`,
+      'duration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>p95 latency is ${fmt(value)}ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are unacceptably slow. <strong>Action required:</strong> Profile slow endpoints, check database performance, review external API calls, verify server resources (CPU/memory), and consider load balancing.</div>`,
+      'maxduration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Max duration is ${fmt(value)}ms (between 800-2000ms). <strong>Ideal:</strong> &lt;800ms<br>Some requests are taking longer than ideal. This could indicate occasional slow queries or resource contention. <strong>Consider:</strong> Identifying the slowest endpoints and optimizing them.</div>`,
+      'maxduration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Max duration is ${fmt(value)}ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>At least one request took unacceptably long. <strong>Action required:</strong> Review the slowest endpoints (check logs for timeouts), investigate database locks, check for memory issues, and consider query optimization or adding timeouts.</div>`
+    };
+    
+    const key = `${metricType}-${className.replace('kpi-', '')}`;
+    return explanations[key] || '';
+  }
+
+  const successExplanation = getColorExplanation('success', successRate, successKpiClass);
+  const durationExplanation = getColorExplanation('duration', p95Latency, durationKpiClass);
+  const maxDurationExplanation = getColorExplanation('maxduration', dur.max, maxDurKpiClass);
 
   const donut = buildDonut(successRate);
   const latArtifacts = latencyBar(dur.min, dur.med, dur['p(90)'], dur['p(95)'], dur.max, THRESH);
@@ -414,6 +443,8 @@ export function generateHtmlReport(data, options = {}) {
     overallStatus === 'good' ? 'Healthy' : overallStatus === 'warn' ? 'Attention' : 'Action Needed';
   const overallClass =
     overallStatus === 'good' ? 'alert-good' : overallStatus === 'warn' ? 'alert-warn' : 'alert-bad';
+  const overallKpiClass = 
+    overallStatus === 'good' ? 'kpi-good' : overallStatus === 'warn' ? 'kpi-warn' : 'kpi-bad';
   const p95Text = dur['p(95)'] !== undefined ? `${fmt(dur['p(95)'])} ms p95` : 'p95 n/a';
   const successRateText = `${fmt(successRate, 2)}% success (${fmt(100 - successRate, 2)}% fail)`;
   const failedThresholdLine = thresholdSummary.total
@@ -421,6 +452,12 @@ export function generateHtmlReport(data, options = {}) {
       ? 'All thresholds passed.'
       : `${thresholdSummary.failed}/${thresholdSummary.total} thresholds failed${thresholdSummary.failedItems.length ? ': ' + thresholdSummary.failedItems.join('; ') + (thresholdSummary.failed > thresholdSummary.failedItems.length ? '…' : '') : ''}`
     : 'No thresholds defined.';
+  
+  // Generate explanation for Overall Test Status
+  const overallExplanation = getColorExplanation('overall', thresholdSummary.failed, overallKpiClass, { 
+    failed: thresholdSummary.failed, 
+    total: thresholdSummary.total 
+  });
 
   // Derive potential SLO target for p95 latency from thresholds
   function extractP95Target() {
@@ -752,6 +789,11 @@ export function generateHtmlReport(data, options = {}) {
   body.dark .alert-good { background:linear-gradient(135deg,#143f24,#1b1f24); }
   body.dark .alert-warn { background:linear-gradient(135deg,#4a3305,#1b1f24); }
   body.dark .alert-bad { background:linear-gradient(135deg,#4a111d,#1b1f24); }
+  /* Dark mode styles for explanation boxes */
+  body.dark .kpi-warn .color-reason { background:#4a3305 !important; border-left-color:#ffa54d !important; color:#e6edf3 !important; }
+  body.dark .kpi-bad .color-reason { background:#4a111d !important; border-left-color:#ff6b81 !important; color:#e6edf3 !important; }
+  body.dark .color-reason strong { color:#ffa54d !important; }
+  body.dark .kpi-bad .color-reason strong { color:#ff6b81 !important; }
   body.dark .cell-good { background:#12381e !important; }
   body.dark .cell-warn { background:#4a3305 !important; }
   body.dark .cell-bad { background:#4a111d !important; }
@@ -817,11 +859,11 @@ export function generateHtmlReport(data, options = {}) {
     </div>
     <h2>Key Performance Indicators</h2>
     <div class="grid">
-      <div class="kpi ${overallStatus === 'good' ? 'kpi-good' : overallStatus === 'warn' ? 'kpi-warn' : 'kpi-bad'}"><h4>Overall Test Status</h4><p>${overallBadgeText}</p><div class="muted">${failedThresholdLine}</div></div>
+      <div class="kpi ${overallStatus === 'good' ? 'kpi-good' : overallStatus === 'warn' ? 'kpi-warn' : 'kpi-bad'}"><h4>Overall Test Status</h4><p>${overallBadgeText}</p><div class="muted">${failedThresholdLine}</div>${overallExplanation}</div>
       <div class="kpi ${neutralKpi}"><h4>Total Requests</h4><p>${fmtInt(reqs.count)}</p><div class="muted">Rate: ${fmt(reqs.rate || 0, 2)} /s</div></div>
-      <div class="kpi ${successKpiClass}"><h4>Request Success Rate</h4><p>${fmt(successRate, 2)}%</p><div class="muted">HTTP errors ${(failedRate * 100).toFixed(2)}%</div></div>
-  <div class="kpi ${durationKpiClass}"><h4>Avg Duration (ms)</h4><p>${fmt(dur.avg)}</p><div class="muted">p95 ${fmt(dur['p(95)'])}</div>${latencySpark}</div>
-      <div class="kpi ${maxDurKpiClass}"><h4>Max Duration (ms)</h4><p>${fmt(dur.max)}</p><div class="muted">Min ${fmt(dur.min)}</div></div>
+      <div class="kpi ${successKpiClass}"><h4>Request Success Rate</h4><p>${fmt(successRate, 2)}%</p><div class="muted">HTTP errors ${(failedRate * 100).toFixed(2)}%</div>${successExplanation}</div>
+  <div class="kpi ${durationKpiClass}"><h4>Avg Duration (ms)</h4><p>${fmt(dur.avg)}</p><div class="muted">p95 ${fmt(dur['p(95)'])}</div>${latencySpark}${durationExplanation}</div>
+      <div class="kpi ${maxDurKpiClass}"><h4>Max Duration (ms)</h4><p>${fmt(dur.max)}</p><div class="muted">Min ${fmt(dur.min)}</div>${maxDurationExplanation}</div>
       <div class="kpi ${neutralKpi}"><h4>Data In</h4><p>${fmtBytes(dataRecv)}</p><div class="muted">Raw: ${fmtInt(dataRecv)} B</div></div>
       <div class="kpi ${neutralKpi}"><h4>Data Out</h4><p>${fmtBytes(dataSent)}</p><div class="muted">Raw: ${fmtInt(dataSent)} B</div></div>
       <div class="kpi ${neutralKpi}"><h4>Iterations</h4><p>${fmtInt(safe(metrics, 'iterations.values.count', 0))}</p><div class="muted">Avg Iter (ms) ${fmt(iterationDur.avg)}</div></div>
@@ -861,6 +903,59 @@ export function generateHtmlReport(data, options = {}) {
     <h2>All Metrics (Raw Statistics) <button class="toggle-btn" data-target="sec-all-metrics">Toggle</button></h2>
     <div class="panel mt-6 section-body" id="sec-all-metrics">
       <p class="notes">Every metric collected during the run with its available statistics. Trend metrics expose percentiles (p(90), p(95), etc.), counters expose counts and derived rates, gauges expose the latest <code>value</code>, and rates show success ratios.</p>
+      
+      <div style="background: linear-gradient(135deg, #e3f2fd, #ffffff); border: 1px solid #90caf9; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <h3 style="margin-top: 0; color: #1976d2; font-size: 16px;">📖 Understanding Metrics - Quick Guide</h3>
+        <div style="font-size: 13px; line-height: 1.6;">
+          <p style="margin: 8px 0;"><strong>Response Time Benchmarks (p95):</strong> 
+            <span style="color: #1B873F; font-weight: 600;">✓ Excellent: &lt;800ms</span> | 
+            <span style="color: #FF8B00; font-weight: 600;">⚠ Good: 800-2000ms</span> | 
+            <span style="color: #B00020; font-weight: 600;">✗ Slow: &gt;2000ms</span>
+          </p>
+          <p style="margin: 8px 0;"><strong>Success Rate:</strong> 
+            <span style="color: #1B873F; font-weight: 600;">✓ Excellent: &gt;99%</span> | 
+            <span style="color: #FF8B00; font-weight: 600;">⚠ Acceptable: 95-99%</span> | 
+            <span style="color: #B00020; font-weight: 600;">✗ Poor: &lt;95%</span>
+          </p>
+          <details style="margin-top: 12px;">
+            <summary style="cursor: pointer; font-weight: 600; color: #1976d2;">📊 Click to see detailed metric explanations</summary>
+            <div style="margin-top: 12px; padding-left: 12px; border-left: 3px solid #90caf9;">
+              <p><strong>🔹 http_req_duration</strong> - Total time from sending request to receiving response (most important metric)</p>
+              <p><strong>🔹 http_req_waiting</strong> - Server processing time (excludes network)</p>
+              <p><strong>🔹 http_req_blocked</strong> - Time waiting for available connection (should be ~0ms)</p>
+              <p><strong>🔹 http_req_connecting</strong> - TCP connection setup time</p>
+              <p><strong>🔹 http_req_tls_handshaking</strong> - SSL/TLS encryption setup time</p>
+              <p><strong>🔹 http_req_sending</strong> - Time to upload request data</p>
+              <p><strong>🔹 http_req_receiving</strong> - Time to download response data</p>
+              <p><strong>🔹 http_req_failed</strong> - Percentage of failed requests (rate: 0.01 = 1%)</p>
+              <p><strong>🔹 http_reqs</strong> - Total requests and throughput (requests/second)</p>
+              <p><strong>🔹 data_received</strong> - Total data downloaded from server</p>
+              <p><strong>🔹 data_sent</strong> - Total data uploaded to server</p>
+              <p><strong>🔹 checks</strong> - Validation results (includes HTTP status + thresholds)</p>
+              <p><strong>🔹 iteration_duration</strong> - Complete test scenario time (all steps)</p>
+              <p><strong>🔹 vus</strong> - Number of virtual users (simulated concurrent users)</p>
+              <hr style="margin: 12px 0; border: none; border-top: 1px solid #90caf9;">
+              <p style="margin-top: 12px;"><strong>📐 Column Meanings:</strong></p>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><strong>min</strong> - Fastest (best case)</li>
+                <li><strong>avg</strong> - Average (can be skewed by outliers)</li>
+                <li><strong>med</strong> - Median/middle value (typical experience)</li>
+                <li><strong>p(90)</strong> - 90% were faster than this</li>
+                <li><strong>p(95)</strong> - 95% were faster (use this for SLAs) ⭐</li>
+                <li><strong>p(99)</strong> - 99% were faster than this</li>
+                <li><strong>max</strong> - Slowest (worst case)</li>
+                <li><strong>count</strong> - Total number</li>
+                <li><strong>rate</strong> - Per second or percentage (0.02 = 2%)</li>
+              </ul>
+              <p style="margin-top: 12px; padding: 10px; background: #fff3e0; border-radius: 4px;">
+                💡 <strong>Tip:</strong> Focus on <strong>p(95)</strong> response time and <strong>http_req_failed</strong> rate first. 
+                For complete benchmarks, see <strong>METRICS-GUIDE.md</strong> file.
+              </p>
+            </div>
+          </details>
+        </div>
+      </div>
+      
       ${allMetricsTable}
     </div>
 
@@ -944,6 +1039,11 @@ export function generateHtmlReport(data, options = {}) {
     <table class="compact"><tbody>
       <tr><th>Environment</th><td>${safe(data, 'setup_data.configEnvironment', 'n/a')}</td></tr>
       <tr><th>Use Data File Config</th><td>${safe(data, 'setup_data.useDataFileConfig', 'n/a')}</td></tr>
+      <tr><th>Config File</th><td>${safe(data, 'setup_data.configFile', 'n/a')}</td></tr>
+      <tr><th>API Host</th><td>${safe(data, 'setup_data.apiHost', 'n/a')}</td></tr>
+      <tr><th>Total Users Available</th><td>${safe(data, 'setup_data.totalUsers', 'n/a')}</td></tr>
+      <tr><th>Scenario Override</th><td>${safe(data, 'setup_data.scenarioOverride', 'n/a')}</td></tr>
+      <tr><th>Test Execution Time</th><td>${safe(data, 'setup_data.testExecutionTime', 'n/a')}</td></tr>
       <tr><th>Duration (s)</th><td>${fmt(testDurationSeconds, 2)}</td></tr>
       <tr><th>Summary Stats</th><td>${(safe(data, 'options.summaryTrendStats', []) || []).join(', ')}</td></tr>
     </tbody></table>

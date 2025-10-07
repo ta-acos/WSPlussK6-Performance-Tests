@@ -12,7 +12,7 @@
 import { check, group } from 'k6';
 import encoding from 'k6/encoding';
 import http from 'k6/http';
-import { recordErrorSample } from '../error-sampler.js';
+import { recordError } from '../utils/error-tracker.js';
 
 /**
  * Authenticate user using OAuth2 client credentials flow
@@ -71,7 +71,7 @@ export function authenticate(config, user, vuId) {
         url: endpoint
       }
     });
-    recordErrorSample(authResponse, { endpoint: 'auth:token', name: 'OAuth Token Request' });
+    recordError(authResponse, { endpoint: 'auth:token', errorType: 'http_error', message: 'OAuth Token Request failed' });
 
     // Validate authentication response
     const authSuccess = check(authResponse, {

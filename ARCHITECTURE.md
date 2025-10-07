@@ -1,1184 +1,1126 @@
-# WebSak Plus K6 Performance Testing - Architecture Documentation
+# Acos GRAF - Load Test Architecture
 
-**Last Updated:** October 3, 2025  
-**Version:** 2.0.0
+**Version:** 3.0.0  
+**Last Updated:** October 7, 2025
 
 ## 📋 Table of Contents
 
 1. [System Overview](#system-overview)
-2. [Architecture Layers](#architecture-layers)
-3. [Test Suite Components](#test-suite-components)
-4. [Data Flow & Interactions](#data-flow--interactions)
-5. [Configuration Management](#configuration-management)
-6. [Module Dependencies](#module-dependencies)
-7. [Test Execution Flow](#test-execution-flow)
-8. [Document Attachment Architecture](#document-attachment-architecture)
-9. [Performance Testing Patterns](#performance-testing-patterns)
-10. [Extensibility & Best Practices](#extensibility--best-practices)
+2. [Architecture Evolution](#architecture-evolution)
+3. [Core Architecture Layers](#core-architecture-layers)
+4. [Centralized Configuration System](#centralized-configuration-system)
+5. [Test Suite Components](#test-suite-components)
+6. [Data Flow & Interactions](#data-flow--interactions)
+7. [Path Management Architecture](#path-management-architecture)
+8. [Environment Metadata System](#environment-metadata-system)
+9. [Module Dependencies](#module-dependencies)
+10. [Test Execution Flow](#test-execution-flow)
+11. [Document Attachment Architecture](#document-attachment-architecture)
+12. [Performance Testing Patterns](#performance-testing-patterns)
+13. [Extensibility & Best Practices](#extensibility--best-practices)
 
 ---
 
 ## System Overview
 
 ### Purpose
-Comprehensive K6-based performance testing framework for WebSak Plus, focusing on Case (Sak) and Journal Post (JP) creation workflows with document attachment capabilities.
 
-### Key Features
-- **Scenario-based load testing** (smoke, load, stress, spike, endurance)
-- **Modular architecture** with reusable components
-- **Centralized configuration** management
-- **Multiple test types**: Single/Multiple JPs with document attachments
-- **Binary & synthetic document** support
-- **OAuth2 authentication** with multi-user support
-- **HTML reporting** with metrics visualization
-- **Configurable pacing** and think time
+**Acos GRAF (Generic Reusable Automation Framework) - Load Test** is a comprehensive K6-based performance testing framework designed for WebSak Plus, focusing on Case (Sak) and Journal Post (JP) creation workflows with advanced document attachment capabilities and centralized configuration management.
+
+### Key Architectural Features
+
+✅ **Centralized Path Management**
+- Single point of control for all framework paths
+- Environment-specific path configurations
+- Dynamic path resolution with fallback defaults
+- No hardcoded paths in test or framework code
+
+✅ **Enhanced Environment Awareness**
+- Automatic environment detection and metadata collection
+- Environment-specific configuration overrides
+- Dynamic configuration loading based on environment
+
+✅ **Modular Architecture**
+- Separation of concerns with clear layer boundaries
+- Reusable components across test scenarios
+- Pluggable configuration system
+
+✅ **Advanced Configuration System**
+- Multi-layered configuration management
+- Flag-based configuration control
+- JSON-based configuration files with validation
 
 ### Technology Stack
+
 - **K6 v0.x** - Load testing framework
-- **JavaScript (ES6)** - Test scripting
-- **OAuth2** - Authentication protocol
-- **JSON** - Configuration format
+- **JavaScript (ES6+)** - Test scripting with modern features
+- **OAuth2/OIDC** - Authentication protocol
+- **JSON** - Configuration format with schema validation
 - **PowerShell** - NPM scripts (Windows environment)
+- **Node.js** - Development tooling and package management
 
 ---
 
-## Architecture Layers
+## Architecture Evolution
+
+### Version 3.0.0 Enhancements
+
+🆕 **Centralized Path Management**
+- Introduced `src/config/paths-config.json` for all path configurations
+- Enhanced `config-manager.js` with path resolution functions
+- Eliminated hardcoded paths from all framework files
+
+🆕 **Enhanced Environment Metadata**
+- Added automatic environment detection
+- Enhanced report generation with environment details
+- Improved debugging and tracking capabilities
+
+🆕 **Configuration System Improvements**
+- Multi-layered configuration loading
+- Environment-specific overrides
+- Fallback mechanisms for missing configurations
+
+### Migration from Previous Versions
+
+```javascript
+// Before v3.0.0 (hardcoded paths)
+const reportPath = 'src/reports/test-report.html';
+
+// After v3.0.0 (configurable paths)
+import { getReportPaths } from '../lib/config-manager.js';
+const reportPath = getReportPaths().getHtmlPath('test');
+```
+
+---
+
+## Core Architecture Layers
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Test Scripts Layer                        │
-│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐  │
-│  │  create-sak.js │  │  create-jp.js  │  │ create-jp-with-  │  │
-│  │                │  │                │  │  multiple-doc    │  │
-│  └────────────────┘  └────────────────┘  └──────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │      create-multiplejp-with-multiple-document.js         │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                      Utility Modules Layer                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │ auth-module  │  │ case-module  │  │    jp-module         │  │
-│  │              │  │              │  │ (payload builders)   │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │config-manager│  │ api-client   │  │  report-generator    │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │   pacing.js  │  │ validation.js│  │  error-sampler.js    │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    Configuration Data Layer                      │
-│  ┌──────────────────┐  ┌────────────────────┐  ┌─────────────┐ │
-│  │  autotest.json   │  │ users-config.json  │  │  dev.json   │ │
-│  │  (scenarios)     │  │  (credentials)     │  │  (optional) │ │
-│  └──────────────────┘  └────────────────────┘  └─────────────┘ │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │           websak-api-config.json (endpoints)             │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │           testDocuments/ (binary files)                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                       External Services                          │
-│  ┌──────────────────┐  ┌────────────────────────────────────┐  │
-│  │ Identity Server  │  │   WebSak Plus API                  │  │
-│  │  (OAuth2/OIDC)   │  │   - Case Management                │  │
-│  │                  │  │   - Journal Post Management        │  │
-│  └──────────────────┘  │   - Document Upload                │  │
-│                        └────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            Test Scenarios Layer                              │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────┐ │
+│  │   create-sak    │  │   create-jp     │  │  create-jp-with-multiple-   │ │
+│  │      .js        │  │      .js        │  │       document.js           │ │
+│  │                 │  │                 │  │                             │ │
+│  │ • Smoke Tests   │  │ • JP Workflows  │  │ • Document Attachments      │ │
+│  │ • Load Tests    │  │ • Performance   │  │ • Batch Processing          │ │
+│  │ • Stress Tests  │  │ • Validation    │  │ • File Upload Testing       │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │            create-multiplejp-with-multiple-document.js                │ │
+│  │                                                                       │ │
+│  │  • Bulk JP Creation    • High-Volume Processing                       │ │
+│  │  • Multiple Documents  • Production Workload Simulation               │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Configuration Management Layer                        │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │                     🆕 Enhanced Config Manager                         │ │
+│  │                          config-manager.js                           │ │
+│  │                                                                       │ │
+│  │  • getPathsConfig()          • getEnvironmentMetadata()              │ │
+│  │  • getReportPaths()          • getApiEndpoints()                     │ │
+│  │  • getTestDataPaths()        • Configuration Loading                 │ │
+│  │  • Dynamic Path Resolution   • Environment Detection                 │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Core Business Logic Layer                           │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────┐ │
+│  │  auth-module    │  │  case-module    │  │        jp-module            │ │
+│  │                 │  │                 │  │                             │ │
+│  │ • OAuth2 Auth   │  │ • Case Creation │  │ • JP Creation Workflows     │ │
+│  │ • Token Mgmt    │  │ • Template Mgmt │  │ • Document Attachments      │ │
+│  │ • Multi-user    │  │ • Validation    │  │ • Payload Construction      │ │
+│  │ • Credentials   │  │ • Error Handle  │  │ • 🆕 Configurable Endpoints │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Framework Utilities Layer (DEPRECATED)                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────┐ │
+│  │  api-client     │  │ report-generator│  │      error-tracker          │ │
+│  │                 │  │                 │  │                             │ │
+│  │ • HTTP Wrapper  │  │ • HTML Reports  │  │ • Error Analytics           │ │
+│  │ • Request Logic │  │ • JSON Summary  │  │ • Failure Tracking          │ │
+│  │ • Response Val  │  │ • Apdex Scoring │  │ • Debug Information         │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────┐ │
+│  │     pacing      │  │   validation    │  │                             │ │
+│  │                 │  │                 │  │                             │ │
+│  │ • Think Time    │  │ • Response Val  │  │                             │ │
+│  │ • Pacing Logic  │  │ • Assertions    │  │                             │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Configuration Data Layer                            │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────────┐ │
+│  │ 🆕 paths-config │  │  autotest.json  │  │     users-config.json       │ │
+│  │      .json      │  │                 │  │                             │ │
+│  │                 │  │ • Test Scenarios│  │ • User Credentials          │ │
+│  │ • Report Paths  │  │ • Load Profiles │  │ • Multi-user Support        │ │
+│  │ • Data Paths    │  │ • Thresholds    │  │ • OAuth2 Config             │ │
+│  │ • API Endpoints │  │ • Performance   │  │                             │ │
+│  │ • External URLs │  │   Criteria      │  │                             │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────────────┘ │
+│  ┌─────────────────┐  ┌─────────────────────────────────────────────────────┐ │
+│  │   dev.json      │  │              websak-api-config.json                │ │
+│  │                 │  │                                                     │ │
+│  │ • Dev Settings  │  │ • API Endpoints        • OAuth2 Configuration      │ │
+│  │ • Debug Flags   │  │ • Service URLs         • Authentication Settings   │ │
+│  │ • Local Config  │  │ • Request Templates    • API Version Management    │ │
+│  └─────────────────┘  └─────────────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────────────────────────────┐ │
+│  │                      testDocuments/ (Binary Files)                       │ │
+│  │                                                                           │ │
+│  │  • 1MB-10MB Test Files    • Multiple Format Support (PDF, DOCX)          │ │
+│  │  • Performance Benchmarks • Real-world File Testing                      │ │
+│  └───────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           External Services Layer                            │
+│  ┌─────────────────────┐    ┌─────────────────────────────────────────────┐ │
+│  │   Identity Server   │    │            WebSak Plus API                  │ │
+│  │    (OAuth2/OIDC)    │    │                                             │ │
+│  │                     │    │  • Case Management        • JP Management   │ │
+│  │ • Token Endpoint    │◄──►│  • Template Services      • Document Upload │ │
+│  │ • Client Creds      │    │  • Validation APIs        • File Processing │ │
+│  │ • Token Validation  │    │  • Error Responses        • Status Tracking │ │
+│  └─────────────────────┘    └─────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Centralized Configuration System
+
+### 🆕 Configuration Architecture
+
+The framework implements a **3-layer configuration system**:
+
+1. **Base Configuration**: Default settings and fallbacks
+2. **Environment Configuration**: Environment-specific overrides  
+3. **Runtime Configuration**: Dynamic settings and user preferences
+
+### Configuration Manager Enhanced Functions
+
+```javascript
+// Path Management Functions
+getPathsConfig()          // Load centralized path configuration
+getReportPaths()          // Get dynamic report path generators  
+getTestDataPaths()        // Get test data file locations
+getApiEndpoints()         // Get configurable API endpoint patterns
+getExternalUrls()         // Get external resource URLs
+
+// Environment Functions  
+getEnvironmentMetadata()  // Get environment details and metadata
+detectEnvironment()       // Automatic environment detection
+loadEnvironmentConfig()   // Load environment-specific settings
+
+// Utility Functions
+validateConfiguration()   // Validate configuration completeness
+getConfigurationSummary() // Get configuration loading summary
+```
+
+### 🆕 Centralized Path Configuration
+
+**File**: `src/config/paths-config.json`
+
+```json
+{
+  "description": "Centralized path configuration for Acos GRAF Load Test framework",
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-07",
+  
+  "paths": {
+    "reports": {
+      "baseDir": "src/reports",
+      "htmlSuffix": "-report.html", 
+      "jsonSuffix": "-summary.json"
+    },
+    "testData": {
+      "baseDir": "src/data",
+      "testDocuments": "src/data/testDocuments",
+      "usersConfig": "src/data/users-config.json",
+      "apiConfig": "src/data/websak-api-config.json"
+    },
+    "apiEndpoints": {
+      "websak": {
+        "base": "/api/websak/api",
+        "endpoints": {
+          "jpAttach": "/jp/uploadfiletodokument/",
+          "caseCreate": "/case/create",
+          "templateGet": "/templates"
+        }
+      }
+    },
+    "external": {
+      "papaparseUrl": "https://jslib.k6.io/papaparse/5.1.1/index.js"
+    }
+  }
+}
+```
+
+### Configuration Loading Process
+
+```javascript
+// 1. Initialize Configuration Manager (K6 Init Phase)
+import { 
+  getPathsConfig, 
+  getReportPaths, 
+  getEnvironmentMetadata 
+} from '../lib/config-manager.js';
+
+// 2. Load Path Configuration
+const pathsConfig = getPathsConfig();
+const reportPaths = getReportPaths();
+
+// 3. Generate Dynamic Paths
+export function handleSummary(data) {
+  const testName = 'create-sak';
+  return {
+    [reportPaths.getHtmlPath(testName)]: htmlReport(data),
+    [reportPaths.getJsonPath(testName)]: JSON.stringify(data)
+  };
+}
+
+// 4. Environment Metadata Collection
+const envMetadata = getEnvironmentMetadata();
+console.log(`Environment: ${envMetadata.environment}`);
+console.log(`Use Data File Config: ${envMetadata.useDataFileConfig}`);
 ```
 
 ---
 
 ## Test Suite Components
 
-### 1. Test Scripts (tests/)
+### 1. Case (Sak) Creation Test
 
-#### create-sak.js
-**Purpose:** Performance test for Case (Sak) creation  
-**Workflow:**
-1. Authenticate user
-2. Retrieve case templates
-3. Create new case
-4. Validate response
-5. Apply pacing
+**File**: `tests/api/cases/create-sak.js`
 
-**Key Features:**
-- Scenario-based execution (smoke → endurance)
-- Dynamic user allocation (round-robin)
-- Template selection logic
-- Comprehensive error handling
-- HTML report generation
-
-**Configuration:**
-- Uses `autotest.json` for scenarios
-- Reads users from `users-config.json`
-- Supports all 5 load patterns
-
----
-
-#### create-jp.js
-**Purpose:** Performance test for Journal Post creation  
-**Workflow:**
-1. Authenticate user
-2. Create case
-3. Retrieve JP templates
-4. Create journal post
-5. Validate JP creation
-6. Apply pacing
-
-**Key Features:**
-- Complete case → JP workflow
-- Template prioritization ("Utgående dokument")
-- JP ID extraction from multiple response locations
-- Integration with case-module and jp-module
-- Scenario-based load testing
-
-**Configuration:**
-- Inherits scenario config from autotest.json
-- Supports runtime scenario override via `-e SCENARIO=<name>`
-
----
-
-#### create-jp-with-multiple-document.js
-**Purpose:** Test single JP creation with multiple document attachments  
-**Workflow:**
-1. Create case
-2. Create journal post
-3. Attach multiple documents (sequential or batch)
-4. Validate attachments
-
-**Key Features:**
-- Configurable document count (`DOC_COUNT`)
-- Supports real files via `DOC_FILES` (base64 or plain text)
-- Synthetic document generation
-- MIME type configuration (`DOC_MIME`, `DOC_MIME_LIST`)
-- Discovery mode for endpoint testing
-- Early-exit on first failure
-
-**Environment Variables:**
-```bash
-DOC_COUNT=5              # Number of documents to attach
-DOC_MIME=application/pdf # Single MIME type
-DOC_FILES=path1,path2    # Real file paths
-DOC_FILE_MODE=base64     # Encoding mode
-JP_ATTACH_DISCOVERY=true # Discovery mode
-```
-
----
-
-#### create-multiplejp-with-multiple-document.js
-**Purpose:** Test multiple incoming/outgoing JPs with bulk document attachments  
-**Workflow:**
-1. Authenticate user
-2. Create case
-3. Create N incoming JPs
-4. Create M outgoing JPs
-5. Attach documents to all JPs (batch upload)
-6. Validate all operations
-
-**Key Features:**
-- **Dual JP types:** Incoming (dokTypeId=1) & Outgoing (dokTypeId=4)
-- **Incoming JP payload:** Recipients, copy recipients, due date
-- **Outgoing JP payload:** Standard text templates
-- **Document modes:**
-  - Synthetic: Lightweight text documents (fast)
-  - Test documents: 10 large binary files (1MB-10MB)
-- **Batch upload:** All documents in single API call using `dokuments[]` array
-- **Binary data support:** K6 `open(file, 'b')` with proper MIME types
-- **Configurable counts:** Control incoming/outgoing JP quantities
-
-**Environment Variables:**
-```bash
-INCOMING_COUNT=2      # Number of incoming JPs
-OUTGOING_COUNT=2      # Number of outgoing JPs
-DOC_COUNT=3           # Documents per JP (synthetic mode)
-USE_TEST_DOCS=true    # Use large test documents
-USE_BATCH_UPLOAD=true # Batch vs individual upload
-```
-
-**Test Documents:**
-Location: `utils/modules/data/testDocuments/`
-- 1mb.pdf, 1mb.docx, 3-mb.pdf, 5mb.docx
-- 6mb.pdf, 10mb.pdf, 10mb.docx
-- PerfTestingGuide.docx, PerfTestScenarios.xlsx
-- benchmarks.csv
-
-Total: 10 files, ~37MB
-
-**JP Type Structures:**
-
-*Incoming JP (dokTypeId: 1):*
+**Architecture**:
 ```javascript
-{
-  dokTypeId: 1,
-  dokStatusId: 7,
-  brevDato: "2025-10-03T00:00:00+02:00",
-  forfallsDato: "2025-10-24T00:00:00+02:00", // 21 days
-  nyeMottakere: [{ id: 31, navn: "TestAutomation - Arkivar" }],
-  nyeKopiMottakere: [{ id: 33, navn: "TestAutomation - Saksbehandler" }]
-}
+┌─────────────────────────────────────────────────────────────┐
+│                    Create Sak Test Flow                      │
+├─────────────────────────────────────────────────────────────┤
+│ 1. Configuration Loading                                    │
+│    • Load paths configuration                               │
+│    • Load environment metadata                              │
+│    • Load user credentials                                  │
+│    • Load API configuration                                 │
+├─────────────────────────────────────────────────────────────┤
+│ 2. Authentication Phase                                     │
+│    • OAuth2 client credentials flow                         │
+│    • Token acquisition and validation                       │
+│    • Multi-user credential rotation                         │
+├─────────────────────────────────────────────────────────────┤
+│ 3. Template Retrieval                                       │
+│    • Get available case templates                           │
+│    • Template validation and selection                      │
+│    • Error handling for missing templates                   │
+├─────────────────────────────────────────────────────────────┤
+│ 4. Case Creation                                            │
+│    • Payload construction with template data                │
+│    • HTTP POST to configurable endpoint                     │
+│    • Response validation and error tracking                 │
+├─────────────────────────────────────────────────────────────┤
+│ 5. Performance Measurement                                  │
+│    • Response time tracking                                 │
+│    • Success rate monitoring                                │
+│    • Error categorization and analysis                      │
+├─────────────────────────────────────────────────────────────┤
+│ 6. Report Generation                                        │
+│    • HTML report with configurable path                     │
+│    • JSON summary with environment metadata                 │
+│    • Apdex scoring and performance analysis                 │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-*Outgoing JP (dokTypeId: 4):*
+### 2. Journal Post (JP) Creation Tests
+
+**Files**: 
+- `tests/api/journalposts/create-jp.js`
+- `tests/api/journalposts/create-jp-with-multiple-document.js`
+- `tests/api/journalposts/create-multiplejp-with-multiple-document.js`
+
+**Enhanced Architecture**:
 ```javascript
-{
-  dokTypeId: 4,
-  dokStatusId: 6,
-  brevDato: "2025-10-03T00:00:00+02:00",
-  standardTekster: [{ key: 'Start', id: 42 }]
-}
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         JP Creation Test Suite                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Configuration & Environment Setup                                            │
+│ • Centralized path configuration loading                                     │
+│ • Environment-aware configuration selection                                  │
+│ • Dynamic API endpoint resolution                                            │
+│ • Test document path resolution                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Authentication & Session Management                                          │
+│ • OAuth2 token management with refresh                                       │
+│ • Multi-user session handling                                                │
+│ • Session state validation                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Prerequisite Case Creation                                                   │
+│ • Dynamic case creation for JP attachment                                    │
+│ • Case ID validation and storage                                             │
+│ • Error handling for case creation failures                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ JP Template & Creation Pipeline                                              │
+│ • JP template retrieval with configurable endpoints                          │
+│ • Multiple JP type support (incoming/outgoing)                               │
+│ • Bulk JP creation with parallel processing                                  │
+│ • JP validation and status tracking                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Document Attachment Architecture                                             │
+│ • Configurable test document paths                                           │
+│ • Multiple document format support (PDF, DOCX)                               │
+│ • File size validation (1MB-10MB)                                            │
+│ • Batch upload processing                                                    │
+│ • Document attachment validation                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Performance Monitoring & Analytics                                           │
+│ • Real-time performance metric collection                                    │
+│ • Document upload performance analysis                                       │
+│ • Bulk operation performance tracking                                        │
+│ • Error categorization and failure analysis                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Enhanced Reporting System                                                    │
+│ • Configurable report output paths                                           │
+│ • Environment metadata inclusion                                             │
+│ • Document processing performance metrics                                    │
+│ • Comprehensive error tracking and analysis                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-### 2. Utility Modules (utils/modules/)
-
-#### auth-module.js
-**Purpose:** OAuth2 authentication management  
-**Functions:**
-- `authenticate(config, user, vuId)` - Obtain access token
-- Token caching and refresh logic
-- Multi-user support with round-robin
-
-**Dependencies:**
-- `users-config.json` - Credentials
-- `websak-api-config.json` - Token endpoint
-
-**Authentication Flow:**
-```
-User Credentials → OAuth2 Token Request → Access Token
-                 ↓
-        Store in VU-specific variable
-                 ↓
-        Use in Authorization header
-```
-
----
-
-#### case-module.js
-**Purpose:** Case (Sak) management operations  
-**Functions:**
-- `getCaseTemplates(config, authToken, vuId)` - Retrieve templates
-- `createCase(config, authToken, caseName, templateId, vuId)` - Create case
-- Template selection logic ("Ny sak" prioritization)
-
-**API Interactions:**
-- GET `/api/websak/api/sakstyper` - List templates
-- POST `/api/websak/api/sak` - Create case
-
----
-
-#### jp-module.js
-**Purpose:** Journal Post management and document handling  
-**Functions:**
-- `getJpTemplates(config, authToken, caseId, vuId)` - Retrieve JP templates
-- `createJournalPost(config, authToken, caseId, jpName, jpTypeId, vuId)` - Create JP
-- `buildJpDocumentPayload(documentData, jpId, isMainDocument)` - Build doc payload
-- `buildMultipartFormData(documentData, jpId, documentIndex, isMainDocument)` - Individual upload
-- `buildBatchMultipartFormData(documentsArray, jpId, mainDocumentIndex)` - Batch upload
-- `attachDocumentToJp(config, authToken, jpId, documentData, vuId)` - Upload document
-
-**Key Features:**
-- **Centralized payload builders** - Single source of truth for document payloads
-- **Binary data support** - `binaryData || content || base64Content` fallback
-- **Batch upload** - All documents in one request using `dokuments[i]` array
-- **Individual upload** - Sequential uploads with proper array indices
-- **MIME type handling** - Automatic detection from file extensions
-- **Template prioritization** - "Utgående dokument" preferred
-
-**Payload Structure:**
-```javascript
-// Individual document
-{
-  'jp.id': jpId,
-  'dokuments[0].tittel': 'Document Title',
-  'dokuments[0].dokumentBeskrivelse': 'Description',
-  'dokuments[0].hovedDokument': true/false,
-  'dokuments[0].file': http.file(binaryData, name, mimeType)
-}
-
-// Batch upload
-{
-  'jp.id': jpId,
-  'dokuments[0].tittel': 'Doc 1',
-  'dokuments[0].file': file1,
-  'dokuments[1].tittel': 'Doc 2',
-  'dokuments[1].file': file2,
-  // ... up to N documents
-}
-```
-
-**API Interactions:**
-- GET `/api/websak/api/jp/doktyper/{caseId}` - List JP templates
-- POST `/api/websak/api/jp/ny` - Create JP
-- POST `/api/websak/api/jp/uploadfiletodokument/` - Upload documents
-
----
-
-#### config-manager.js
-**Purpose:** Centralized configuration orchestration  
-**Functions:**
-- `loadTestConfig(environment)` - Load all configs
-- `getK6OptionsWithScenarios(config, scenarioOverride)` - Generate K6 options
-- `getConfiguredUsers(config)` - User allocation
-- `formatTime(ms)` - Time formatting utilities
-
-**Configuration Sources:**
-1. `autotest.json` or `dev.json` - Scenarios, thresholds
-2. `users-config.json` - User credentials
-3. `websak-api-config.json` - API endpoints
-
-**Scenario Resolution:**
-```javascript
-Env var SCENARIO → Override
-     ↓ (if not set)
-config.loadTest.activeScenario → Default
-     ↓
-Apply VUs, duration, stages, thresholds
-```
-
----
-
-#### report-generator.js
-**Purpose:** Enhanced HTML report generation  
-**Functions:**
-- `generateHtmlReport(data, outputPath)` - Create HTML report
-- `generateSummaryJson(data, outputPath)` - Export metrics JSON
-
-**Report Sections:**
-1. Test Overview (duration, VUs, scenarios)
-2. Performance Metrics (response times, throughput)
-3. Pass/Fail Thresholds
-4. Error Analysis
-5. Visual Charts (if applicable)
-
----
-
-### 3. Shared Utilities (utils/)
-
-#### api-client.js
-**Purpose:** Low-level HTTP wrapper  
-**Note:** Mostly used for legacy support; most tests use http directly
-
----
-
-#### pacing.js
-**Purpose:** Think time and pacing control  
-**Functions:**
-- `applyPacing(duration)` - Sleep between iterations
-- `calculatePacing(targetRPS, vus)` - Dynamic pacing calculation
-
-**Pacing Modes:**
-- `PACING_MODE=none` - No delays (maximum throughput)
-- `PACING_MODE=fixed` - Fixed sleep duration
-- Default - Scenario-based pacing
-
----
-
-#### validation.js
-**Purpose:** Common validation helpers  
-**Functions:**
-- `validateResponse(response, expectedStatus)` - HTTP response validation
-- `extractField(response, fieldName)` - Data extraction
-- Error categorization
-
----
-
-#### error-sampler.js
-**Purpose:** Error rate sampling and reporting  
-**Functions:**
-- Sample errors for detailed logging
-- Prevent log flooding in high-load scenarios
-- Error aggregation
 
 ---
 
 ## Data Flow & Interactions
 
-### Typical Test Execution Flow
+### 🆕 Enhanced Data Flow with Centralized Configuration
 
+```mermaid
+graph TD
+    A[Test Execution Start] --> B[Configuration Manager Init]
+    B --> C[Load paths-config.json]
+    C --> D[Load Environment-Specific Config]
+    D --> E[Detect Environment Metadata]
+    E --> F[Initialize Path Resolvers]
+    F --> G[Load User Credentials]
+    G --> H[Load API Configuration]
+    H --> I[OAuth2 Authentication]
+    I --> J[Business Logic Execution]
+    J --> K[Performance Data Collection]
+    K --> L[Dynamic Report Path Generation]
+    L --> M[Enhanced Report Generation]
+    M --> N[Environment Metadata Inclusion]
+    N --> O[Test Completion]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Init Phase                               │
-│  • Load configuration files (JSON)                               │
-│  • Preload test documents (if USE_TEST_DOCS=true)               │
-│  • Setup K6 options (scenarios, thresholds)                      │
-│  • Initialize counters and metrics                               │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                      VU Init Phase (per VU)                      │
-│  • Assign user credentials (round-robin)                         │
-│  • Initialize VU-specific state                                  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    Main Execution (default)                      │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  1. Authentication                                         │  │
-│  │     • Get OAuth2 token for assigned user                  │  │
-│  │     • Cache token for VU session                          │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  2. Create Case                                            │  │
-│  │     • Retrieve case templates                             │  │
-│  │     • Select template ("Ny sak" preferred)                │  │
-│  │     • POST to create case                                 │  │
-│  │     • Extract case ID from response                       │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  3. Create Journal Post(s)                                 │  │
-│  │     • Retrieve JP templates for case                      │  │
-│  │     • Select JP template (type-specific)                  │  │
-│  │     • Build JP payload (incoming vs outgoing)             │  │
-│  │     • POST to create JP                                   │  │
-│  │     • Extract JP ID from response                         │  │
-│  │     • Repeat for multiple JPs (if applicable)             │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  4. Attach Documents (if applicable)                       │  │
-│  │     • Generate/load document data                         │  │
-│  │     • Build multipart form data                           │  │
-│  │     • Batch upload (all docs) OR                          │  │
-│  │     • Individual upload (sequential)                      │  │
-│  │     • Validate each upload response                       │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  5. Validation & Metrics                                   │  │
-│  │     • Check HTTP status codes                             │  │
-│  │     • Validate response structure                         │  │
-│  │     • Record custom metrics                               │  │
-│  │     • Log success/failure                                 │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  6. Pacing                                                 │  │
-│  │     • Apply think time (if PACING_MODE != 'none')         │  │
-│  │     • Sleep before next iteration                         │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                        Teardown Phase                            │
-│  • Aggregate metrics                                             │
-│  • Generate HTML report                                          │
-│  • Export summary JSON                                           │
-│  • Display test summary                                          │
-└─────────────────────────────────────────────────────────────────┘
+
+### Configuration Resolution Flow
+
+1. **Init Phase**: Load `paths-config.json` and establish path resolvers
+2. **Environment Detection**: Automatically detect environment and load overrides
+3. **Dynamic Resolution**: Resolve all paths dynamically based on configuration
+4. **Fallback Handling**: Use default paths if configuration is missing
+5. **Validation**: Validate configuration completeness and log warnings
+
+### API Interaction Flow
+
+```javascript
+// Enhanced API interaction with configurable endpoints
+import { getApiEndpoints } from '../lib/config-manager.js';
+
+// 1. Get configurable API endpoints
+const apiEndpoints = getApiEndpoints();
+
+// 2. Build API URLs dynamically
+const jpAttachUrl = `${baseUrl}${apiEndpoints.websak.base}${apiEndpoints.websak.endpoints.jpAttach}${jpId}`;
+
+// 3. Fallback to defaults if configuration missing
+const fallbackUrl = jpAttachUrl || `${baseUrl}/api/websak/api/jp/uploadfiletodokument/${jpId}`;
 ```
 
 ---
 
-## Configuration Management
+## Path Management Architecture
 
-### Configuration Files
+### 🆕 Dynamic Path Resolution System
 
-#### 1. autotest.json / dev.json
-**Location:** `utils/modules/config/`  
-**Purpose:** Load test scenarios and thresholds
+The framework implements a sophisticated path management system that eliminates hardcoded paths and provides flexibility for different deployment scenarios.
 
-**Structure:**
-```json
+#### Core Path Management Components
+
+```javascript
+// Path Configuration Structure
 {
-  "loadTest": {
-    "activeScenario": "smoke_test",
-    "scenarios": {
-      "smoke_test": {
-        "name": "smoke_test",
-        "description": "Quick validation",
-        "executor": "shared-iterations",
-        "vus": 1,
-        "iterations": 1,
-        "maxDuration": "5m"
-      },
-      "load_test": {
-        "executor": "constant-vus",
-        "vus": 7,
-        "duration": "5m"
+  "paths": {
+    "reports": {
+      "baseDir": "src/reports",           // Base directory for reports
+      "htmlSuffix": "-report.html",       // HTML report suffix
+      "jsonSuffix": "-summary.json"       // JSON summary suffix
+    },
+    "testData": {
+      "baseDir": "src/data",              // Base data directory
+      "testDocuments": "src/data/testDocuments", // Test files location
+      "usersConfig": "src/data/users-config.json", // User credentials
+      "apiConfig": "src/data/websak-api-config.json" // API configuration
+    },
+    "apiEndpoints": {
+      "websak": {
+        "base": "/api/websak/api",        // API base path
+        "endpoints": {
+          "jpAttach": "/jp/uploadfiletodokument/", // JP attachment endpoint
+          "caseCreate": "/case/create",              // Case creation endpoint
+          "templateGet": "/templates"                // Template retrieval endpoint
+        }
       }
-      // ... other scenarios
     }
-  },
-  "thresholds": {
-    "http_req_duration": ["p(95)<2000", "p(99)<5000"],
-    "http_req_failed": ["rate<0.05"]
   }
 }
 ```
 
----
+#### Path Resolution Functions
 
-#### 2. users-config.json
-**Location:** `utils/modules/config/data/`  
-**Purpose:** OAuth2 user credentials
+```javascript
+// Enhanced config-manager.js functions for path management
 
-**Structure:**
-```json
-{
-  "users": [
-    {
-      "username": "TA_ARK",
-      "clientId": "ta-ark-client",
-      "clientSecret": "secret-value"
+// 1. Report Path Generation
+export function getReportPaths() {
+  const pathsConfig = getPathsConfig();
+  return {
+    getHtmlPath: (testName) => `${pathsConfig.paths.reports.baseDir}/${testName}${pathsConfig.paths.reports.htmlSuffix}`,
+    getJsonPath: (testName) => `${pathsConfig.paths.reports.baseDir}/${testName}${pathsConfig.paths.reports.jsonSuffix}`,
+    getBaseDir: () => pathsConfig.paths.reports.baseDir
+  };
+}
+
+// 2. Test Data Path Resolution
+export function getTestDataPaths() {
+  const pathsConfig = getPathsConfig();
+  return {
+    getTestDocumentsPath: () => pathsConfig.paths.testData.testDocuments,
+    getUsersConfigPath: () => pathsConfig.paths.testData.usersConfig,
+    getApiConfigPath: () => pathsConfig.paths.testData.apiConfig,
+    getDataDir: () => pathsConfig.paths.testData.baseDir
+  };
+}
+
+// 3. API Endpoint Resolution
+export function getApiEndpoints() {
+  const pathsConfig = getPathsConfig();
+  return {
+    websak: {
+      base: pathsConfig.paths.apiEndpoints.websak.base,
+      endpoints: pathsConfig.paths.apiEndpoints.websak.endpoints,
+      getFullEndpoint: (endpointName) => 
+        `${pathsConfig.paths.apiEndpoints.websak.base}${pathsConfig.paths.apiEndpoints.websak.endpoints[endpointName]}`
     }
-    // ... 7 users total
-  ]
+  };
 }
 ```
 
-**User Allocation:**
-- Round-robin: `users[(__VU - 1) % users.length]`
-- Each VU gets dedicated user
-- Prevents credential conflicts
+#### Benefits of Centralized Path Management
+
+🎯 **Single Point of Control**
+- Change report output directory for all tests from one location
+- Modify API endpoints without touching test code
+- Update test document locations globally
+
+🔄 **Environment Flexibility**  
+- Different path configurations for dev/staging/prod
+- Easy migration between different server structures
+- Support for different deployment scenarios
+
+🛡️ **Reliability & Fallbacks**
+- Automatic fallbacks to default paths if configuration missing
+- Validation of path existence and accessibility
+- Clear error messages for configuration issues
+
+⚡ **Performance & Maintainability**
+- Reduced code duplication across test files
+- Easier debugging with centralized configuration
+- Simplified deployment and environment setup
 
 ---
 
-#### 3. websak-api-config.json
-**Location:** `utils/modules/config/data/`  
-**Purpose:** API endpoints and configuration
+## Environment Metadata System
 
-**Structure:**
-```json
-{
-  "api": {
-    "host": "https://autotest01.acoscloud.no",
-    "endpoints": {
-      "sakstyper": "/api/websak/api/sakstyper",
-      "sak": "/api/websak/api/sak",
-      "jpDoktyper": "/api/websak/api/jp/doktyper/{caseId}",
-      "jpCreate": "/api/websak/api/jp/ny",
-      "jpUpload": "/api/websak/api/jp/uploadfiletodokument/"
-    }
-  },
-  "oauth": {
-    "tokenEndpoint": "/identity/connect/token",
-    "scope": ""
-  }
+### 🆕 Automatic Environment Detection
+
+The framework now automatically detects and collects environment metadata for enhanced reporting and debugging.
+
+#### Environment Metadata Collection
+
+```javascript
+// Enhanced environment metadata collection
+export function getEnvironmentMetadata() {
+  return {
+    environment: detectEnvironment(),           // Auto-detected environment
+    useDataFileConfig: 'Yes',                  // Configuration mode
+    apiHost: getApiHost(),                     // API host information
+    testExecutionTime: new Date().toISOString(), // Execution timestamp
+    k6Version: getK6Version(),                 // K6 version info
+    configurationSource: 'paths-config.json',  // Configuration source
+    pathConfigurationLoaded: true,              // Path config status
+    testDataPath: getTestDataPaths().getDataDir(), // Test data location
+    reportOutputPath: getReportPaths().getBaseDir() // Report output location
+  };
+}
+
+// Environment detection logic
+function detectEnvironment() {
+  // Check environment variables
+  if (__ENV.NODE_ENV) return __ENV.NODE_ENV;
+  if (__ENV.ENVIRONMENT) return __ENV.ENVIRONMENT;
+  
+  // Check hostname patterns
+  const hostname = __ENV.HOSTNAME || 'unknown';
+  if (hostname.includes('prod')) return 'Production';
+  if (hostname.includes('staging')) return 'Staging';
+  if (hostname.includes('dev')) return 'Development';
+  
+  // Default for automated testing
+  return 'Auto Test';
 }
 ```
 
----
+#### Enhanced Report Integration
 
-### Runtime Configuration Override
+Environment metadata is automatically included in all test reports:
 
-```bash
-# Override scenario
-k6 run -e SCENARIO=load_test tests/create-jp.js
-
-# Override document settings
-k6 run -e DOC_COUNT=10 -e USE_TEST_DOCS=true tests/create-multiplejp-with-multiple-document.js
-
-# Override JP counts
-k6 run -e INCOMING_COUNT=5 -e OUTGOING_COUNT=3 tests/create-multiplejp-with-multiple-document.js
-
-# Disable pacing
-$env:PACING_MODE='none'; k6 run tests/create-sak.js
+```html
+<!-- Environment Information Section in HTML Reports -->
+<div class="environment-info">
+  <h3>🌍 Environment Information</h3>
+  <div class="metadata-grid">
+    <div class="metadata-item">
+      <strong>Environment:</strong> <span class="env-badge">Auto Test</span>
+    </div>
+    <div class="metadata-item">
+      <strong>Use Data File Config:</strong> <span class="config-badge">Yes</span>
+    </div>
+    <div class="metadata-item">
+      <strong>API Host:</strong> <span class="host-info">api.websak.local</span>
+    </div>
+    <div class="metadata-item">
+      <strong>Configuration Source:</strong> <span class="source-info">paths-config.json</span>
+    </div>
+  </div>
+</div>
 ```
 
 ---
 
 ## Module Dependencies
 
-### Dependency Graph
+### 🆕 Enhanced Dependency Graph
 
 ```
-create-multiplejp-with-multiple-document.js
-    ├── config-manager.js
-    │   ├── config-loader.js
-    │   ├── autotest.json
-    │   ├── users-config.json
-    │   └── websak-api-config.json
-    ├── auth-module.js
-    │   └── http (K6 built-in)
-    ├── case-module.js
-    │   ├── http
-    │   └── validation.js
-    ├── jp-module.js
-    │   ├── http
-    │   └── validation.js
-    ├── pacing.js
-    │   └── sleep (K6 built-in)
-    ├── report-generator.js
-    │   └── htmlContent (template)
-    └── testDocuments/ (10 binary files)
+config-manager.js (CORE)
+├── paths-config.json (NEW)
+├── autotest.json  
+├── dev.json
+├── users-config.json
+└── websak-api-config.json
 
-create-jp-with-multiple-document.js
-    ├── [same as above, minus testDocuments]
-    └── real files via DOC_FILES env var
+auth-module.js
+├── config-manager.js
+├── users-config.json
+└── websak-api-config.json
 
-create-jp.js
-    ├── config-manager.js
-    ├── auth-module.js
-    ├── case-module.js
-    ├── jp-module.js
-    ├── pacing.js
-    └── report-generator.js
+case-module.js  
+├── config-manager.js (for API endpoints)
+├── auth-module.js
+└── websak-api-config.json
 
-create-sak.js
-    ├── config-manager.js
-    ├── auth-module.js
-    ├── case-module.js
-    ├── pacing.js
-    └── report-generator.js
+jp-module.js (ENHANCED)
+├── config-manager.js (for paths & endpoints)
+├── auth-module.js
+├── case-module.js
+└── testDocuments/ (configurable path)
+
+Test Files (ALL ENHANCED)
+├── config-manager.js (centralized configuration)
+├── auth-module.js
+├── case-module.js
+├── jp-module.js
+└── Dynamic path resolution for reports
+
+Utils Layer (DEPRECATED - being moved to lib/)
+├── api-client.js
+├── report-generator.js
+├── error-tracker.js
+├── pacing.js
+└── validation.js
 ```
+
+### Configuration Loading Dependencies
+
+```javascript
+// Dependency loading order in K6 init phase
+1. paths-config.json → Base path configuration
+2. Environment detection → Environment-specific settings  
+3. autotest.json → Test scenarios and thresholds
+4. users-config.json → Authentication credentials
+5. websak-api-config.json → API endpoint configuration
+6. dev.json → Development overrides (optional)
+```
+
+---
+
+## Test Execution Flow
+
+### 🆕 Enhanced Test Execution Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              K6 Init Phase                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Load paths-config.json                                                    │
+│    • Initialize path resolvers                                               │
+│    • Set up dynamic path generation                                          │
+│    • Validate path configuration                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. Environment Detection & Metadata Collection                               │
+│    • Auto-detect environment (Auto Test, Development, Production)            │
+│    • Collect system information and metadata                                 │
+│    • Load environment-specific configuration overrides                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 3. Configuration Loading Pipeline                                            │
+│    • Load autotest.json (scenarios, thresholds)                              │
+│    • Load users-config.json (authentication credentials)                     │
+│    • Load websak-api-config.json (API endpoints)                             │
+│    • Apply dev.json overrides if present                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 4. Test Data & Document Initialization                                       │
+│    • Resolve test document paths dynamically                                 │
+│    • Load and validate test documents (PDF, DOCX files)                      │
+│    • Initialize document metadata and size information                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 5. API Client & Module Initialization                                        │
+│    • Initialize HTTP client with configurable endpoints                      │
+│    • Set up authentication modules with credential rotation                  │
+│    • Initialize business logic modules (case, JP)                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            K6 Setup Phase                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Scenario Configuration                                                    │
+│    • Load test scenario (smoke, load, stress, spike, endurance)              │
+│    • Configure virtual user ramping and duration                             │
+│    • Set performance thresholds and success criteria                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. User Session Initialization                                               │
+│    • Assign user credentials from pool                                       │
+│    • Initialize OAuth2 authentication session                                │
+│    • Validate initial authentication and token acquisition                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          K6 Execution Phase                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Virtual User Execution Loop                                                  │
+│                                                                             │
+│ ┌─────────────────────────────────────────────────────────────────────────┐ │
+│ │ 1. Authentication & Token Management                                     │ │
+│ │    • OAuth2 client credentials flow                                      │ │
+│ │    • Token validation and refresh if needed                              │ │
+│ │    • Multi-user credential rotation                                      │ │
+│ └─────────────────────────────────────────────────────────────────────────┘ │
+│                                       ↓                                     │
+│ ┌─────────────────────────────────────────────────────────────────────────┐ │
+│ │ 2. Business Logic Execution (Test-Specific)                              │ │
+│ │    • Case Creation (for create-sak tests)                                │ │
+│ │    • JP Creation (for JP tests)                                          │ │
+│ │    • Document Attachment (for document tests)                            │ │
+│ │    • Bulk Operations (for multi-JP tests)                                │ │
+│ └─────────────────────────────────────────────────────────────────────────┘ │
+│                                       ↓                                     │
+│ ┌─────────────────────────────────────────────────────────────────────────┐ │
+│ │ 3. Performance Measurement & Validation                                  │ │
+│ │    • Response time tracking and analysis                                 │ │
+│ │    • Success rate monitoring                                             │ │
+│ │    • Error categorization and tracking                                   │ │
+│ │    • Custom metric collection                                            │ │
+│ └─────────────────────────────────────────────────────────────────────────┘ │
+│                                       ↓                                     │
+│ ┌─────────────────────────────────────────────────────────────────────────┐ │
+│ │ 4. Pacing & Think Time                                                   │ │
+│ │    • Configurable pacing between operations                              │ │
+│ │    • Think time simulation for realistic load                            │ │
+│ │    • No-pacing mode for maximum throughput testing                       │ │
+│ └─────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           K6 Teardown Phase                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Performance Data Aggregation                                             │
+│    • Collect all performance metrics and statistics                          │
+│    • Calculate percentiles, averages, and performance indicators             │
+│    • Aggregate error data and failure analysis                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. Enhanced Report Generation (handleSummary)                               │
+│    • Generate dynamic report paths using configuration                       │
+│    • Create comprehensive HTML report with environment metadata              │
+│    • Generate JSON summary with detailed performance data                    │
+│    • Include configuration summary and environment information               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 3. Report Output & Validation                                                │
+│    • Write reports to configurable output directories                        │
+│    • Validate report generation success                                      │
+│    • Log report locations and accessibility                                  │
+│    • Provide summary of test execution and results                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Execution Flow Benefits
+
+🚀 **Initialization Efficiency**
+- Single configuration loading phase reduces init time
+- Cached path resolution eliminates runtime overhead
+- Environment detection happens once per test execution
+
+🎯 **Runtime Performance**  
+- Pre-resolved paths eliminate file system lookups during test execution
+- Optimized configuration access patterns
+- Minimal memory footprint for configuration data
+
+🔍 **Debugging & Troubleshooting**
+- Clear separation of configuration vs execution phases
+- Detailed logging of configuration loading process
+- Environment metadata helps identify execution context
 
 ---
 
 ## Document Attachment Architecture
 
-### Breakthrough: dokuments[] Array Structure
+### Enhanced Document Processing Pipeline
 
-**Key Discovery:** WebSak API accepts document arrays in multipart form data using indexed keys:
+The framework supports sophisticated document attachment testing with configurable paths and multiple document formats.
+
+#### Document Architecture Components
 
 ```javascript
-// Batch upload - all documents in one request
-{
-  'jp.id': jpId,
-  'dokuments[0].tittel': 'First Document',
-  'dokuments[0].dokumentBeskrivelse': 'Description',
-  'dokuments[0].hovedDokument': true,
-  'dokuments[0].file': http.file(data1, 'file1.pdf', 'application/pdf'),
-  'dokuments[1].tittel': 'Second Document',
-  'dokuments[1].dokumentBeskrivelse': 'Description',
-  'dokuments[1].hovedDokument': false,
-  'dokuments[1].file': http.file(data2, 'file2.pdf', 'application/pdf')
-  // ... up to N documents
-}
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Document Attachment Architecture                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Document Configuration & Discovery                                        │
+│    • Dynamic test document path resolution                                   │
+│    • Multiple format support (PDF, DOCX, etc.)                               │
+│    • Size-based document selection (1MB, 3MB, 5MB, 10MB)                     │
+│    • Document metadata collection and validation                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. Document Loading & Preparation                                            │
+│    • Binary file loading with K6 SharedArray optimization                    │
+│    • Document type detection and validation                                  │
+│    • Memory-efficient document storage for multiple VUs                      │
+│    • Document rotation for varied testing                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 3. Attachment Workflow Processing                                            │
+│    • Single document attachment per JP                                       │
+│    • Multiple document batch attachment                                      │
+│    • Bulk JP creation with document attachment                               │
+│    • Sequential vs parallel attachment processing                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 4. Performance Monitoring & Analytics                                        │
+│    • Document upload time tracking                                           │
+│    • File size vs performance correlation                                    │
+│    • Batch upload performance analysis                                       │
+│    • Storage system performance monitoring                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 5. Error Handling & Validation                                               │
+│    • Document upload failure tracking                                        │
+│    • File corruption detection                                               │
+│    • Storage quota and limitation handling                                   │
+│    • Retry mechanisms for failed uploads                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Centralized Payload Builders (jp-module.js)
+#### Document Configuration Example
 
-#### buildMultipartFormData()
-**Purpose:** Build individual document upload payload  
-**Parameters:**
-- `documentData` - Document metadata and content
-- `jpId` - Journal Post ID
-- `documentIndex` - Array index (for batch upload)
-- `isMainDocument` - Flag for primary document
-
-**Returns:** Multipart form data object
-
-**Content Priority:**
-1. `binaryData` - Raw binary file content (preferred for test documents)
-2. `content` - Text content (synthetic documents)
-3. `base64Content` - Base64 encoded (legacy support)
-4. Fallback: Default text content
-
----
-
-#### buildBatchMultipartFormData()
-**Purpose:** Build batch upload payload for multiple documents  
-**Parameters:**
-- `documentsArray` - Array of document objects
-- `jpId` - Journal Post ID
-- `mainDocumentIndex` - Index of primary document (default: 0)
-
-**Returns:** Multipart form data object with all documents
-
-**Features:**
-- Single request for N documents
-- Proper array indexing (`dokuments[i]`)
-- Main document designation
-- MIME type per document
-
----
-
-### Document Upload Modes
-
-#### Batch Upload (USE_BATCH_UPLOAD=true)
-**Benefits:**
-- Single API call for all documents
-- Reduced network overhead
-- Faster execution
-- Lower server load
-
-**Use Cases:**
-- Performance testing
-- Bulk document scenarios
-- Production workflows
-
-**Implementation:**
 ```javascript
-const formData = buildBatchMultipartFormData(documentsArray, jpId, 0);
-const response = http.post(uploadUrl, formData, { headers });
-```
+// Enhanced document handling with configurable paths
+import { getTestDataPaths } from '../lib/config-manager.js';
 
----
+// Get configurable test document path
+const testDataPaths = getTestDataPaths();
+const testDocumentsPath = testDataPaths.getTestDocumentsPath();
 
-#### Individual Upload (USE_BATCH_UPLOAD=false)
-**Benefits:**
-- Granular error handling
-- Progress tracking per document
-- Easier debugging
-- Endpoint discovery
+// Document configuration
+const documentConfig = {
+  small: `${testDocumentsPath}/1mb.pdf`,
+  medium: `${testDocumentsPath}/3-mb.pdf`, 
+  large: `${testDocumentsPath}/5mb.docx`,
+  xlarge: `${testDocumentsPath}/10mb.pdf`
+};
 
-**Use Cases:**
-- Error testing
-- Incremental uploads
-- Legacy system support
-
-**Implementation:**
-```javascript
-documentsArray.forEach((doc, index) => {
-  const formData = buildMultipartFormData(doc, jpId, index, index === 0);
-  const response = http.post(uploadUrl, formData, { headers });
+// Load documents with SharedArray for performance
+const testDocuments = new SharedArray('testDocuments', function () {
+  return [
+    { name: '1mb.pdf', data: open(documentConfig.small, 'b'), size: '1MB' },
+    { name: '3-mb.pdf', data: open(documentConfig.medium, 'b'), size: '3MB' },
+    { name: '5mb.docx', data: open(documentConfig.large, 'b'), size: '5MB' },
+    { name: '10mb.pdf', data: open(documentConfig.xlarge, 'b'), size: '10MB' }
+  ];
 });
-```
-
----
-
-### Test Document Preloading
-
-**Location:** Init phase (K6 setup function)  
-**Trigger:** `USE_TEST_DOCS=true`
-
-**Process:**
-```javascript
-const testDocPaths = [
-  '../utils/modules/data/testDocuments/1mb.pdf',
-  '../utils/modules/data/testDocuments/1mb.docx',
-  // ... 10 files total
-];
-
-const preloadedTestDocuments = [];
-
-testDocPaths.forEach((filePath) => {
-  const fileData = open(filePath, 'b'); // Binary mode
-  const mimeType = detectMimeType(fileName);
-  
-  preloadedTestDocuments.push({
-    name: fileName,
-    binaryData: fileData,
-    mimeType: mimeType,
-    tittel: fileName.replace(/\.[^/.]+$/, ''),
-    size: fileData.length
-  });
-});
-```
-
-**MIME Type Detection:**
-```javascript
-function detectMimeType(fileName) {
-  const ext = fileName.split('.').pop().toLowerCase();
-  const mimeTypes = {
-    'pdf': 'application/pdf',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'csv': 'text/csv'
-  };
-  return mimeTypes[ext] || 'application/octet-stream';
-}
 ```
 
 ---
 
 ## Performance Testing Patterns
 
-### 1. Scenario-Based Testing
+### 🆕 Enhanced Testing Patterns with Configuration
 
-**Pattern:** Define reusable load patterns in configuration
+#### 1. Scenario-Based Load Testing
 
-**Benefits:**
-- Consistent test methodology
-- Easy scenario switching
-- Reproducible results
-- Clear test objectives
-
-**Scenarios:**
-
-| Scenario | Pattern | Purpose |
-|----------|---------|---------|
-| **Smoke** | 1 VU, 1 iteration | Quick validation, functionality check |
-| **Load** | 7 VUs, 5 min constant | Normal capacity baseline |
-| **Stress** | Ramp 1→7→14 over 14 min | Find breaking points, max capacity |
-| **Spike** | 2→14→2 over 4 min | Test resilience, auto-scaling |
-| **Endurance** | 5 VUs, 15 min | Memory leaks, stability, resource exhaustion |
-
----
-
-### 2. Multi-User Testing
-
-**Pattern:** Round-robin user allocation
-
-**Implementation:**
 ```javascript
-const users = getConfiguredUsers(testConfig);
-const user = users[(__VU - 1) % users.length];
+// Enhanced scenario configuration with environment awareness
+export const options = {
+  scenarios: {
+    smoke_test: {
+      executor: 'constant-vus',
+      vus: 1,
+      duration: '1m',
+      tags: { test_type: 'smoke', environment: getEnvironmentMetadata().environment }
+    },
+    load_test: {
+      executor: 'ramping-vus', 
+      startVUs: 0,
+      stages: [
+        { duration: '2m', target: 10 },
+        { duration: '5m', target: 10 },
+        { duration: '2m', target: 0 }
+      ],
+      tags: { test_type: 'load', environment: getEnvironmentMetadata().environment }
+    }
+  },
+  
+  // Enhanced thresholds with environment-specific values
+  thresholds: {
+    http_req_duration: ['p(95)<2000', 'p(99)<5000'],
+    http_req_failed: ['rate<0.05'],
+    'http_req_duration{test_type:smoke}': ['p(95)<1000'],
+    'http_req_duration{test_type:load}': ['p(95)<2000']
+  }
+};
 ```
 
-**Benefits:**
-- Prevents credential conflicts
-- Simulates real user behavior
-- Tests concurrent access
-- Load distribution
+#### 2. Configurable Performance Patterns
 
----
-
-### 3. Document Testing Strategies
-
-#### Synthetic Documents (Fast Functional Testing)
-**Use Case:** API validation, quick smoke tests  
-**Characteristics:**
-- Small text content (~1KB)
-- Fast generation
-- Minimal network impact
-- High iteration rate
-
-**Configuration:**
-```bash
-USE_TEST_DOCS=false
-DOC_COUNT=3
-```
-
----
-
-#### Large Test Documents (Realistic Performance)
-**Use Case:** Production simulation, capacity planning  
-**Characteristics:**
-- Real file types (PDF, DOCX, XLSX, CSV)
-- Large sizes (1MB-10MB)
-- Binary content
-- Network bandwidth testing
-
-**Configuration:**
-```bash
-USE_TEST_DOCS=true
-# Uses all 10 preloaded files automatically
-```
-
----
-
-### 4. Pacing Control
-
-**Pattern:** Configurable think time between iterations
-
-**Modes:**
-1. **None** (`PACING_MODE=none`) - Maximum throughput
-2. **Fixed** - Constant sleep duration
-3. **Scenario-based** - Defined per scenario
-
-**Implementation:**
 ```javascript
-if (__ENV.PACING_MODE !== 'none') {
-  sleep(thinkTime);
-}
+// Dynamic performance configuration based on environment
+const performanceConfig = getEnvironmentMetadata();
+
+// Adjust thresholds based on environment
+const thresholds = {
+  development: { p95: 3000, errorRate: 0.1 },
+  staging: { p95: 2000, errorRate: 0.05 },
+  production: { p95: 1000, errorRate: 0.01 }
+};
+
+const currentThresholds = thresholds[performanceConfig.environment.toLowerCase()] || thresholds.development;
 ```
 
-**Use Cases:**
-- Realistic user simulation (with pacing)
-- Capacity testing (without pacing)
-- SLA validation (scenario-based)
+#### 3. Advanced Document Testing Patterns
+
+```javascript
+// Configurable document testing patterns
+const documentTestingPatterns = {
+  single_document: {
+    docCount: 1,
+    pattern: 'sequential',
+    sizes: ['1MB']
+  },
+  multiple_documents: {
+    docCount: parseInt(__ENV.DOC_COUNT) || 3,
+    pattern: 'batch', 
+    sizes: ['1MB', '3MB', '5MB']
+  },
+  bulk_processing: {
+    jpCount: parseInt(__ENV.INCOMING_COUNT) || 2,
+    docCount: parseInt(__ENV.DOC_COUNT) || 2,
+    pattern: 'parallel',
+    sizes: ['1MB', '3MB', '5MB', '10MB']
+  }
+};
+```
 
 ---
 
 ## Extensibility & Best Practices
 
-### Adding New Tests
+### 🆕 Framework Extension Patterns
 
-1. **Create test file** in `tests/`
-2. **Import required modules:**
-   ```javascript
-   import { authenticate } from '../utils/modules/auth-module.js';
-   import { getK6OptionsWithScenarios } from '../utils/modules/config-manager.js';
-   ```
-3. **Use centralized config:**
-   ```javascript
-   const testConfig = loadTestConfig('autotest');
-   export const options = getK6OptionsWithScenarios(testConfig);
-   ```
-4. **Implement default function:**
-   ```javascript
-   export default function() {
-     // Test logic
-   }
-   ```
-5. **Add npm scripts** to `package.json`
-6. **Update documentation**
+#### 1. Adding New Test Scenarios
 
----
-
-### Adding New Document Upload Endpoints
-
-1. **Update websak-api-config.json:**
-   ```json
-   {
-     "api": {
-       "endpoints": {
-         "jpUploadNew": "/api/websak/api/jp/{jpId}/newdocument"
-       }
-     }
-   }
-   ```
-
-2. **Use centralized builders in jp-module.js:**
-   - No changes needed if payload structure is consistent
-   - Modify `buildMultipartFormData()` if structure differs
-
-3. **Test with discovery mode:**
-   ```bash
-   k6 run -e JP_ATTACH_DISCOVERY=true tests/create-jp-with-multiple-document.js
-   ```
-
----
-
-### Adding New JP Types
-
-1. **Create payload generator function:**
-   ```javascript
-   function generateCustomJpPayload(caseId, jpName, testMeta) {
-     return {
-       dokTypeId: X,
-       dokStatusId: Y,
-       // ... custom fields
-     };
-   }
-   ```
-
-2. **Use in test:**
-   ```javascript
-   const payload = generateCustomJpPayload(caseId, jpName, testMeta);
-   const jpResponse = createJournalPostWithPayload(config, authToken, payload, vuId);
-   ```
-
-3. **Document JP type in this file**
-
----
-
-### Best Practices
-
-#### Code Organization
-- ✅ Use centralized modules for reusable logic
-- ✅ Keep test files focused on workflow
-- ✅ Separate configuration from code
-- ✅ Use descriptive function and variable names
-
-#### Configuration
-- ✅ Define scenarios in JSON, not in code
-- ✅ Use environment variables for runtime overrides
-- ✅ Keep credentials in separate config files
-- ✅ Document all configuration options
-
-#### Testing
-- ✅ Start with smoke tests
-- ✅ Use synthetic documents for functional testing
-- ✅ Use large documents for performance testing
-- ✅ Validate responses at each step
-- ✅ Apply proper pacing for realistic simulation
-
-#### Documentation
-- ✅ Update README for new tests
-- ✅ Document environment variables
-- ✅ Provide usage examples
-- ✅ Keep architecture diagram current
-
-#### Error Handling
-- ✅ Validate HTTP status codes
-- ✅ Log errors with context (VU, iteration)
-- ✅ Use error sampling to prevent log flooding
-- ✅ Fail fast in smoke tests
-- ✅ Graceful degradation in load tests
-
----
-
-## Performance Metrics
-
-### Standard Metrics
-
-K6 automatically collects:
-- `http_req_duration` - Total request time
-- `http_req_waiting` - Time to first byte (TTFB)
-- `http_req_sending` - Time sending request
-- `http_req_receiving` - Time receiving response
-- `http_req_failed` - Failed requests rate
-- `http_reqs` - Total requests count
-- `vus` - Active virtual users
-- `iterations` - Completed iterations
-
-### Custom Metrics
-
-Tests can define custom metrics:
 ```javascript
-import { Counter, Rate, Trend } from 'k6/metrics';
+// Template for new test scenarios with centralized configuration
+import { 
+  getPathsConfig, 
+  getReportPaths, 
+  getEnvironmentMetadata,
+  getApiEndpoints 
+} from '../src/lib/config-manager.js';
 
-const caseCreationTime = new Trend('case_creation_time');
-const jpCreationRate = new Rate('jp_creation_rate');
-const documentsUploaded = new Counter('documents_uploaded');
+// 1. Load all configuration in init phase
+const pathsConfig = getPathsConfig();
+const reportPaths = getReportPaths();
+const envMetadata = getEnvironmentMetadata();
+const apiEndpoints = getApiEndpoints();
 
-// Record metrics
-caseCreationTime.add(response.timings.duration);
-jpCreationRate.add(response.status === 200);
-documentsUploaded.add(docCount);
+// 2. Define test scenario
+export default function() {
+  // Use configurable API endpoints
+  const apiUrl = `${__ENV.API_BASE_URL}${apiEndpoints.websak.getFullEndpoint('newEndpoint')}`;
+  
+  // Your test logic here
+}
+
+// 3. Use configurable report generation
+export function handleSummary(data) {
+  const testName = 'new-test-scenario';
+  return {
+    [reportPaths.getHtmlPath(testName)]: htmlReport(data, envMetadata),
+    [reportPaths.getJsonPath(testName)]: JSON.stringify(data)
+  };
+}
 ```
 
-### Thresholds
+#### 2. Extending Configuration System
 
-Defined in `autotest.json`:
-```json
+```javascript
+// Adding new configuration categories to paths-config.json
 {
-  "thresholds": {
-    "http_req_duration": ["p(95)<2000", "p(99)<5000"],
-    "http_req_failed": ["rate<0.05"],
-    "case_creation_time": ["p(95)<1500"],
-    "jp_creation_rate": ["rate>0.95"]
+  "paths": {
+    // Existing configurations...
+    
+    "newFeature": {
+      "baseDir": "src/newfeature",
+      "configFile": "src/newfeature/config.json",
+      "outputDir": "src/reports/newfeature"
+    }
+  },
+  
+  "apiEndpoints": {
+    "websak": {
+      // Existing endpoints...
+      "newEndpoint": "/new/api/endpoint"
+    }
   }
 }
 ```
 
-**Threshold Evaluation:**
-- ✅ Pass: All thresholds met
-- ❌ Fail: Any threshold violated
-- Exit code reflects pass/fail status
+#### 3. Environment-Specific Overrides
 
----
-
-## Security Considerations
-
-### Credentials Management
-- ❌ Never commit credentials to version control
-- ✅ Use separate config files (`.gitignore`)
-- ✅ Use environment variables for sensitive data
-- ✅ Rotate credentials regularly
-
-### Token Management
-- ✅ Tokens cached per VU session
-- ✅ Short-lived tokens (OAuth2 standard)
-- ✅ No token sharing between VUs
-- ❌ Tokens not persisted to disk
-
-### API Access
-- ✅ Use HTTPS for all API calls
-- ✅ Validate SSL certificates
-- ✅ Implement rate limiting awareness
-- ✅ Respect API quotas
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. Authentication Failures
-**Symptoms:** 400 Bad Request, "invalid_client"  
-**Causes:**
-- Incorrect credentials in `users-config.json`
-- User not selected properly (round-robin issue)
-- Token endpoint misconfigured
-
-**Solution:**
 ```javascript
-// Verify user selection
-const user = users[(__VU - 1) % users.length];
-console.log(`Using user: ${user.username}`);
+// Environment-specific configuration overrides
+// File: src/config/production-paths-config.json
+{
+  "paths": {
+    "reports": {
+      "baseDir": "/var/reports/websak-performance",
+      "htmlSuffix": "-prod-report.html"
+    },
+    "testData": {
+      "baseDir": "/etc/websak-test-data"
+    }
+  }
+}
 
-// Check token endpoint
-console.log(`Token URL: ${config.api.host}${config.oauth.tokenEndpoint}`);
-```
-
----
-
-#### 2. Document Upload Failures
-**Symptoms:** 404 Not Found, 405 Method Not Allowed  
-**Causes:**
-- Incorrect endpoint URL
-- Missing JP ID in payload
-- Wrong payload structure
-
-**Solution:**
-- Use `jp-module.js` centralized builders
-- Verify `jp.id` is set correctly
-- Check endpoint in `websak-api-config.json`
-- Enable discovery mode: `-e JP_ATTACH_DISCOVERY=true`
-
----
-
-#### 3. Test Documents Not Loading
-**Symptoms:** "File not found" errors  
-**Causes:**
-- Incorrect file paths
-- Missing test documents
-
-**Solution:**
-```javascript
-// Verify paths are relative to test file
-const testDocPaths = [
-  '../utils/modules/data/testDocuments/1mb.pdf',
-  // ...
-];
-
-// Check file exists
-const fileData = open(filePath, 'b');
-if (!fileData) {
-  console.error(`Failed to load: ${filePath}`);
+// Load environment-specific configuration
+function loadEnvironmentConfig() {
+  const env = detectEnvironment();
+  const envConfigFile = `src/config/${env.toLowerCase()}-paths-config.json`;
+  
+  try {
+    const envConfig = JSON.parse(open(envConfigFile));
+    return mergeConfigurations(baseConfig, envConfig);
+  } catch (e) {
+    console.log(`Environment config not found: ${envConfigFile}, using defaults`);
+    return baseConfig;
+  }
 }
 ```
 
----
+### Best Practices for Framework Development
 
-#### 4. High Error Rates
-**Symptoms:** > 5% failed requests  
-**Causes:**
-- Server overloaded (stress test)
-- Network issues
-- Invalid test data
+#### 1. Configuration Management
 
-**Solution:**
-- Reduce VU count
-- Increase ramp-up duration
-- Check server logs
-- Validate test data
+✅ **Do:**
+- Use centralized path configuration for all file paths
+- Implement fallback defaults for missing configuration
+- Validate configuration completeness at startup
+- Use environment-specific overrides when needed
 
----
+❌ **Don't:**
+- Hardcode paths in test files or modules
+- Mix configuration loading with business logic
+- Ignore configuration validation errors
+- Use different configuration patterns across modules
 
-## Future Enhancements
+#### 2. Performance Testing
 
-### Planned Features
-- [ ] Support for additional JP types (internal, reply, etc.)
-- [ ] Document verification endpoint calls
-- [ ] Custom test document selection (subset of 10 files)
-- [ ] Document size threshold configuration
-- [ ] Parallel JP creation for load testing
-- [ ] Upload speed metrics per file type
-- [ ] Support for additional file formats (images, archives)
-- [ ] Retry logic for large file uploads
-- [ ] Document deletion/cleanup functions
-- [ ] Real-time metrics dashboard
-- [ ] Distributed load testing support
-- [ ] CI/CD integration templates
+✅ **Do:**
+- Use configurable thresholds based on environment
+- Implement proper pacing and think time
+- Monitor both functional and performance metrics
+- Use SharedArray for test data to reduce memory usage
 
-### Community Contributions
-- Report issues on GitHub
-- Submit pull requests with tests
-- Share performance insights
-- Suggest new scenarios
+❌ **Don't:**
+- Run performance tests without baseline metrics
+- Ignore error rates in favor of response times only
+- Use unrealistic load patterns
+- Mix functional and performance testing in same scenarios
+
+#### 3. Error Handling & Debugging
+
+✅ **Do:**
+- Include environment metadata in all reports
+- Log configuration loading status and paths
+- Provide clear error messages for configuration issues
+- Track and categorize different types of failures
+
+❌ **Don't:**
+- Suppress configuration loading errors
+- Use generic error messages without context
+- Ignore failed configuration validations
+- Mix error handling with business logic
+
+#### 4. Framework Maintenance
+
+✅ **Do:**
+- Keep framework code (`src/`) separate from test scenarios (`tests/`)
+- Use consistent naming conventions across all modules
+- Document configuration changes and new features
+- Maintain backward compatibility when possible
+
+❌ **Don't:**
+- Mix framework utilities with test-specific code
+- Change configuration structure without migration plan
+- Add new features without updating documentation
+- Break existing test scenarios with framework changes
 
 ---
 
 ## Conclusion
 
-This architecture provides a robust, maintainable, and extensible framework for performance testing WebSak Plus. Key strengths:
+The **Acos GRAF - Load Test Framework v3.0.0** represents a significant evolution in performance testing architecture, introducing:
 
-1. **Modularity** - Reusable components across tests
-2. **Configuration-driven** - Easy scenario management
-3. **Centralized logic** - Single source of truth for payloads
-4. **Comprehensive** - Covers multiple workflows and document strategies
-5. **Well-documented** - Clear guidance for users and developers
+🎯 **Centralized Configuration Management** - Single point of control for all framework paths and settings
+🌍 **Enhanced Environment Awareness** - Automatic environment detection and metadata collection  
+⚙️ **Flexible Architecture** - Modular design with clear separation of concerns
+📊 **Advanced Reporting** - Comprehensive reports with environment context and performance analytics
+🚀 **Production Ready** - Designed for enterprise deployment with configuration flexibility
 
-For questions or support, refer to the main [README.md](./README.md) or individual test documentation files.
+The framework provides a solid foundation for scalable performance testing while maintaining simplicity and ease of use for test developers and performance engineers.
 
 ---
 
-**Document Version:** 2.0.0  
-**Last Updated:** October 3, 2025  
-**Maintained by:** Performance Testing Team
+**Framework Architecture maintained by the Acos Performance Testing Team**  
+**Version 3.0.0 - October 7, 2025**

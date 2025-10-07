@@ -19,31 +19,31 @@
  *  k6 run tests/create-multiplejp-with-multiple-document.js -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true --vus 1 --iterations 1
  */
 
-import { randomSleep } from '../utils/pacing.js';
+import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
-  getK6OptionsWithScenarios,
   getK6Options,
-  printConfigSummary
-} from '../utils/modules/config-manager.js';
-import { authenticate, createAuthHeaders } from '../utils/modules/auth-module.js';
+  getK6OptionsWithScenarios,
+  printConfigSummary,
+  getEnvironmentMetadata,
+  getReportPaths,
+  getTestDataPaths
+} from '../../../src/lib/config-manager.js';
+import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
 import {
   getTemplates as getCaseTemplates,
   createCase,
   generateCaseTestData
-} from '../utils/modules/case-module.js';
+} from '../../../src/lib/case-module.js';
 import {
   getJpTemplates,
-  createJournalPost,
   attachDocumentsBatch,
   attachDocument
-} from '../utils/modules/jp-module.js';
-import { generateHtmlReport } from '../utils/report-generator.js';
-import { injectErrorAnalyticsIntoSummary } from '../utils/error-sampler.js';
-import { injectErrorAnalytics } from '../utils/error-tracker.js';
-import { group, check, sleep } from 'k6';
+} from '../../../src/lib/jp-module.js';
+import { generateHtmlReport } from '../../../src/utils/report-generator.js';
+import { injectErrorAnalytics } from '../../../src/utils/error-tracker.js';
+import { group, check } from 'k6';
 import http from 'k6/http';
-import encoding from 'k6/encoding';
 
 // ========================================
 // CONFIGURATION FLAGS
@@ -105,8 +105,9 @@ if (USE_TEST_DOCS) {
   console.log('📂 Preloading test documents from testDocuments folder...');
 
   // Get test document paths from config
+  const testDataPaths = getTestDataPaths();
   const testDocConfig = config?.testDocuments || {
-    basePath: '../utils/modules/data/testDocuments',
+    basePath: testDataPaths.testDocuments,
     files: [
       '1mb.pdf',
       '1mb.docx',
@@ -644,20 +645,24 @@ export function teardown(data) {
 }
 
 export function handleSummary(data) {
-  // Call old method first (for group breakdown, but returns empty error arrays due to k6 limitation)
-  injectErrorAnalyticsIntoSummary(data);
-  
-  // Then inject error analytics using NEW k6 metrics-based tracker
-  // This WILL capture errors because it uses k6 Custom Metrics and will OVERWRITE the empty arrays!
+  // Inject error analytics using k6 metrics-based tracker
   injectErrorAnalytics(data);
 
   const apdexEnv = __ENV.APDEX_T || __ENV.APDex_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
+  // Add environment and metadata information for reporting
+  const testConfig = loadTestConfig('create-multiplejp-with-multiple-document', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const envMetadata = getEnvironmentMetadata(testConfig);
+  data.setup_data = {
+    ...envMetadata
+  };
+
   const html = generateHtmlReport(data, { apdexT });
   // Relative paths that work when running from repo root or k6-tests directory
+  const reportPaths = getReportPaths('create-multiplejp-with-multiple-document');
   return {
-    'reports/create-multiplejp-with-multiple-document-summary.json': JSON.stringify(data, null, 2),
-    'reports/create-multiplejp-with-multiple-document-report.html': html,
+    [reportPaths.json]: JSON.stringify(data, null, 2),
+    [reportPaths.html]: html,
     stdout: ''
   };
 }

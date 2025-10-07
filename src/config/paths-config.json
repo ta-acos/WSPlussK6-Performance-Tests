@@ -1,0 +1,83 @@
+{
+  "description": "Centralized path configuration for the Acos GRAF Load Test framework",
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-07",
+  
+  "paths": {
+    "reports": {
+      "baseDir": "src/reports",
+      "htmlSuffix": "-report.html",
+      "jsonSuffix": "-summary.json"
+    },
+    
+    "testData": {
+      "baseDir": "src/data",
+      "testDocuments": "src/data/testDocuments",
+      "usersConfig": "src/data/users-config.json",
+      "apiConfig": "src/data/websak-api-config.json"
+    },
+    
+    "configs": {
+      "baseDir": "src/config",
+      "autotest": "src/config/autotest.json",
+      "dev": "src/config/dev.json",
+      "paths": "src/config/paths-config.json"
+    },
+    
+    "external": {
+      "papaparseUrl": "https://jslib.k6.io/papaparse/5.1.1/index.js"
+    }
+  },
+  
+  "apiEndpoints": {
+    "description": "Default API endpoint paths - can be overridden in websak-api-config.json",
+    "oauth": {
+      "tokenPath": "/identityserver/connect/token"
+    },
+    "websak": {
+      "base": "/api/websak/api",
+      "endpoints": {
+        "sakmaler": "/register/sakmaler",
+        "sak": "/sak/ny",
+        "jpmaler": "/register/sak",
+        "jpny": "/jp/ny",
+        "innholdJp": "/jp/",
+        "tekstmal": "/jp",
+        "flett": "/dokument/flett",
+        "jpAttach": "/jp/uploadfiletodokument/",
+        "jpDocuments": "/jp/{jpId}/dokumenter",
+        "soek": "/soek",
+        "sakstyper": "/register/sakstyper",
+        "avgjorelsekoder": "/register/avgjorelsekoder",
+        "ordningsprinsipper": "/register/ordningsprinsipper",
+        "ordningsverdierPattern": "/register/ordningsprinsipper/{prinsipp}/sakstype/{sakstype}/ordningsverdier",
+        "noekkelord": "/register/noekkelord/sas_arkivsak",
+        "nymalsak": "/sak/nymalsak/"
+      }
+    }
+  },
+  
+  "testDocuments": {
+    "basePath": "./src/data/testDocuments",
+    "supportedExtensions": [".pdf", ".docx", ".xlsx", ".csv"],
+    "files": [
+      "1mb.pdf",
+      "1mb.docx", 
+      "3-mb.pdf",
+      "5mb.docx",
+      "6mb.pdf",
+      "10mb.pdf",
+      "10mb.docx",
+      "PerfTestingGuide.docx",
+      "PerfTestScenarios.xlsx",
+      "benchmarks.csv"
+    ]
+  },
+  
+  "errorMessages": {
+    "timeout": {
+      "jpAttachEndpoint": "/api/websak/api/jp/uploadfiletodokument/",
+      "message": "Document attachment timeout: {duration}ms > 5000ms threshold. JP ID: {jpId}"
+    }
+  }
+}
