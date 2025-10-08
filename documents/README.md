@@ -109,8 +109,10 @@ npm run report:open
 │   │   ├── case-module.js       # Case creation logic
 │   │   ├── config-manager.js    # 🆕 Enhanced configuration management
 │   │   └── jp-module.js         # Journal Post operations
-│   ├── utils/                   # Framework utilities (DEPRECATED)
+│   ├── utils/                   # Framework utilities
 │   │   ├── api-client.js        # HTTP client wrapper
+│   │   ├── auth.js             # Authentication utilities
+│   │   ├── config-loader.js     # Configuration loading
 │   │   ├── error-tracker.js     # Error analytics
 │   │   ├── pacing.js           # Think time management
 │   │   ├── report-generator.js  # HTML report generation
@@ -125,9 +127,10 @@ npm run report:open
 │   │       ├── create-jp-with-multiple-document.js
 │   │       └── create-multiplejp-with-multiple-document.js
 │   └── common/                  # Shared test utilities
-├── docs/                        # Documentation
+├── documents/                   # Documentation
 │   ├── ARCHITECTURE.md         # Framework architecture
-│   └── METRICS-GUIDE.md        # Performance metrics guide
+│   ├── METRICS-GUIDE.md        # Performance metrics guide
+│   └── README.md               # This file
 └── package.json                # NPM configuration
 ```
 
@@ -360,8 +363,8 @@ npm run test:create-multiplejp-with-multiple-document:smoke
 
 ## 📚 Documentation
 
-- **[Framework Architecture](docs/ARCHITECTURE.md)**: Detailed technical architecture
-- **[Metrics Guide](docs/METRICS-GUIDE.md)**: Performance metrics and analysis
+- **[Framework Architecture](documents/ARCHITECTURE.md)**: Detailed technical architecture
+- **[Metrics Guide](documents/METRICS-GUIDE.md)**: Performance metrics and analysis
 
 ---
 

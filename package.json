@@ -1,7 +1,7 @@
 {
   "name": "acos-graf-load-test",
-  "version": "1.1.1",
-  "description": "Acos GRAF - Load Test: K6 performance testing framework for WebSak Plus (modular Create Sak & Journal Post scenarios)",
+  "version": "3.0.0",
+  "description": "Acos GRAF - Load Test v3.0: Enhanced K6 performance testing framework for WebSak Plus with centralized path management, environment metadata, and advanced configuration system",
   "scripts": {
     "__comment_sak": "=== Create Sak (Case) Tests ===",
     "__comment_sak_desc": "Tests for creating WebSak cases with various load patterns",
