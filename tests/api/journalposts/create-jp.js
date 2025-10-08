@@ -1,42 +1,64 @@
 /**
- * Test: Create Journal Post workflow (Case + JP)
- * Steps: authenticate -> create case -> fetch JP templates -> create JP
- * Purpose: Validate combined workflow latency and success rate.
+ * ===================================================================
+ * PERFORMANCE TEST: Create Journal Posts (Basic Workflow)
+ * ===================================================================
  *
- * Quick run:
- *  k6 run tests/create-jp.js --vus 1 --duration 10s
+ * WHAT THIS TEST DOES:
+ * This test simulates users creating cases and then adding journal posts to them.
+ * A journal post is like adding an email, phone call record, or document entry
+ * to a case file. This is a simpler version that doesn't attach documents.
+ *
+ * TEST WORKFLOW STEPS:
+ * 1. 🔐 Log in to the system (authenticate user)
+ * 2. 📋 Get available case templates (what types of cases can be created)
+ * 3. 📁 Create a new case using a template
+ * 4. 📄 Get available journal post templates (types of journal entries)
+ * 5. ✉️  Create a journal post in the case (like logging an email or call)
+ *
+ * WHY WE TEST THIS:
+ * This tests the basic case + journal post workflow that users do frequently.
+ * It's faster than the document attachment version, so good for testing
+ * basic system performance under load.
+ *
+ * CONFIGURATION OPTIONS:
+ *  - SCENARIO: Choose test intensity (smoke_test, load_test, stress_test)
+ *
+ * QUICK TEST COMMAND:
+ *  k6 run tests/api/journalposts/create-jp.js --vus 1 --duration 10s
  */
 
-// import { sleep } from 'k6'; // TODO: Use if manual sleep needed
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
-  loadTestConfig,
-  getK6Options,
-  getK6OptionsWithScenarios,
-  printConfigSummary,
-  getEnvironmentMetadata,
-  getReportPaths
-} from '../../../src/lib/config-manager.js';
-import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
-import {
-  getTemplates as getCaseTemplates,
-  createCase,
-  generateCaseTestData
-} from '../../../src/lib/case-module.js';
-import { getJpTemplates, createJournalPost, generateJpTestData } from '../../../src/lib/jp-module.js';
-import { generateHtmlReport } from '../../../src/utils/report-generator.js';
+  generateK6Options,
+  performTestSetup,
+  initializeTestExecution,
+  executeAuthenticationFlow,
+  executeCaseCreationFlow,
+  selectTemplateByName
+} from '../../../src/utils/test-workflow.js';
+import { getJpTemplates, createJournalPost } from '../../../src/lib/jp-module.js';
+import { generateJpTestData } from '../../../src/lib/payload-module.js';
+import { validateTemplates } from '../../../src/utils/test-validation.js';
+import { performSimpleTeardown } from '../../../src/utils/test-teardown.js';
+import { performSimpleSummary } from '../../../src/utils/test-summary.js';
 
 // ========================================
-// CONFIGURATION FLAGS
+// CONFIGURATION SETTINGS
 // ========================================
-const USE_DATA_FILE_CONFIG = true; // Use autotest.json + scenarios if true
-const CONFIG_ENVIRONMENT = 'autotest'; // Environment config identifier
+// Whether to load test settings from config files (autotest.json) or use built-in defaults
+const USE_DATA_FILE_CONFIG = true;
 
-// Override scenario from environment variable if provided
+// Which environment to test against (autotest, development, production, etc.)
+const CONFIG_ENVIRONMENT = 'autotest';
+
+// Override the test scenario if specified (smoke_test, load_test, stress_test, etc.)
 // Usage: k6 run -e SCENARIO=load_test tests/create-jp.js
 const SCENARIO_OVERRIDE = __ENV.SCENARIO || null;
 
-// Fallback / inline test configuration when flag disabled
+// ========================================
+// PERFORMANCE THRESHOLDS & TEST SETTINGS
+// ========================================
+// Backup settings used when config files are not available
 const ORIGINAL_TEST_CONFIG = {
   vus: 5,
   duration: '10s',
@@ -51,152 +73,76 @@ const ORIGINAL_TEST_CONFIG = {
   }
 };
 
-// Load configuration
-const config = loadTestConfig('create-jp', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+// Configuration is handled by workflow utilities
 
-// When using inline config ensure VUs match available users
-if (!USE_DATA_FILE_CONFIG) {
-  ORIGINAL_TEST_CONFIG.vus = config.users.length || ORIGINAL_TEST_CONFIG.vus;
-  config.vus = ORIGINAL_TEST_CONFIG.vus;
-}
-
-// Export k6 options - use scenario-based configuration from autotest.json
-export const options = USE_DATA_FILE_CONFIG
-  ? getK6OptionsWithScenarios(config, SCENARIO_OVERRIDE)
-  : getK6Options(config);
+// Export k6 options - use workflow utility for configuration
+export const options = generateK6Options(
+  'create-jp',
+  ORIGINAL_TEST_CONFIG,
+  USE_DATA_FILE_CONFIG,
+  CONFIG_ENVIRONMENT,
+  SCENARIO_OVERRIDE
+);
 
 export function setup() {
-  console.log('🚀 Starting Create JP Modular Test');
-  printConfigSummary(config);
-  return { started: true };
+  return performTestSetup('🚀 Starting Create JP Modular Test');
 }
 
-export default function () {
-  const testConfig = loadTestConfig(
+export default function createJournalPostTest(data) {
+  const vuId = __VU;
+
+  // Initialize test execution
+  const { testConfig, user } = initializeTestExecution(
     'create-jp',
     ORIGINAL_TEST_CONFIG,
     USE_DATA_FILE_CONFIG,
-    CONFIG_ENVIRONMENT
+    CONFIG_ENVIRONMENT,
+    vuId
   );
-  const users = testConfig.users;
+  if (!testConfig || !user) return;
 
-  if (!users || users.length === 0) {
-    console.error('🔥 No users loaded for Create JP test');
-    return;
-  }
+  // Execute authentication flow
+  const authHeaders = executeAuthenticationFlow(testConfig, user, vuId);
+  if (!authHeaders) return;
 
-  const userIndex = (__VU - 1) % users.length;
-  const user = users[userIndex];
-  const vuId = `VU${__VU}`;
+  // Execute case creation flow
+  const caseData = executeCaseCreationFlow(testConfig, authHeaders, vuId);
+  if (!caseData) return;
 
-  // Basic field validation
-  if (!user?.UserName || !user?.ClientID || !user?.ClientSecret) {
-    console.error(`❌ ${vuId}: Invalid user record`, user);
-    return;
-  }
-
-  // Authentication
-  const accessToken = authenticate(testConfig, user, vuId);
-  if (!accessToken) {
-    console.error(`❌ ${vuId}: Token acquisition failed`);
-    return;
-  }
-  const authHeaders = createAuthHeaders(accessToken);
-
-  // Retrieve case templates
-  const caseTemplates = getCaseTemplates(testConfig, authHeaders, vuId);
-  if (caseTemplates.length === 0) {
-    console.error(`❌ ${vuId}: No case templates retrieved`);
-    return;
-  }
-
-  // Choose template titled "Ny sak" if present
-  const nySakTemplate = caseTemplates.find((t) => (t.tittel || '').toLowerCase() === 'ny sak');
-  const selectedCaseTemplate = nySakTemplate || caseTemplates[0];
-
-  // Generate case test data
-  const caseTestData = generateCaseTestData('PerfTestCase', vuId);
-
-  // Create case
-  const caseData = createCase(
-    testConfig,
-    authHeaders,
-    caseTemplates,
-    caseTestData,
-    vuId,
-    selectedCaseTemplate
-  );
-  if (!caseData || !caseData.id) {
-    console.error(`❌ ${vuId}: Case creation failed`);
-    return;
-  }
-
-  // Retrieve JP templates for created case
+  // Get JP templates for the created case
   const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
-  if (jpTemplates.length === 0) {
-    console.error(`❌ ${vuId}: No JP templates available`);
+  if (!validateTemplates(jpTemplates, 'JP', vuId)) {
     return;
   }
 
-  // Select template containing "utgående" if present
-  const outgoingTemplate = jpTemplates.find((t) => (t.tittel || '').toLowerCase().includes('utgående'));
-  if (outgoingTemplate) {
-    // Reorder so chosen template used first by createJournalPost() logic
-    const idx = jpTemplates.indexOf(outgoingTemplate);
-    if (idx > 0) {
-      jpTemplates.unshift(jpTemplates.splice(idx, 1)[0]);
-    }
-  }
+  // Select preferred template (prioritize by config or use first available)
+  const selectedTemplate = selectTemplateByName(jpTemplates, testConfig.templates?.jp) || jpTemplates[0];
+  console.log(`🎯 ${vuId}: Using JP template: "${selectedTemplate.tittel}" (ID: ${selectedTemplate.id})`);
 
-  // Generate JP test data
+  // Generate JP test data and create journal post
   const jpTestData = generateJpTestData('PerfTestJP', vuId);
-
-  // Create Journal Post
   const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, vuId);
-  if (!jpData || !jpData.id) {
-    console.warn(`⚠️ ${vuId}: JP creation returned no ID (may still be accepted)`);
+
+  if (jpData && jpData.id) {
+    console.log(`✅ ${vuId}: Successfully created JP "${jpTestData.jpName}" with ID: ${jpData.id}`);
   } else {
-    console.log(`🎉 ${vuId}: Created Journal Post ID ${jpData.id} in Case ${caseData.id}`);
+    console.warn(`⚠️ ${vuId}: JP creation completed but no ID returned`);
   }
 
-  randomSleep(0.3, 1.1);
+  // Optional pacing between iterations
+  randomSleep(testConfig);
 }
 
 export function teardown() {
-  console.log('🏁 Create JP Modular Test complete');
+  performSimpleTeardown('Create JP Modular');
 }
 
 /**
  * Rich summary artifacts (HTML, JSON, Markdown) produced for distribution.
  */
 export function handleSummary(data) {
-  // const m = data.metrics || {};
-  // const dur = m.http_req_duration?.values || {}; // TODO: Use for detailed metrics analysis
-  // const failedRate = m.http_req_failed?.values?.rate || 0; // TODO: Use for failure analysis
-  // const totalReqs = m.http_reqs?.values?.count || 0; // TODO: Use for throughput analysis
-  // const runSecs = (data.state?.testRunDurationMs || 0) / 1000; // TODO: Use for rate calculations
-  // Markdown summary intentionally disabled (user request to avoid .md artifact)
-
-  const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T;
-  const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
-  // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig(
-    'create-jp',
-    ORIGINAL_TEST_CONFIG,
+  return performSimpleSummary('create-jp', data, ORIGINAL_TEST_CONFIG, {
     USE_DATA_FILE_CONFIG,
     CONFIG_ENVIRONMENT
-  );
-  const envMetadata = getEnvironmentMetadata(testConfig);
-  data.setup_data = {
-    ...envMetadata
-  };
-
-  const html = generateHtmlReport(data, { apdexT });
-
-  const reportPaths = getReportPaths('create-jp');
-  return {
-    [reportPaths.json]: JSON.stringify(data, null, 2),
-    [reportPaths.html]: html,
-    stdout: ''
-  };
+  });
 }

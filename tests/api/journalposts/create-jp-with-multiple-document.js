@@ -1,15 +1,43 @@
 /**
- * Test: Create Journal Post with Multiple Documents (Case + JP + N Docs)
- * Steps: authenticate -> create case -> fetch JP templates -> create JP -> attach multiple documents
- * Purpose: Validate end-to-end workflow latency including document attachments.
+ * ===================================================================
+ * PERFORMANCE TEST: Create Journal Posts with Multiple Documents
+ * ===================================================================
  *
- * Env Overrides:
- *  - SCENARIO: select load scenario from config (e.g. smoke_test, load_test)
- *  - DOC_COUNT: number of documents to attach per JP (default 3)
- *  - APDEX_T: custom Apdex threshold (ms) for HTML report
+ * WHAT THIS TEST DOES:
+ * This test simulates a real user creating a case, then creating a journal post
+ * (like an email or document entry), and then attaching multiple files to it.
+ * Think of it like someone logging an email into a case management system and
+ * attaching several documents to that email entry.
  *
- * Quick run:
- *  k6 run tests/create-jp-with-multiple-document.js --vus 1 --duration 10s
+ * TEST WORKFLOW STEPS:
+ * 1. 🔐 Log in to the system (authenticate user)
+ * 2. 📋 Get available case templates (what types of cases can be created)
+ * 3. 📁 Create a new case using a template
+ * 4. 📄 Get available journal post templates (types of journal entries)
+ * 5. ✉️  Create a journal post in the case (like logging an email)
+ * 6. 📎 Attach multiple documents to the journal post
+ * 7. ✅ Verify that all documents were successfully attached
+ *
+ * WHY WE TEST THIS:
+ * This tests the complete workflow that users do daily. We measure how fast
+ * the system responds when users create cases and attach documents, especially
+ * when many users do this at the same time.
+ *
+ * CONFIGURATION OPTIONS (Environment Variables):
+ *  - SCENARIO: Choose test intensity (smoke_test=quick, load_test=normal, stress_test=heavy)
+ *  - DOC_COUNT: How many documents to attach per journal post (default: 3)
+ *  - ENABLE_JP_ATTACH: Whether to actually attach documents (true/false)
+ *  - USE_BATCH_UPLOAD: Upload all documents at once vs one-by-one (faster when true)
+ *  - APDEX_T: Performance threshold in milliseconds for "satisfied" response times
+ *
+ * QUICK TEST COMMAND:
+ *  k6 run tests/api/journalposts/create-jp-with-multiple-document.js --vus 1 --duration 10s
+ *
+ * EXAMPLE RESULTS:
+ * - Response times for each step (login, create case, attach documents)
+ * - Success/failure rates
+ * - How many operations completed per second
+ * - Performance metrics compared to acceptable thresholds
  */
 
 import { randomSleep } from '../../../src/utils/pacing.js';
@@ -17,81 +45,118 @@ import {
   loadTestConfig,
   getK6Options,
   getK6OptionsWithScenarios,
-  printConfigSummary,
-  getEnvironmentMetadata,
-  getReportPaths
+  printConfigSummary
 } from '../../../src/lib/config-manager.js';
 import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
+import { getTemplates as getCaseTemplates, createCase } from '../../../src/lib/case-module.js';
+import { getJpTemplates, createJournalPost } from '../../../src/lib/jp-module.js';
+import { generateCaseTestData, generateJpTestData } from '../../../src/lib/payload-module.js';
 import {
-  getTemplates as getCaseTemplates,
-  createCase,
-  generateCaseTestData
-} from '../../../src/lib/case-module.js';
+  validateUserData,
+  validateUser,
+  validateAuthentication,
+  validateTemplates,
+  validateCaseCreation
+} from '../../../src/utils/test-validation.js';
+import { performSimpleTeardown } from '../../../src/utils/test-teardown.js';
+import { performSimpleSummary } from '../../../src/utils/test-summary.js';
 import {
-  getJpTemplates,
-  createJournalPost,
-  generateJpTestData,
-  attachDocument,
-  attachDocumentsBatch
-} from '../../../src/lib/jp-module.js';
-import { generateHtmlReport } from '../../../src/utils/report-generator.js';
-import { group, check, sleep } from 'k6';
-import http from 'k6/http';
-import encoding from 'k6/encoding';
+  preloadExternalFiles,
+  attachDocumentsWithVerification
+} from '../../../src/utils/document-attachment.js';
 
 // ========================================
-// CONFIGURATION FLAGS
+// CONFIGURATION SETTINGS
 // ========================================
-const USE_DATA_FILE_CONFIG = true; // Use autotest.json + scenarios if true
-const CONFIG_ENVIRONMENT = 'autotest'; // Environment config identifier
+// These settings control how the test runs. You can change them by setting
+// environment variables when running the test.
+
+// Whether to load test settings from config files (autotest.json) or use built-in defaults
+const USE_DATA_FILE_CONFIG = true;
+
+// Which environment to test against (autotest, development, production, etc.)
+const CONFIG_ENVIRONMENT = 'autotest';
+
+// Override the test scenario if specified (smoke_test, load_test, stress_test, etc.)
 const SCENARIO_OVERRIDE = __ENV.SCENARIO || null;
 
-// Number of documents to attach per Journal Post
+// How many documents to attach to each journal post (default: 3 documents)
+// You can change this by setting DOC_COUNT=5 when running the test
 const DOC_COUNT = parseInt(__ENV.DOC_COUNT || __ENV.DOCUMENTS || '3', 10) || 3;
-// Enable/disable attachment phase (helps suppress warnings while endpoint is unknown)
+
+// Whether to actually attach documents or skip that step (useful for testing without documents)
 const ENABLE_ATTACH = (__ENV.ENABLE_JP_ATTACH || 'true').toLowerCase() === 'true';
-// External file attachments (comma-separated relative paths)
+
+// If you want to use specific files instead of generated test documents,
+// list them here separated by commas (e.g., DOC_FILES="file1.pdf,file2.docx")
 const RAW_DOC_FILES = (__ENV.DOC_FILES || '')
   .split(',')
   .map((p) => p.trim())
   .filter(Boolean);
-const DOC_FILE_MODE = (__ENV.DOC_FILE_MODE || 'base64').toLowerCase(); // 'base64' | 'text'
+
+// How to handle the document files: 'base64' (binary files) or 'text' (text files)
+const DOC_FILE_MODE = (__ENV.DOC_FILE_MODE || 'base64').toLowerCase();
+
+// Whether to reuse the same document files for multiple attachments
 const DOC_FILE_REPEAT = (__ENV.DOC_FILE_REPEAT || 'true').toLowerCase() === 'true';
 
-// Fallback / inline test configuration when data file usage disabled
+// ========================================
+// PERFORMANCE THRESHOLDS & TEST SETTINGS
+// ========================================
+// These are the backup settings used when config files are not available.
+// These define what we consider "acceptable" performance for each operation.
+
 const ORIGINAL_TEST_CONFIG = {
-  vus: 5,
-  duration: '10s',
+  vus: 5, // Number of virtual users (simulated users running the test)
+  duration: '10s', // How long to run the test
+
+  // Performance thresholds - what response times are acceptable:
   thresholds: {
+    // Overall HTTP request response times - 95% must be under 3.5 seconds
     http_req_duration: ['p(95)<3500'],
+
+    // Error rate - less than 5% of requests should fail
     http_req_failed: ['rate<0.05'],
-    'group_duration{group:::Authentication}': ['p(95)<2000'],
-    'group_duration{group:::Get Case Templates}': ['p(95)<2500'],
-    'group_duration{group:::Create New Case}': ['p(95)<3000'],
-    'group_duration{group:::Get JP Templates}': ['p(95)<3000'],
-    'group_duration{group:::Create Journal Post}': ['p(95)<3500'],
-    'group_duration{group:::Attach Document to JP}': ['p(95)<3500'],
-    'group_duration{group:::Verify JP Documents}': ['p(95)<2000']
+
+    // Specific operation thresholds (95% of operations must complete within these times):
+    'group_duration{group:::Authentication}': ['p(95)<2000'], // Login: under 2 seconds
+    'group_duration{group:::Get Case Templates}': ['p(95)<2500'], // Get templates: under 2.5 seconds
+    'group_duration{group:::Create New Case}': ['p(95)<3000'], // Create case: under 3 seconds
+    'group_duration{group:::Get JP Templates}': ['p(95)<3000'], // Get JP templates: under 3 seconds
+    'group_duration{group:::Create Journal Post}': ['p(95)<3500'], // Create journal post: under 3.5 seconds
+    'group_duration{group:::Attach Document to JP}': ['p(95)<3500'], // Attach documents: under 3.5 seconds
+    'group_duration{group:::Verify JP Documents}': ['p(95)<2000'] // Verify documents: under 2 seconds
   }
 };
 
-// Load configuration
+// ========================================
+// LOAD TEST CONFIGURATION
+// ========================================
+// This section loads the test configuration from files or uses the defaults above
+
 const config = loadTestConfig(
-  'create-jp-with-multiple-document',
-  ORIGINAL_TEST_CONFIG,
-  USE_DATA_FILE_CONFIG,
-  CONFIG_ENVIRONMENT
+  'create-jp-with-multiple-document', // Test name for identification
+  ORIGINAL_TEST_CONFIG, // Fallback settings if config files not found
+  USE_DATA_FILE_CONFIG, // Whether to try loading from config files
+  CONFIG_ENVIRONMENT // Which environment config to use (autotest, dev, etc.)
 );
 
+// If not using config files, adjust user count based on available test users
 if (!USE_DATA_FILE_CONFIG) {
   ORIGINAL_TEST_CONFIG.vus = config.users.length || ORIGINAL_TEST_CONFIG.vus;
   config.vus = ORIGINAL_TEST_CONFIG.vus;
 }
 
+// Export K6 test options - this tells K6 how to run the test
+// (how many users, for how long, what performance thresholds to check)
 export const options = USE_DATA_FILE_CONFIG
-  ? getK6OptionsWithScenarios(config, SCENARIO_OVERRIDE)
-  : getK6Options(config);
+  ? getK6OptionsWithScenarios(config, SCENARIO_OVERRIDE) // Use predefined test scenarios
+  : getK6Options(config); // Use simple configuration
 
+// ========================================
+// TEST SETUP FUNCTION
+// ========================================
+// This runs once at the start of the test to prepare everything
 export function setup() {
   console.log('🚀 Starting Create JP with Multiple Documents Test');
   console.log(`📎 Documents per JP: ${DOC_COUNT}`);
@@ -99,146 +164,81 @@ export function setup() {
   return { started: true };
 }
 
-// Helper to generate document data objects
-// MIME type + size customization via env vars
-const DOC_MIME = __ENV.DOC_MIME || 'text/plain';
-const DOC_MIME_LIST = (__ENV.DOC_MIME_LIST || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-const DOC_SIZE_BASE = parseInt(__ENV.DOC_SIZE_BASE || '512', 10) || 512;
-const DOC_SIZE_STEP = parseInt(__ENV.DOC_SIZE_STEP || '10', 10) || 10;
+// ========================================
+// DOCUMENT PREPARATION
+// ========================================
+// If specific document files were provided, load them now (before the test starts)
+// This happens once and reuses the same documents for all test iterations
+const preloadedFileAttachments = preloadExternalFiles(RAW_DOC_FILES, {
+  mode: DOC_FILE_MODE, // How to read files (base64 for binary, text for text files)
+  allowRepeat: DOC_FILE_REPEAT // Whether to reuse files if we need more than available
+});
 
-function resolveMime(index) {
-  if (DOC_MIME_LIST.length === 0) return DOC_MIME;
-  return DOC_MIME_LIST[index % DOC_MIME_LIST.length];
-}
-
-function generateDocumentData(baseName, index, testMeta) {
-  const timestamp = new Date().toISOString();
-  return {
-    name: `${baseName}_${index + 1}_${testMeta.testId}.txt`,
-    content: `Performance test document #${index + 1} created at ${timestamp} (VU: ${testMeta.vuId})`,
-    mimeType: resolveMime(index),
-    size: DOC_SIZE_BASE + index * DOC_SIZE_STEP
-  };
-}
-
-// ===================== FILE ATTACHMENT PRELOAD (init phase) =====================
-function guessMime(fileName) {
-  const lower = fileName.toLowerCase();
-  if (lower.endsWith('.pdf')) return 'application/pdf';
-  if (lower.endsWith('.json')) return 'application/json';
-  if (lower.endsWith('.xml')) return 'application/xml';
-  if (lower.endsWith('.html') || lower.endsWith('.htm')) return 'text/html';
-  if (lower.endsWith('.csv')) return 'text/csv';
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-  if (lower.endsWith('.png')) return 'image/png';
-  if (lower.endsWith('.gif')) return 'image/gif';
-  if (lower.endsWith('.txt') || lower.endsWith('.log')) return 'text/plain';
-  return 'application/octet-stream';
-}
-
-const preloadedFileAttachments = RAW_DOC_FILES.map((relPath) => {
-  try {
-    // Try binary open first for base64, fallback to text
-    let rawBinary = null;
-    let binaryOk = false;
-    try {
-      rawBinary = open(relPath, 'b');
-      binaryOk = Array.isArray(rawBinary) || rawBinary instanceof Uint8Array;
-    } catch (e) {
-      // ignore, will fallback to text
-    }
-    let textContent = null;
-    if (!binaryOk) {
-      try {
-        textContent = open(relPath);
-      } catch (e2) {
-        console.error(`🔥 Failed to open attachment file '${relPath}': ${e2.message}`);
-        return null;
-      }
-    }
-    const fileName = relPath.split(/[/\\]/).pop();
-    const mime = guessMime(fileName);
-    if (DOC_FILE_MODE === 'base64') {
-      let bytes;
-      if (binaryOk) {
-        bytes = rawBinary;
-      } else {
-        // convert string to bytes
-        bytes = new TextEncoder().encode(textContent);
-      }
-      const b64 = encoding.b64encode(bytes, { std: 'RFC4648' });
-      return {
-        name: fileName,
-        mimeType: mime,
-        size: bytes.length,
-        base64Content: b64,
-        originalPath: relPath
-      };
-    } else {
-      // text mode
-      const content = binaryOk ? '[BINARY-DATA-NOT-CONVERTED]' : textContent;
-      return {
-        name: fileName,
-        mimeType: mime,
-        size: content.length,
-        content,
-        originalPath: relPath
-      };
-    }
-  } catch (err) {
-    console.error(`🔥 Unexpected error preloading '${relPath}': ${err.message}`);
-    return null;
-  }
-}).filter(Boolean);
-
-if (preloadedFileAttachments.length > 0) {
-  console.log(
-    `📎 Preloaded ${preloadedFileAttachments.length} external attachment file(s) (mode=${DOC_FILE_MODE}, repeat=${DOC_FILE_REPEAT})`
-  );
-}
-
+// ========================================
+// MAIN TEST FUNCTION
+// ========================================
+// This is the main test that runs for each virtual user.
+// Each "iteration" of this function represents one user going through
+// the complete workflow: login -> create case -> create journal post -> attach documents
 export default function () {
-  // Reuse global config to avoid repeated init logs (reduces console noise)
+  // Get the test configuration and user list
   const testConfig = config;
   const users = testConfig.users;
 
-  if (!users || users.length === 0) {
-    console.error('🔥 No users loaded for multi-doc JP test');
-    return;
-  }
-
-  const userIndex = (__VU - 1) % users.length;
-  const user = users[userIndex];
+  // Create a unique identifier for this virtual user (for logging purposes)
   const vuId = `VU${__VU}`;
 
-  if (!user?.UserName || !user?.ClientID || !user?.ClientSecret) {
-    console.error(`❌ ${vuId}: Invalid user record`, user);
-    return;
+  // ========================================
+  // STEP 1: VALIDATE USER DATA
+  // ========================================
+  // Make sure we have test users configured
+  if (!validateUserData(users, vuId)) {
+    return; // Stop if no users available
   }
 
-  // Authenticate
+  // Select which test user this virtual user will simulate
+  const userIndex = (__VU - 1) % users.length;
+  const user = users[userIndex];
+
+  // Validate the selected user has required information (username, password, etc.)
+  if (!validateUser(user, vuId, userIndex, users.length)) {
+    return; // Stop if user data is invalid
+  }
+
+  // ========================================
+  // STEP 2: USER LOGIN (AUTHENTICATION)
+  // ========================================
+  // Simulate a user logging into the system
+  console.log(`🔐 ${vuId}: Attempting login for user ${user.username}`);
   const accessToken = authenticate(testConfig, user, vuId);
-  if (!accessToken) {
-    console.error(`❌ ${vuId}: Token acquisition failed`);
-    return;
+  if (!validateAuthentication(accessToken, user, vuId)) {
+    return; // Stop if login failed
   }
+
+  // Create authorization headers for API calls (like a session cookie)
   const authHeaders = createAuthHeaders(accessToken);
+  console.log(`✅ ${vuId}: Successfully logged in`);
 
-  // Case templates
+  // ========================================
+  // STEP 3: GET AVAILABLE CASE TEMPLATES
+  // ========================================
+  // Get the list of case types that the user can create
+  console.log(`📋 ${vuId}: Getting available case templates`);
   const caseTemplates = getCaseTemplates(testConfig, authHeaders, vuId);
-  if (caseTemplates.length === 0) {
-    console.error(`❌ ${vuId}: No case templates retrieved`);
-    return;
+  if (!validateTemplates(caseTemplates, user, vuId, 'case templates')) {
+    return; // Stop if no case templates available
   }
 
-  // Prefer template titled "Ny sak"
+  // Choose which case template to use (prefer "Ny sak" if available, otherwise use first one)
   const nySakTemplate = caseTemplates.find((t) => (t.tittel || '').toLowerCase() === 'ny sak');
   const selectedCaseTemplate = nySakTemplate || caseTemplates[0];
+  console.log(`📋 ${vuId}: Using case template: ${selectedCaseTemplate.tittel || 'Unknown'}`);
 
-  // Case data
+  // ========================================
+  // STEP 4: CREATE A NEW CASE
+  // ========================================
+  // Generate test data for the case and create it
+  console.log(`📁 ${vuId}: Creating new case`);
   const caseTestData = generateCaseTestData('PerfTestCaseMultiDoc', vuId);
   const caseData = createCase(
     testConfig,
@@ -248,231 +248,97 @@ export default function () {
     vuId,
     selectedCaseTemplate
   );
-  if (!caseData || !caseData.id) {
-    console.error(`❌ ${vuId}: Case creation failed`);
-    return;
+  if (!validateCaseCreation(caseData, vuId)) {
+    return; // Stop if case creation failed
   }
+  console.log(`✅ ${vuId}: Case created with ID: ${caseData.id}`);
 
-  // JP templates
+  // ========================================
+  // STEP 5: GET JOURNAL POST TEMPLATES
+  // ========================================
+  // Get the types of journal posts (document entries) that can be created in this case
+  console.log(`📄 ${vuId}: Getting journal post templates for case ${caseData.id}`);
   const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
-  if (jpTemplates.length === 0) {
-    console.error(`❌ ${vuId}: No JP templates available`);
-    return;
+  if (!validateTemplates(jpTemplates, user, vuId, 'JP templates')) {
+    return; // Stop if no journal post templates available
   }
 
-  // Prefer template containing "utgående"
+  // Choose which journal post template to use (prefer "utgående" for outgoing documents)
   const outgoingTemplate = jpTemplates.find((t) => (t.tittel || '').toLowerCase().includes('utgående'));
   if (outgoingTemplate) {
+    // Move the preferred template to the front of the list
     const idx = jpTemplates.indexOf(outgoingTemplate);
     if (idx > 0) jpTemplates.unshift(jpTemplates.splice(idx, 1)[0]);
   }
+  console.log(`📄 ${vuId}: Using JP template: ${jpTemplates[0]?.tittel || 'Unknown'}`);
 
-  // JP test data
+  // ========================================
+  // STEP 6: CREATE JOURNAL POST
+  // ========================================
+  // Generate test data for the journal post and create it
+  console.log(`✉️ ${vuId}: Creating journal post in case ${caseData.id}`);
   const jpTestData = generateJpTestData('PerfTestJP-MultiDoc', vuId);
   const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, vuId);
+
+  // Verify the journal post was created successfully
   if (!jpData || !jpData.id) {
     console.warn(`⚠️ ${vuId}: JP creation returned no ID - skipping document attachments`);
-    randomSleep(0.3, 1.1);
+    randomSleep(0.3, 1.1); // Small delay before ending
     return;
   }
+  console.log(`✅ ${vuId}: Journal post created with ID: ${jpData.id}`);
 
-  let attachedCount = 0;
-  if (ENABLE_ATTACH) {
-    // WebSak API supports multiple documents using dokuments[] array structure!
-    // We can upload all documents in a single batch request OR one by one
+  // ========================================
+  // STEP 7: ATTACH DOCUMENTS TO JOURNAL POST
+  // ========================================
+  // Now attach multiple documents to the journal post and verify they were attached correctly
+  const USE_BATCH_UPLOAD = (__ENV.USE_BATCH_UPLOAD || 'true').toLowerCase() === 'true';
 
-    const USE_BATCH_UPLOAD = (__ENV.USE_BATCH_UPLOAD || 'true').toLowerCase() === 'true';
+  console.log(`📎 ${vuId}: Starting document attachment process (${DOC_COUNT} documents)`);
+  console.log(`📎 ${vuId}: Upload mode: ${USE_BATCH_UPLOAD ? 'batch' : 'individual'}`);
 
-    if (USE_BATCH_UPLOAD && DOC_COUNT > 1) {
-      // Batch upload: Send all documents in one request
-      console.log(`📦 ${vuId}: Preparing batch upload of ${DOC_COUNT} documents`);
+  // This function handles the complete workflow: attach documents + verify they're there
+  attachDocumentsWithVerification(testConfig, authHeaders, jpData.id, {
+    documentCount: DOC_COUNT, // How many documents to attach
+    useBatchUpload: USE_BATCH_UPLOAD, // Upload all at once vs one-by-one
+    preloadedDocuments: preloadedFileAttachments, // Use specific files if provided
+    useRealDocuments: preloadedFileAttachments.length > 0, // Whether to use real files or generate test files
+    baseName: jpTestData.documentName.replace('.txt', ''), // Base name for generated test documents
+    jpType: 'Incoming', // Type of journal post (Incoming/Outgoing)
+    vuId: vuId, // Virtual user ID for logging
+    testMeta: { testId: jpTestData.testId, vuId }, // Additional metadata for tracking
+    enableAttachment: ENABLE_ATTACH, // Whether to actually attach documents
+    enableVerification: true, // Whether to verify documents were attached
+    verificationDelay: 0.5 // Wait time before checking (0.5 seconds)
+  });
 
-      const documentsArray = [];
-      for (let i = 0; i < DOC_COUNT; i++) {
-        let docData;
-        if (preloadedFileAttachments.length > 0) {
-          if (i < preloadedFileAttachments.length) {
-            docData = preloadedFileAttachments[i];
-          } else if (DOC_FILE_REPEAT) {
-            docData = preloadedFileAttachments[i % preloadedFileAttachments.length];
-          } else {
-            docData = generateDocumentData(jpTestData.documentName.replace('.txt', ''), i, {
-              testId: jpTestData.testId,
-              vuId
-            });
-          }
-        } else {
-          docData = generateDocumentData(jpTestData.documentName.replace('.txt', ''), i, {
-            testId: jpTestData.testId,
-            vuId
-          });
-        }
-        documentsArray.push(docData);
-      }
+  console.log(`✅ ${vuId}: Completed full workflow - case + journal post + ${DOC_COUNT} documents`);
 
-      // Perform batch upload
-      const batchSuccess = attachDocumentsBatch(testConfig, authHeaders, jpData.id, documentsArray, vuId, 0);
-      if (batchSuccess) {
-        attachedCount = DOC_COUNT;
-      } else {
-        console.error(`❌ ${vuId}: Batch upload failed`);
-      }
-    } else {
-      // Individual upload: Send documents one by one
-      console.log(`📄 ${vuId}: Uploading ${DOC_COUNT} document(s) individually`);
-
-      for (let i = 0; i < DOC_COUNT; i++) {
-        let docData;
-        if (preloadedFileAttachments.length > 0) {
-          if (i < preloadedFileAttachments.length) {
-            docData = preloadedFileAttachments[i];
-          } else if (DOC_FILE_REPEAT) {
-            docData = preloadedFileAttachments[i % preloadedFileAttachments.length];
-          } else {
-            docData = generateDocumentData(jpTestData.documentName.replace('.txt', ''), i, {
-              testId: jpTestData.testId,
-              vuId
-            });
-          }
-        } else {
-          docData = generateDocumentData(jpTestData.documentName.replace('.txt', ''), i, {
-            testId: jpTestData.testId,
-            vuId
-          });
-        }
-
-        const isMainDocument = i === 0;
-        const attached = attachDocument(testConfig, authHeaders, jpData.id, docData, vuId, i, isMainDocument);
-        if (!attached) {
-          const suppressWarn = (__ENV.SUPPRESS_JP_ATTACH_WARN || '').toLowerCase() === 'true';
-          const msg = `JP attachment attempt #${i + 1} failed. Early exit.`;
-          if (suppressWarn) {
-            console.log(`ℹ️ ${vuId}: ${msg}`);
-          } else {
-            console.warn(`⚠️ ${vuId}: ${msg}`);
-          }
-          break;
-        }
-        attachedCount++;
-      }
-    }
-
-    // Verification step only if at least one attachment succeeded
-    if (attachedCount > 0) {
-      // Small delay to allow backend to process attachments
-      sleep(0.5);
-
-      group('Verify JP Documents', () => {
-        const listTemplate =
-          testConfig.apiConfig.endpoints.jpDocuments ||
-          `${testConfig.apiConfig.endpoints.innholdJp}{jpId}/dokumenter`;
-        const listPath = listTemplate.replace(/\{jpId\}/g, jpData.id);
-        const listUrl = `${testConfig.baseUrl}${listPath}`;
-
-        console.log(`🔍 ${vuId}: Verifying documents at: ${listUrl}`);
-
-        const listResp = http.get(listUrl, {
-          headers: authHeaders,
-          timeout: '30s',
-          tags: { name: '📄 List JP Documents', endpoint: 'jp:listDocuments', jp_id: jpData.id, url: listUrl }
-        });
-
-        // Log response details before check (check might suppress errors)
-        if (listResp.status !== 200) {
-          console.error(`🔥 ${vuId}: Document list request failed - Status: ${listResp.status}`);
-          console.error(`📥 Response Body: ${listResp.body?.slice(0, 500)}`);
-        }
-
-        const ok = check(listResp, {
-          'list_docs: status 200': (r) => r.status === 200,
-          'list_docs: has parseable response': (r) => {
-            try {
-              const body = JSON.parse(r.body);
-              // Accept various response structures: array, { data: [] }, { documents: [] }, { dokumenter: [] }, etc.
-              const isValid =
-                Array.isArray(body) ||
-                Array.isArray(body?.data) ||
-                Array.isArray(body?.documents) ||
-                Array.isArray(body?.dokumenter) || // Norwegian: "documents"
-                Array.isArray(body?.items) ||
-                Array.isArray(body?.result);
-              return isValid;
-            } catch (e) {
-              console.error(`🔥 ${vuId}: Document list parse error: ${e.message}`);
-              return false;
-            }
-          }
-        });
-
-        if (ok) {
-          try {
-            const parsed = JSON.parse(listResp.body);
-            // Try multiple possible array locations (including Norwegian "dokumenter")
-            const docs = Array.isArray(parsed)
-              ? parsed
-              : parsed.data || parsed.documents || parsed.dokumenter || parsed.items || parsed.result || [];
-
-            if (Array.isArray(docs)) {
-              const expectedCount = attachedCount; // Expect the number of documents we uploaded
-              if (docs.length === expectedCount) {
-                console.log(
-                  `✅ ${vuId}: Verified ${docs.length} document(s) (attached ${attachedCount}) - Perfect match!`
-                );
-              } else if (docs.length < expectedCount) {
-                console.error(
-                  `❌ ${vuId}: Document list (${docs.length}) less than expected (${expectedCount})`
-                );
-                console.error(`   Some documents may have failed to upload. Check API response and logs.`);
-              } else if (docs.length > expectedCount) {
-                console.log(
-                  `ℹ️ ${vuId}: Found ${docs.length} documents (expected ${expectedCount}) - may include pre-existing documents`
-                );
-              }
-            } else {
-              console.warn(`⚠️ ${vuId}: Could not find document array in response`);
-            }
-          } catch (e) {
-            console.warn(`⚠️ ${vuId}: Could not parse document listing response: ${e.message}`);
-          }
-        } else {
-          console.warn(
-            `⚠️ ${vuId}: Could not verify documents for JP ${jpData.id}. Check the endpoint configuration.`
-          );
-        }
-      });
-    }
-  } else {
-    console.log(`ℹ️ ${vuId}: Attachment phase disabled (ENABLE_JP_ATTACH=false)`);
-  }
-
+  // Add a small random delay between iterations to simulate real user behavior
   randomSleep(0.3, 1.1);
 }
 
+// ========================================
+// TEST CLEANUP FUNCTIONS
+// ========================================
+
+/**
+ * TEARDOWN FUNCTION
+ * This runs once at the end of the test to clean up and log final results
+ */
 export function teardown() {
-  console.log('🏁 Create JP with Multiple Documents Test complete');
+  performSimpleTeardown('Create JP with Multiple Documents');
 }
 
+/**
+ * SUMMARY FUNCTION
+ * This processes the test results and generates reports (HTML dashboard, JSON metrics)
+ * It runs after all test iterations are complete and creates performance reports
+ * that show response times, success rates, and whether performance thresholds were met.
+ */
 export function handleSummary(data) {
-  const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T;
-  const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
-  // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig(
-    'create-jp-with-multiple-document',
-    ORIGINAL_TEST_CONFIG,
+  return performSimpleSummary('create-jp-with-multiple-document', data, ORIGINAL_TEST_CONFIG, {
     USE_DATA_FILE_CONFIG,
     CONFIG_ENVIRONMENT
-  );
-  const envMetadata = getEnvironmentMetadata(testConfig);
-  data.setup_data = {
-    ...envMetadata
-  };
-
-  const html = generateHtmlReport(data, { apdexT });
-  // Relative paths that work when running from repo root or k6-tests directory
-  const reportPaths = getReportPaths('create-jp-with-multiple-document');
-  return {
-    [reportPaths.json]: JSON.stringify(data, null, 2),
-    [reportPaths.html]: html,
-    stdout: ''
-  };
+  });
 }

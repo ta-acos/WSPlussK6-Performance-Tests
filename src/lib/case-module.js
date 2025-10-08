@@ -17,40 +17,7 @@
 import { check, group } from 'k6';
 import http from 'k6/http';
 import { recordError } from '../utils/error-tracker.js';
-import { generateRandomString } from '../utils/validation.js';
-
-/**
- * Generate case creation payload
- * CENTRALIZED PAYLOAD CONFIGURATION - Update this function to modify the case creation structure
- *
- * @param {Object} selectedTemplate - The selected case template
- * @param {Object} testData - Test data containing caseName, caseDescription, timestamp
- * @param {Object} config - Test configuration object (contains sakType names from Config file)
- * @param {Object} resolvedIds - Object containing resolved IDs (sakTypeId, malId, avgjkodeid)
- * @returns {Object} Case creation payload ready for API submission
- */
-export function generateCasePayload(selectedTemplate, testData, config, resolvedIds = {}) {
-  // Get the current date for obsDato (observation date)
-  const currentDate = new Date();
-  currentDate.setHours(22, 0, 0, 0); // Set to 22:00:00.000Z
-
-  return {
-    malId: resolvedIds.malId || selectedTemplate.id || 2, // Use resolved malId or template ID
-    sak: {
-      tittel1: testData.caseName || 'Title1 1',
-      tittel2: testData.caseDescription || 'Title1 1',
-      klasseringer: [],
-      aktivtTilleggsdataSett: null,
-      noekkelord: [],
-      erSamleMappe: false,
-      obsDato: currentDate.toISOString(),
-      obsKommentar: `Performance test case created at ${testData.timestamp}`,
-      saksparter: [],
-      sakstypeid: resolvedIds.sakTypeId || 19, // Use resolved sakTypeId from name lookup
-      avgjkodeid: resolvedIds.avgjkodeid || null // Use resolved avgjkodeid from name lookup (was previously ignored)
-    }
-  };
-}
+import { generateCasePayload } from './payload-module.js';
 
 /**
  * Retrieve available case templates (Sakmaler)
@@ -257,24 +224,6 @@ export function createCase(
   });
 
   return caseData;
-}
-
-/**
- * Generate test data for case creation
- * @param {string} prefix - Prefix for the case name
- * @param {string} vuId - Virtual User identifier
- * @returns {Object} Test data object
- */
-export function generateCaseTestData(prefix = 'Test Case', vuId = '') {
-  const randomString = generateRandomString(6);
-  const timestamp = new Date().toISOString();
-
-  return {
-    testId: generateRandomString(8),
-    timestamp: timestamp,
-    caseName: `${prefix} ${randomString} ${vuId}`,
-    caseDescription: `Performance test case created at ${timestamp}`
-  };
 }
 
 /**

@@ -1,12 +1,49 @@
 /**
- * Configuration Manager for K6 Tests
+ * ===================================================================
+ * CONFIGURATION MANAGER MODULE
+ * ===================================================================
  *
- * This module provides a centralized way to manage test configurations with flag-based control.
- * When useDataFileConfig is enabled, it loads settings from data files.
- * When disabled, it uses test-specific configurations.
+ * WHAT THIS MODULE DOES:
+ * This module is the "control center" for all test configuration. It loads
+ * settings from configuration files, manages test user accounts, and provides
+ * standardized configuration to all performance tests.
  *
- * K6 CONSTRAINT: All open() calls must happen in init phase (global scope).
- * This module loads all data during init and provides access functions.
+ * MAIN CAPABILITIES:
+ *
+ * 1. 📋 CONFIGURATION LOADING:
+ *    - Loads test settings from JSON configuration files
+ *    - Manages different environments (autotest, dev, production)
+ *    - Provides fallback defaults when config files are missing
+ *
+ * 2. 👥 USER MANAGEMENT:
+ *    - Loads test user accounts from users-config.json
+ *    - Validates user credentials and client information
+ *    - Provides user rotation for tests with multiple virtual users
+ *
+ * 3. 🌐 API CONFIGURATION:
+ *    - Loads API endpoint URLs and paths from websak-api-config.json
+ *    - Manages different API versions and environments
+ *    - Provides consistent API endpoint access across tests
+ *
+ * 4. 🎯 TEST SCENARIOS:
+ *    - Defines different test intensities (smoke, load, stress, spike, endurance)
+ *    - Sets appropriate user counts, durations, and thresholds for each scenario
+ *    - Allows easy switching between test types via environment variables
+ *
+ * 5. 📊 PERFORMANCE THRESHOLDS:
+ *    - Defines what response times are considered acceptable
+ *    - Sets error rate limits for different operations
+ *    - Provides consistent performance criteria across all tests
+ *
+ * WHY THIS MODULE IS IMPORTANT:
+ * Without centralized configuration, each test would have its own settings,
+ * making it difficult to maintain consistency and change settings across
+ * multiple tests. This module ensures all tests use the same standards.
+ *
+ * TECHNICAL NOTE:
+ * K6 requires all file loading to happen during initialization (before tests run).
+ * This module handles all file loading upfront and provides access functions
+ * for tests to use during execution.
  */
 
 import { SharedArray } from 'k6/data';

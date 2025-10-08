@@ -1,51 +1,75 @@
 /**
- * Test: Create Case (Sak)
- * Scenario origin: Converted from JMeter (End_WebSak_Create_Sak.jmx)
- * Goal: Exercise authentication, template retrieval, register lookups and case creation.
+ * ===================================================================
+ * PERFORMANCE TEST: Create Cases (Basic Case Creation)
+ * ===================================================================
  *
- * Flags:
- *  USE_DATA_FILE_CONFIG=true  -> use autotest.json scenarios & thresholds
- *  USE_DATA_FILE_CONFIG=false -> fall back to ORIGINAL_TEST_CONFIG below
+ * WHAT THIS TEST DOES:
+ * This test simulates users creating new cases in the case management system.
+ * Think of this like creating a new case file for a client matter, incident,
+ * or request that needs to be tracked and managed.
  *
- * Quick run example:
- *  k6 run tests/create-sak.js --vus 3 --duration 15s
+ * TEST WORKFLOW STEPS:
+ * 1. 🔐 Log in to the system (authenticate user)
+ * 2. 📋 Get available case templates (what types of cases can be created)
+ * 3. 📊 Get reference data (case types, decision codes, etc.)
+ * 4. 📁 Create a new case using the selected template and data
+ *
+ * WHY WE TEST THIS:
+ * Case creation is a fundamental operation in the system. This test measures
+ * how fast cases can be created and whether the system can handle multiple
+ * users creating cases simultaneously without performance degradation.
+ *
+ * BACKGROUND:
+ * Originally converted from JMeter test (End_WebSak_Create_Sak.jmx)
+ *
+ * CONFIGURATION OPTIONS:
+ *  - USE_DATA_FILE_CONFIG: true = use autotest.json, false = use built-in settings
+ *  - SCENARIO: Choose test intensity (smoke_test, load_test, stress_test)
+ *
+ * QUICK TEST COMMAND:
+ *  k6 run tests/api/cases/create-sak.js --vus 3 --duration 15s
  */
 
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
-  loadTestConfig,
-  getK6Options,
-  getK6OptionsWithScenarios,
-  printConfigSummary,
-  getEnvironmentMetadata,
-  getReportPaths
-} from '../../../src/lib/config-manager.js';
-import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js';
-import {
-  getTemplates,
-  createCase,
-  generateCaseTestData,
-  getSakstyper,
-  getAvgjorelsekoder
-} from '../../../src/lib/case-module.js';
-import { generateHtmlReport } from '../../../src/utils/report-generator.js';
-import { injectErrorAnalytics } from '../../../src/utils/error-tracker.js';
+  generateK6Options,
+  performTestSetup,
+  initializeTestExecution,
+  executeAuthenticationFlow,
+  executeCaseCreationFlow
+} from '../../../src/utils/test-workflow.js';
+import { performSimpleTeardown } from '../../../src/utils/test-teardown.js';
+import { performSimpleSummary } from '../../../src/utils/test-summary.js';
+import { getSakstyper, getAvgjorelsekoder } from '../../../src/lib/case-module.js';
 
 // ========================================
-// CONFIGURATION FLAGS - MODIFY THESE TO CONTROL BEHAVIOR
+// CONFIGURATION SETTINGS
 // ========================================
-const USE_DATA_FILE_CONFIG = true; // Set to true to use autotest.json config
-const CONFIG_ENVIRONMENT = 'autotest'; // Which config file to use when flag is true
-const SCENARIO_OVERRIDE = __ENV.SCENARIO || null; // Override scenario via -e SCENARIO=smoke_test
+// These settings control how the test runs and where it gets its configuration
 
-// Original test configuration (used when USE_DATA_FILE_CONFIG = false)
+// Whether to load test settings from config files (autotest.json) or use built-in defaults
+const USE_DATA_FILE_CONFIG = true;
+
+// Which environment to test against (autotest, development, production, etc.)
+const CONFIG_ENVIRONMENT = 'autotest';
+
+// Override the test scenario if specified via command line: -e SCENARIO=smoke_test
+const SCENARIO_OVERRIDE = __ENV.SCENARIO || null;
+
+// ========================================
+// PERFORMANCE THRESHOLDS & TEST SETTINGS
+// ========================================
+// Backup settings used when config files are not available (USE_DATA_FILE_CONFIG = false)
 const ORIGINAL_TEST_CONFIG = {
-  // Dynamic VUs based on user config count - each user gets their own VU
-  vus: 7, // Will be overridden by usersData.length when config loads
-  duration: '2m', // Run for 2 minutes with full load
+  // Number of virtual users (will be adjusted based on available test users)
+  vus: 7,
 
+  // How long to run the test
+  duration: '2m',
+
+  // Performance thresholds - what response times are acceptable:
   thresholds: {
-    http_req_duration: ['p(95)<3000'], // Relaxed for load test
+    http_req_duration: ['p(95)<3000'], // 95% of requests must complete within 3 seconds
     http_req_failed: ['rate<0.1'], // Allow 10% failures under load
     'group_duration{group:::Authentication}': ['p(95)<2000'],
     'group_duration{group:::Get Case Templates}': ['p(95)<2500'],
@@ -55,152 +79,74 @@ const ORIGINAL_TEST_CONFIG = {
   }
 };
 
-// Load configuration
-const config = loadTestConfig('create-sak', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
-
-// Override VUs with user count for original behavior (when using original config)
-if (!USE_DATA_FILE_CONFIG) {
-  config.vus = config.users.length; // Use all available users from user config
-  ORIGINAL_TEST_CONFIG.vus = config.users.length;
-}
-
-// Export K6 options with scenario support
-// Use scenario-based configuration when available, otherwise fall back to traditional options
-export const options = USE_DATA_FILE_CONFIG
-  ? getK6OptionsWithScenarios(config, SCENARIO_OVERRIDE)
-  : getK6Options(config);
+// Export K6 options with scenario support - using workflow utility
+export const options = generateK6Options(
+  'create-sak',
+  ORIGINAL_TEST_CONFIG,
+  USE_DATA_FILE_CONFIG,
+  CONFIG_ENVIRONMENT,
+  SCENARIO_OVERRIDE
+);
 
 /**
  * Test Setup
  */
 export function setup() {
-  console.log('🚀 Starting Create Sak LOAD TEST ');
-  printConfigSummary(config);
-
-  if (!USE_DATA_FILE_CONFIG) {
-    console.log('🔥 ORIGINAL LOAD TEST MODE ACTIVATED:');
-    console.log(`⚡ Virtual Users: ${config.vus} (1 VU per configured user)`);
-    console.log('🎯 Each user will run continuously with their own credentials');
-  }
-
-  // Return lightweight metadata (no SharedArray) for use in teardown/summary
-  return {
-    testStarted: true,
-    configEnvironment: CONFIG_ENVIRONMENT,
-    useDataFileConfig: USE_DATA_FILE_CONFIG,
-    configSource: USE_DATA_FILE_CONFIG ? 'configFile' : 'inlineConfig',
-    totalUsers: Array.isArray(config.users) ? config.users.length : 0,
-    scenario: SCENARIO_OVERRIDE || config.activeScenario || ''
-  };
+  return performTestSetup('🚀 Starting Create Sak LOAD TEST');
 }
 
 // Main VU iteration: end‑to‑end workflow for creating a case
 export default function (data) {
-  // Instead of using serialized data from setup(), load config directly in main function
-  // This avoids K6's SharedArray serialization issues
-  const testConfig = loadTestConfig(
+  const vuId = __VU;
+
+  // Initialize test execution with user validation
+  const execution = initializeTestExecution(
     'create-sak',
     ORIGINAL_TEST_CONFIG,
     USE_DATA_FILE_CONFIG,
-    CONFIG_ENVIRONMENT
+    CONFIG_ENVIRONMENT,
+    vuId
   );
 
-  const users = testConfig.users;
-
-  // Validate user data
-  if (!users || !Array.isArray(users) || users.length === 0) {
-    console.error('🔥 CRITICAL: No user data available from direct config load');
-    console.error('🔍 TestConfig keys:', Object.keys(testConfig || {}));
+  if (!execution.success) {
+    console.error(`❌ ${vuId}: ${execution.error}`);
     return;
   }
 
-  // Each VU gets a unique user from config (VU 1 = User 0, VU 2 = User 1, etc.)
-  const userIndex = (__VU - 1) % users.length;
-  const user = users[userIndex];
-  const vuId = `VU${__VU}`;
+  const { testConfig, user } = execution;
 
-  // Generate unique test data for this iteration
-  const testData = generateCaseTestData('Test Case', vuId);
-
-  // Early validation of user object
-  if (!user) {
-    console.error(`🔥 CRITICAL: ${vuId}: User at index ${userIndex} is undefined/null`);
-    console.error(`🔍 Available users: ${users.length}, UserIndex: ${userIndex}, __VU: ${__VU}`);
+  // Step 1: Execute authentication workflow
+  const authResult = executeAuthenticationFlow(testConfig, user, vuId);
+  if (!authResult.success) {
+    console.error(`❌ ${vuId}: Authentication failed - ${authResult.error}`);
     return;
   }
 
-  console.log(
-    `🔄 ${vuId}: Starting workflow with user ${user.UserName || 'UNKNOWN'} (${user.ClientID || 'UNKNOWN'})`
-  );
+  // Step 2: Execute case creation workflow with supporting data
+  const caseResult = executeCaseCreationFlow(testConfig, authResult.authHeaders, vuId, {
+    caseNamePrefix: 'Test Case',
+    preferredTemplate: 'ny sak'
+  });
 
-  // Pre-execution validation checks
-  if (!user.UserName || !user.ClientID || !user.ClientSecret) {
-    console.error('🔥 USER CONFIGURATION VALIDATION FAILURE');
-    console.error(`❌ ${vuId}: Invalid user configuration`);
-    console.error(`🔍 User object:`, JSON.stringify(user, null, 2));
-    console.error('💡 Tip: Check users-config.json has objects with userName/clientId/clientSecret');
+  if (!caseResult.success) {
+    console.error(`❌ ${vuId}: Case creation failed - ${caseResult.error}`);
     return;
   }
 
-  // Use testConfig (loaded directly) instead of setup data which can't serialize SharedArrays
-  if (!testConfig || !testConfig.baseUrl) {
-    console.error('🔥 CONFIGURATION VALIDATION FAILURE');
-    console.error(`❌ ${vuId}: Missing configuration or baseUrl`);
-    console.error(`🔍 Config keys:`, Object.keys(testConfig || {}));
-    console.error('💡 Tip: Check configuration loading and websak-api-config.json file');
-    return;
-  }
+  // Step 3: Fetch supporting register data for validation (Sakstyper and Avgjorelsekoder)
+  console.log(`📋 ${vuId}: Fetching sakstyper (case types)`);
+  getSakstyper(testConfig, authResult.authHeaders, vuId);
 
-  if (!testConfig.apiConfig || !testConfig.apiConfig.endpoints) {
-    console.error('🔥 API CONFIGURATION VALIDATION FAILURE');
-    console.error(`❌ ${vuId}: Missing API configuration or endpoints`);
-    console.error('💡 Tip: Check websak-api-config.json has required endpoint configurations');
-    return;
-  }
-
-  // Step 1: Authentication using modular approach
-  const accessToken = authenticate(testConfig, user, vuId);
-  if (!accessToken) {
-    console.error(`❌ ${vuId}: Terminating ${user.UserName} due to authentication failure`);
-    return;
-  }
-
-  // Create authenticated headers
-  const authHeaders = createAuthHeaders(accessToken);
-
-  // Pacing pause after authentication
-  randomSleep(1, 3);
-
-  // Step 2: Get Case Templates using modular approach
-  const availableTemplates = getTemplates(testConfig, authHeaders, vuId);
-  if (availableTemplates.length === 0) {
-    console.error(`❌ ${vuId}: No templates available for ${user.UserName} - terminating workflow`);
-    return;
-  }
+  console.log(`📋 ${vuId}: Fetching avgjorelsekoder (decision codes)`);
+  getAvgjorelsekoder(testConfig, authResult.authHeaders, vuId);
 
   randomSleep(0.2, 0.7);
 
-  // Step 3: Fetch Sakstyper (Case Types) for ID resolution
-  const sakstyper = getSakstyper(testConfig, authHeaders, vuId);
-
-  // Step 4: Fetch Avgjorelsekoder (Decision Codes) for ID resolution
-  const avgjorelsekoder = getAvgjorelsekoder(testConfig, authHeaders, vuId);
-
-  randomSleep(0.2, 0.7);
-
-  // Step 5: Create New Case using modular approach with resolved IDs
-  const caseData = createCase(
-    testConfig,
-    authHeaders,
-    availableTemplates,
-    testData,
-    vuId,
-    sakstyper,
-    avgjorelsekoder
-  );
-
-  if (caseData && caseData.id) {
-    console.log(`🎉 ${vuId}: Complete workflow successful for ${user.UserName} - Case ID: ${caseData.id}`);
+  // Log successful completion
+  if (caseResult.caseData && caseResult.caseData.id) {
+    console.log(
+      `🎉 ${vuId}: Complete workflow successful for ${user.UserName} - Case ID: ${caseResult.caseData.id}`
+    );
   } else {
     console.log(`⚠️ ${vuId}: Workflow completed with issues for ${user.UserName}`);
   }
@@ -209,33 +155,8 @@ export default function (data) {
 }
 
 // Teardown: high level log notes
-export function teardown(data) {
-  console.log('🏁 Create-Sak LOAD TEST completed!');
-  const cfgEnv = data?.configEnvironment || CONFIG_ENVIRONMENT;
-  const cfgSource =
-    data?.configSource || (data?.useDataFileConfig ? 'Performance Test Data File' : 'inlineConfig');
-  const totalUsers = data?.totalUsers ?? (Array.isArray(config.users) ? config.users.length : 'n/a');
-  const scenarioName = data?.scenario || SCENARIO_OVERRIDE || 'n/a';
-  console.log(`📈 Configuration used: ${cfgSource} (${cfgEnv})`);
-  console.log(`📈 Scenario: ${scenarioName}`);
-  console.log(`📈 Total users tested: ${totalUsers}`);
-  console.log('📊 Check the metrics above for performance results');
-
-  if (!USE_DATA_FILE_CONFIG) {
-    console.log('ℹ️  Each user ran with their own credentials from users-config.json');
-  }
-
-  // Log validation failure guidance
-  console.log('\n📋 VALIDATION FAILURE TROUBLESHOOTING GUIDE:');
-  console.log('\n--------------------------------------------------\n');
-  console.log('🔥 If you saw validation failures during the test:');
-  console.log('   • Authentication failures: Check OAuth2 credentials in users-config.json');
-  console.log('   • Template failures: Verify user permissions and template availability');
-  console.log('   • Case creation failures: Check API endpoints and payload format');
-  console.log('   • Configuration failures: Verify websak-api-config.json settings');
-  console.log('💡 All validation failures are logged with detailed context above');
-  console.log('📖 Search for "VALIDATION FAILURE" in logs for specific error details');
-  console.log('\n---------------------------------------------------\n');
+export function teardown() {
+  performSimpleTeardown('Create-Sak');
 }
 
 /**
@@ -243,52 +164,8 @@ export function teardown(data) {
  * HTML is generated via reusable generator in utils/report-generator.js
  */
 export function handleSummary(data) {
-  // Attach error sampling data (if any)
-  try {
-    injectErrorAnalytics(data);
-  } catch (e) {
-    /* no-op */
-  }
-  // Markdown summary intentionally disabled (user request to avoid .md artifact)
-
-  const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T; // allow both spellings
-  const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
-  // Auto-load baseline (best-effort): look for latest previous summary JSON in reports excluding current run
-  let baseline = null;
-  try {
-    if (typeof __ENV !== 'undefined') {
-      // k6 JS runtime does not provide fs, so baseline must be injected externally or via options.
-      // Allow passing BASELINE_JSON (stringified) through env.
-      if (__ENV.BASELINE_JSON) {
-        baseline = JSON.parse(__ENV.BASELINE_JSON);
-      }
-    }
-  } catch (e) {
-    console.error('⚠️ Failed to parse baseline JSON from env BASELINE_JSON:', e.message);
-  }
-
-  if (baseline) {
-    data.baseline = baseline; // attach for report generator
-  }
-
-  // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig(
-    'create-sak',
-    ORIGINAL_TEST_CONFIG,
+  return performSimpleSummary('create-sak', data, ORIGINAL_TEST_CONFIG, {
     USE_DATA_FILE_CONFIG,
     CONFIG_ENVIRONMENT
-  );
-  const envMetadata = getEnvironmentMetadata(testConfig);
-  data.setup_data = {
-    ...envMetadata
-  };
-
-  const html = generateHtmlReport(data, { apdexT });
-
-  const reportPaths = getReportPaths('create-sak');
-  return {
-    [reportPaths.json]: JSON.stringify(data, null, 2),
-    [reportPaths.html]: html,
-    stdout: '' // keep console summary clean (k6 still prints its default)
-  };
+  });
 }

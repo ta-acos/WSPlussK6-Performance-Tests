@@ -30,7 +30,7 @@
 import { check, group } from 'k6';
 import http from 'k6/http';
 import { recordError } from '../utils/error-tracker.js';
-import { generateRandomString } from '../utils/validation.js';
+import { generateJpPayload } from './payload-module.js';
 // import { getPathsConfig } from './config-manager.js'; // TODO: Use when JP attachment endpoint is needed
 
 // Get JP attachment endpoint from configuration
@@ -39,56 +39,7 @@ import { generateRandomString } from '../utils/validation.js';
 //   return pathsConfig.apiEndpoints?.websak?.endpoints?.jpAttach || '/api/websak/api/jp/uploadfiletodokument/';
 // }
 
-/**
- * Generate Journal Post creation payload
- * CENTRALIZED PAYLOAD CONFIGURATION - Update this function to modify the JP creation structure
- *
- * @param {string} caseId - The case ID where JP will be created
- * @param {Object} selectedTemplate - The selected JP template
- * @param {Object} testData - Test data containing jpName, jpDescription, timestamp
- * @param {Object} config - Test configuration object (contains JP IDs from CSV)
- * @returns {Object} JP creation payload ready for API submission
- */
-export function generateJpPayload(caseId, selectedTemplate, testData, config) {
-  // Get configuration values from CSV with fallbacks
-  const jpConfig = config?.apiConfig?.jpConfig || {};
-
-  // Get current date in ISO format with timezone for brevDato
-  const currentDate = new Date();
-  const brevDato = currentDate.toISOString().split('T')[0] + 'T00:00:00+02:00';
-
-  return {
-    sakId: Number(caseId),
-    malId: selectedTemplate.id,
-    tekstMalId: selectedTemplate.id, // Use same as malId (from real payload)
-    journalpost: {
-      id: -1,
-      tittel1: testData.jpName,
-      tittel2: testData.jpDescription,
-      dokTypeId: jpConfig.dokTypeId || 4, // Loaded from CSV
-      dokStatusId: jpConfig.dokStatusId || 6, // Loaded from CSV
-      brevDato: brevDato, // Current date with timezone
-      forfallsDato: null,
-      mottakere: [],
-      kopiMottakere: [],
-      nyeKopiMottakere: [],
-      nyeMottakere: [],
-      aktivtTilleggsdataSett: null,
-      noekkelord: [],
-      admEnhet: jpConfig.admEnhet || 4, // Loaded from CSV
-      saksbehandlerId: jpConfig.saksbehandlerId || 31, // Loaded from CSV
-      kategori: -1,
-      setJournaldato: false,
-      setBrevdato: false // Added from real payload
-    },
-    standardTekster: [
-      {
-        key: 'Start',
-        id: jpConfig.standardTexterId || 42 // Loaded from CSV
-      }
-    ]
-  };
-}
+// generateJpPayload function moved to payload-module.js for centralized payload management
 
 /**
  * Retrieve available JP templates (Jpmaler) for a specific case
@@ -612,24 +563,4 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
   });
 
   return success;
-}
-
-/**
- * Generate test data for JP creation
- * @param {string} prefix - Prefix for the JP name
- * @param {string} vuId - Virtual User identifier
- * @returns {Object} Test data object for JP
- */
-export function generateJpTestData(prefix = 'Test JP', vuId = '') {
-  const randomString = generateRandomString(6);
-  const timestamp = new Date().toISOString();
-
-  return {
-    testId: generateRandomString(8),
-    timestamp: timestamp,
-    jpName: `${prefix} ${randomString} ${vuId}`,
-    jpDescription: `Performance test JP created at ${timestamp}`,
-    documentName: `TestDoc_${randomString}.txt`,
-    documentContent: `Test document content created at ${timestamp}`
-  };
 }
