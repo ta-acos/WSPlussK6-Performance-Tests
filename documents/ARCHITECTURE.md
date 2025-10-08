@@ -1,7 +1,7 @@
 # Acos GRAF Load Test - Architecture Guide
 
 **Version:** 3.0.0  
-**Last Updated:** October 7, 2025
+**Last Updated:** October 8, 2025
 
 ## 📋 Table of Contents
 
@@ -188,7 +188,7 @@ const reportPath = getReportPaths().getHtmlPath('test');
 The framework implements a **3-layer configuration system**:
 
 1. **Base Configuration**: Default settings and fallbacks
-2. **Environment Configuration**: Environment-specific overrides  
+2. **Environment Configuration**: Environment-specific overrides
 3. **Runtime Configuration**: Dynamic settings and user preferences
 
 ### Configuration Manager Enhanced Functions
@@ -196,12 +196,12 @@ The framework implements a **3-layer configuration system**:
 ```javascript
 // Path Management Functions
 getPathsConfig()          // Load centralized path configuration
-getReportPaths()          // Get dynamic report path generators  
+getReportPaths()          // Get dynamic report path generators
 getTestDataPaths()        // Get test data file locations
 getApiEndpoints()         // Get configurable API endpoint patterns
 getExternalUrls()         // Get external resource URLs
 
-// Environment Functions  
+// Environment Functions
 getEnvironmentMetadata()  // Get environment details and metadata
 detectEnvironment()       // Automatic environment detection
 loadEnvironmentConfig()   // Load environment-specific settings
@@ -219,12 +219,12 @@ getConfigurationSummary() // Get configuration loading summary
 {
   "description": "Centralized path configuration for Acos GRAF Load Test framework",
   "version": "1.0.0",
-  "lastUpdated": "2025-10-07",
+  "lastUpdated": "2025-10-08",
   
   "paths": {
     "reports": {
       "baseDir": "src/reports",
-      "htmlSuffix": "-report.html", 
+      "htmlSuffix": "-report.html",
       "jsonSuffix": "-summary.json"
     },
     "testData": {
@@ -360,7 +360,7 @@ The framework eliminates hardcoded paths and provides deployment flexibility.
 - Modify API endpoints without touching test code
 - Update test document locations globally
 
-🔄 **Environment Flexibility**  
+🔄 **Environment Flexibility**
 
 - Different path configurations for dev/staging/prod
 - Easy migration between different server structures
@@ -433,7 +433,7 @@ Environment metadata is automatically included in all test reports:
 ```text
 config-manager.js (CORE)
 ├── paths-config.json (NEW)
-├── autotest.json  
+├── autotest.json
 ├── dev.json
 ├── users-config.json
 └── websak-api-config.json
@@ -443,7 +443,7 @@ auth-module.js
 ├── users-config.json
 └── websak-api-config.json
 
-case-module.js  
+case-module.js
 ├── config-manager.js (for API endpoints)
 ├── auth-module.js
 └── websak-api-config.json
@@ -467,7 +467,7 @@ Test Files (ALL ENHANCED)
 ```javascript
 // Dependency loading order in K6 init phase
 1. paths-config.json → Base path configuration
-2. Environment detection → Environment-specific settings  
+2. Environment detection → Environment-specific settings
 3. autotest.json → Test scenarios and thresholds
 4. users-config.json → Authentication credentials
 5. websak-api-config.json → API endpoint configuration
@@ -550,7 +550,7 @@ The **Acos GRAF - Load Test Framework v3.0.0** represents a significant evolutio
 
 🎯 **Centralized Configuration Management** - Single point of control for all framework paths and settings
 
-🌍 **Enhanced Environment Awareness** - Automatic environment detection and metadata collection  
+🌍 **Enhanced Environment Awareness** - Automatic environment detection and metadata collection
 
 ⚙️ **Flexible Architecture** - Modular design with clear separation of concerns
 
@@ -563,4 +563,4 @@ The framework provides a solid foundation for scalable performance testing while
 ---
 
 **Framework Architecture maintained by the Acos Performance Testing Team**  
-**Version 3.0.0 - October 7, 2025**
+**Version 3.0.0 - October 8, 2025**
