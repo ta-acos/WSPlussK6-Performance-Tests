@@ -35,11 +35,7 @@ import {
   createCase,
   generateCaseTestData
 } from '../../../src/lib/case-module.js';
-import {
-  getJpTemplates,
-  attachDocumentsBatch,
-  attachDocument
-} from '../../../src/lib/jp-module.js';
+import { getJpTemplates, attachDocumentsBatch, attachDocument } from '../../../src/lib/jp-module.js';
 import { generateHtmlReport } from '../../../src/utils/report-generator.js';
 import { injectErrorAnalytics } from '../../../src/utils/error-tracker.js';
 import { group, check } from 'k6';
@@ -99,7 +95,7 @@ export const options = USE_DATA_FILE_CONFIG
 // ========================================
 // PRELOAD TEST DOCUMENTS (INIT PHASE)
 // ========================================
-let preloadedTestDocuments = [];
+const preloadedTestDocuments = [];
 
 if (USE_TEST_DOCS) {
   console.log('📂 Preloading test documents from testDocuments folder...');
@@ -122,9 +118,7 @@ if (USE_TEST_DOCS) {
     ]
   };
 
-  const testDocPaths = testDocConfig.files.map(
-    (fileName) => `${testDocConfig.basePath}/${fileName}`
-  );
+  const testDocPaths = testDocConfig.files.map((fileName) => `${testDocConfig.basePath}/${fileName}`);
 
   testDocPaths.forEach((filePath) => {
     try {
@@ -352,7 +346,7 @@ function createJournalPostWithPayload(config, authHeaders, caseId, jpPayload, jp
       }
     });
 
-    const createSuccess = check(createResponse, {
+    check(createResponse, {
       'create_jp: status is 200 or 201': (r) => {
         if (r.status !== 200 && r.status !== 201) {
           console.error(`🔥 ${vuId}: ${jpType} JP creation failed - Status: ${r.status}`);
@@ -651,7 +645,12 @@ export function handleSummary(data) {
   const apdexEnv = __ENV.APDEX_T || __ENV.APDex_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
   // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig('create-multiplejp-with-multiple-document', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const testConfig = loadTestConfig(
+    'create-multiplejp-with-multiple-document',
+    ORIGINAL_TEST_CONFIG,
+    USE_DATA_FILE_CONFIG,
+    CONFIG_ENVIRONMENT
+  );
   const envMetadata = getEnvironmentMetadata(testConfig);
   data.setup_data = {
     ...envMetadata

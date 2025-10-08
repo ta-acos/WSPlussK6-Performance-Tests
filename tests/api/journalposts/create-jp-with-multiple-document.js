@@ -456,7 +456,12 @@ export function handleSummary(data) {
   const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
   // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig('create-jp-with-multiple-document', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const testConfig = loadTestConfig(
+    'create-jp-with-multiple-document',
+    ORIGINAL_TEST_CONFIG,
+    USE_DATA_FILE_CONFIG,
+    CONFIG_ENVIRONMENT
+  );
   const envMetadata = getEnvironmentMetadata(testConfig);
   data.setup_data = {
     ...envMetadata

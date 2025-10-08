@@ -12,7 +12,7 @@
 import { SharedArray } from 'k6/data';
 // Note: External URL import must be resolved at init time, so we use the configured URL
 // This could be made dynamic in the future by loading the config in a separate init phase
-import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js';
+// import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js'; // TODO: Use when CSV parsing needed
 
 // Load API Configuration from JSON (simpler maintenance) - INIT PHASE
 const apiConfigData = new SharedArray('apiConfigJson', function () {
@@ -46,7 +46,7 @@ const usersData = new SharedArray('usersJson', function () {
 });
 
 // Load JSON configurations during INIT PHASE
-let autoTestConfig, devConfig;
+let autoTestConfig;
 // Support multiple candidate paths in case k6 resolves open() relative to the entry script
 // (expected behavior: relative to this file's directory). We'll try a small ordered list.
 const autotestCandidates = [
@@ -73,7 +73,7 @@ if (!autoTestConfig) {
 }
 
 // Only load dev.json if it exists (optional)
-devConfig = {}; // Initialize as empty object since dev.json doesn't exist
+const devConfig = {}; // Initialize as empty object since dev.json doesn't exist
 
 // Load paths configuration
 let pathsConfig;
@@ -101,8 +101,8 @@ if (!pathsConfig) {
   // Fallback default paths
   pathsConfig = {
     paths: {
-      reports: { baseDir: "src/reports", htmlSuffix: "-report.html", jsonSuffix: "-summary.json" },
-      testData: { baseDir: "src/data", testDocuments: "src/data/testDocuments" }
+      reports: { baseDir: 'src/reports', htmlSuffix: '-report.html', jsonSuffix: '-summary.json' },
+      testData: { baseDir: 'src/data', testDocuments: 'src/data/testDocuments' }
     }
   };
 }
@@ -453,24 +453,24 @@ export function getTestDataPaths() {
 export function getApiEndpoints(apiConfig = null) {
   const defaultEndpoints = pathsConfig.apiEndpoints.websak.endpoints;
   const configEndpoints = apiConfig?.endpoints || {};
-  
+
   // Merge default endpoints with configuration overrides
   const endpoints = { ...defaultEndpoints };
-  
+
   // Override with configuration values if provided
-  Object.keys(configEndpoints).forEach(key => {
+  Object.keys(configEndpoints).forEach((key) => {
     if (configEndpoints[key]) {
       endpoints[key] = configEndpoints[key];
     }
   });
-  
+
   // Prefix websak endpoints with base path if not already absolute
-  Object.keys(endpoints).forEach(key => {
+  Object.keys(endpoints).forEach((key) => {
     if (endpoints[key] && !endpoints[key].startsWith('/api/')) {
       endpoints[key] = pathsConfig.apiEndpoints.websak.base + '/' + endpoints[key].replace(/^\//, '');
     }
   });
-  
+
   return endpoints;
 }
 
@@ -489,21 +489,21 @@ export function getExternalUrls() {
  */
 export function getEnvironmentMetadata(testConfig = null) {
   const apiConfig = buildApiConfig();
-  
+
   // If no testConfig provided, try to determine environment from available data
   let environment = 'Unknown';
   let useDataFileConfig = 'No';
   let configFile = 'autotest';
-  
+
   if (testConfig) {
     useDataFileConfig = testConfig.configSource === 'dataFile' ? 'Yes' : 'No';
     configFile = testConfig.environment || testConfig.configFile || 'autotest';
-    
+
     if (testConfig.configSource === 'dataFile') {
       environment = configFile === 'dev' ? 'Development' : 'Auto Test';
     }
   }
-  
+
   // Check API host to refine environment detection
   if (apiConfig.host) {
     if (apiConfig.host.includes('autotest')) {
@@ -516,7 +516,7 @@ export function getEnvironmentMetadata(testConfig = null) {
       environment = 'Production';
     }
   }
-  
+
   return {
     configEnvironment: environment,
     useDataFileConfig: useDataFileConfig,

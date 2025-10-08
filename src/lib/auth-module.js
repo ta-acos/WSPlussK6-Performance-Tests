@@ -71,10 +71,14 @@ export function authenticate(config, user, vuId) {
         url: endpoint
       }
     });
-    recordError(authResponse, { endpoint: 'auth:token', errorType: 'http_error', message: 'OAuth Token Request failed' });
+    recordError(authResponse, {
+      endpoint: 'auth:token',
+      errorType: 'http_error',
+      message: 'OAuth Token Request failed'
+    });
 
     // Validate authentication response
-    const authSuccess = check(authResponse, {
+    check(authResponse, {
       'auth: status is 200': (r) => {
         if (r.status !== 200) {
           console.error(`🔥 ${vuId}: Auth failed - Status: ${r.status}`);

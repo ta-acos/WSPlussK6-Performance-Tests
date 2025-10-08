@@ -31,13 +31,13 @@ import { check, group } from 'k6';
 import http from 'k6/http';
 import { recordError } from '../utils/error-tracker.js';
 import { generateRandomString } from '../utils/validation.js';
-import { getPathsConfig } from './config-manager.js';
+// import { getPathsConfig } from './config-manager.js'; // TODO: Use when JP attachment endpoint is needed
 
 // Get JP attachment endpoint from configuration
-function getJpAttachEndpoint() {
-  const pathsConfig = getPathsConfig();
-  return pathsConfig.apiEndpoints?.websak?.endpoints?.jpAttach || '/api/websak/api/jp/uploadfiletodokument/';
-}
+// function getJpAttachEndpoint() {  // TODO: Use when JP attachment endpoint is needed
+//   const pathsConfig = getPathsConfig();
+//   return pathsConfig.apiEndpoints?.websak?.endpoints?.jpAttach || '/api/websak/api/jp/uploadfiletodokument/';
+// }
 
 /**
  * Generate Journal Post creation payload
@@ -117,7 +117,11 @@ export function getJpTemplates(config, authHeaders, caseId, vuId) {
         url: templatesUrl
       }
     });
-    recordError(templatesResponse, { endpoint: 'jp:templates', errorType: 'http_error', message: 'Get JP Templates failed' });
+    recordError(templatesResponse, {
+      endpoint: 'jp:templates',
+      errorType: 'http_error',
+      message: 'Get JP Templates failed'
+    });
 
     // Validate JP templates response
     const templatesSuccess = check(templatesResponse, {
@@ -202,10 +206,14 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
         url: createUrl
       }
     });
-    recordError(createResponse, { endpoint: 'jp:create', errorType: 'http_error', message: 'Create Journal Post failed' });
+    recordError(createResponse, {
+      endpoint: 'jp:create',
+      errorType: 'http_error',
+      message: 'Create Journal Post failed'
+    });
 
     // Validate JP creation response
-    const createSuccess = check(createResponse, {
+    check(createResponse, {
       'create_jp: status is 200 or 201': (r) => {
         if (r.status !== 200 && r.status !== 201) {
           console.error(`🔥 ${vuId}: JP creation failed - Status: ${r.status}`);
@@ -487,7 +495,11 @@ export function attachDocument(
       }
     });
 
-    recordError(attachResponse, { endpoint: 'jp:attachDocument', errorType: 'http_error', message: 'Attach JP Document failed' });
+    recordError(attachResponse, {
+      endpoint: 'jp:attachDocument',
+      errorType: 'http_error',
+      message: 'Attach JP Document failed'
+    });
 
     // Validate response
     const attemptOk = check(attachResponse, {
@@ -585,7 +597,7 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
     } else {
       console.error(`❌ ${vuId}: Failed to attach documents to JP ${jpId}`);
       console.error(`   Status: ${attachResponse.status}`);
-      
+
       // Record error using NEW k6 metrics-based tracker (will appear in report!)
       recordError(attachResponse, {
         endpoint: `/api/websak/api/jp/uploadfiletodokument/`,

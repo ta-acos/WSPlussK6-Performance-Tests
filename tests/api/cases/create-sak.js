@@ -272,7 +272,12 @@ export function handleSummary(data) {
   }
 
   // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig('create-sak', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const testConfig = loadTestConfig(
+    'create-sak',
+    ORIGINAL_TEST_CONFIG,
+    USE_DATA_FILE_CONFIG,
+    CONFIG_ENVIRONMENT
+  );
   const envMetadata = getEnvironmentMetadata(testConfig);
   data.setup_data = {
     ...envMetadata

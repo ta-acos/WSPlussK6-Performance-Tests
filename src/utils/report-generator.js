@@ -41,15 +41,18 @@ function buildDonut(successRate) {
   const circ = 2 * Math.PI * radius;
   const successStroke = (sr / 100) * circ;
   const failureStroke = (fr / 100) * circ;
-  
+
   // Only render failure ring if there are actual failures (avoid red dot at 100%)
-  const failureRing = fr > 0 ? `
+  const failureRing =
+    fr > 0
+      ? `
     <!-- Failure ring (red) - starts where success ends -->
     <circle cx="55" cy="55" r="42" fill="none" stroke="#DC3545" stroke-width="14" 
             stroke-dasharray="${failureStroke} ${circ - failureStroke}" 
             stroke-linecap="round" 
-            transform="rotate(${-90 + (sr / 100) * 360} 55 55)" />` : '';
-  
+            transform="rotate(${-90 + (sr / 100) * 360} 55 55)" />`
+      : '';
+
   return `<svg width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Success/Failure Donut">
     <circle cx="55" cy="55" r="42" fill="none" stroke="#eee" stroke-width="14" />
     <!-- Success ring (green) -->
@@ -326,12 +329,12 @@ export function generateHtmlReport(data, options = {}) {
   const reqs = safe(metrics, 'http_reqs.values', {});
   const failedRate = safe(metrics, 'http_req_failed.values.rate', 0) || 0;
   const checks = safe(metrics, 'checks.values', {});
-  
+
   // Calculate overall success rate based on checks (includes HTTP + thresholds)
   // This provides a complete picture: HTTP success + performance thresholds
   const totalChecks = (checks.passes || 0) + (checks.fails || 0);
   const checkSuccessRate = totalChecks > 0 ? ((checks.passes || 0) / totalChecks) * 100 : 100;
-  
+
   // Use check success rate for donut - shows both HTTP success AND threshold compliance
   // Red portion = any failures (HTTP errors OR slow responses)
   const successRate = checkSuccessRate;
@@ -363,18 +366,18 @@ export function generateHtmlReport(data, options = {}) {
   // Generate explanatory text for why metrics have specific colors
   function getColorExplanation(metricType, value, className, extraData = {}) {
     if (className === 'kpi-neutral' || className === 'kpi-good') return '';
-    
+
     const explanations = {
-      'overall-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed/extraData.total)*100, 0)}% failure rate, less than 30%). <strong>Ideal:</strong> 0% failures<br>Some performance goals were not met. Review the failed thresholds below and consider optimizations. <strong>Action:</strong> Check "Thresholds (Pass/Fail)" section for specific failures.</div>`,
-      'overall-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed/extraData.total)*100, 0)}% failure rate, 30% or more). <strong>Ideal:</strong> 0% failures<br>Critical: Many performance goals were not met. <strong>Action required:</strong> Review all failed thresholds in the "Thresholds (Pass/Fail)" section, prioritize fixing the most critical ones (response time and error rates first), and re-test after optimizations.</div>`,
-      'success-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Success rate is ${fmt(value,2)}% (between 95-99%). <strong>Ideal:</strong> ≥99%<br>This is acceptable but below optimal. Consider investigating occasional failures to improve reliability.</div>`,
-      'success-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Success rate is ${fmt(value,2)}% (below 95%). <strong>Ideal:</strong> ≥99%<br>This indicates significant failures. <strong>Action required:</strong> Check error logs, validate API endpoints, review authentication, and verify server capacity.</div>`,
+      'overall-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed / extraData.total) * 100, 0)}% failure rate, less than 30%). <strong>Ideal:</strong> 0% failures<br>Some performance goals were not met. Review the failed thresholds below and consider optimizations. <strong>Action:</strong> Check "Thresholds (Pass/Fail)" section for specific failures.</div>`,
+      'overall-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed / extraData.total) * 100, 0)}% failure rate, 30% or more). <strong>Ideal:</strong> 0% failures<br>Critical: Many performance goals were not met. <strong>Action required:</strong> Review all failed thresholds in the "Thresholds (Pass/Fail)" section, prioritize fixing the most critical ones (response time and error rates first), and re-test after optimizations.</div>`,
+      'success-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Success rate is ${fmt(value, 2)}% (between 95-99%). <strong>Ideal:</strong> ≥99%<br>This is acceptable but below optimal. Consider investigating occasional failures to improve reliability.</div>`,
+      'success-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Success rate is ${fmt(value, 2)}% (below 95%). <strong>Ideal:</strong> ≥99%<br>This indicates significant failures. <strong>Action required:</strong> Check error logs, validate API endpoints, review authentication, and verify server capacity.</div>`,
       'duration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>p95 latency is ${fmt(value)}ms (between 800-2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are slower than ideal. <strong>Consider:</strong> Optimizing database queries, adding caching, or reviewing API logic.</div>`,
       'duration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>p95 latency is ${fmt(value)}ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are unacceptably slow. <strong>Action required:</strong> Profile slow endpoints, check database performance, review external API calls, verify server resources (CPU/memory), and consider load balancing.</div>`,
       'maxduration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Max duration is ${fmt(value)}ms (between 800-2000ms). <strong>Ideal:</strong> &lt;800ms<br>Some requests are taking longer than ideal. This could indicate occasional slow queries or resource contention. <strong>Consider:</strong> Identifying the slowest endpoints and optimizing them.</div>`,
       'maxduration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Max duration is ${fmt(value)}ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>At least one request took unacceptably long. <strong>Action required:</strong> Review the slowest endpoints (check logs for timeouts), investigate database locks, check for memory issues, and consider query optimization or adding timeouts.</div>`
     };
-    
+
     const key = `${metricType}-${className.replace('kpi-', '')}`;
     return explanations[key] || '';
   }
@@ -443,7 +446,7 @@ export function generateHtmlReport(data, options = {}) {
     overallStatus === 'good' ? 'Healthy' : overallStatus === 'warn' ? 'Attention' : 'Action Needed';
   const overallClass =
     overallStatus === 'good' ? 'alert-good' : overallStatus === 'warn' ? 'alert-warn' : 'alert-bad';
-  const overallKpiClass = 
+  const overallKpiClass =
     overallStatus === 'good' ? 'kpi-good' : overallStatus === 'warn' ? 'kpi-warn' : 'kpi-bad';
   const p95Text = dur['p(95)'] !== undefined ? `${fmt(dur['p(95)'])} ms p95` : 'p95 n/a';
   const successRateText = `${fmt(successRate, 2)}% success (${fmt(100 - successRate, 2)}% fail)`;
@@ -452,11 +455,11 @@ export function generateHtmlReport(data, options = {}) {
       ? 'All thresholds passed.'
       : `${thresholdSummary.failed}/${thresholdSummary.total} thresholds failed${thresholdSummary.failedItems.length ? ': ' + thresholdSummary.failedItems.join('; ') + (thresholdSummary.failed > thresholdSummary.failedItems.length ? '…' : '') : ''}`
     : 'No thresholds defined.';
-  
+
   // Generate explanation for Overall Test Status
-  const overallExplanation = getColorExplanation('overall', thresholdSummary.failed, overallKpiClass, { 
-    failed: thresholdSummary.failed, 
-    total: thresholdSummary.total 
+  const overallExplanation = getColorExplanation('overall', thresholdSummary.failed, overallKpiClass, {
+    failed: thresholdSummary.failed,
+    total: thresholdSummary.total
   });
 
   // Derive potential SLO target for p95 latency from thresholds
@@ -511,38 +514,40 @@ export function generateHtmlReport(data, options = {}) {
     if (!thresholdSummary.failedItems || thresholdSummary.failedItems.length === 0) {
       return '<div class="alert alert-good"><strong>✅ All Performance Targets Met!</strong><p>The application performed within acceptable limits for all measured criteria.</p></div>';
     }
-    
+
     const explanations = [];
     explanations.push('<div class="alert alert-bad">');
     explanations.push('<strong>⚠️ Performance Targets Not Met</strong>');
-    explanations.push('<p>Some performance thresholds were exceeded. Here\'s what this means in simple terms:</p>');
+    explanations.push(
+      "<p>Some performance thresholds were exceeded. Here's what this means in simple terms:</p>"
+    );
     explanations.push('<div class="threshold-explanations">');
-    
-    thresholdSummary.failedItems.forEach(item => {
+
+    thresholdSummary.failedItems.forEach((item) => {
       // Parse threshold like "http_req_duration :: p(95)<2000"
-      const parts = item.split('::').map(s => s.trim());
+      const parts = item.split('::').map((s) => s.trim());
       const metric = parts[0];
       const condition = parts[1] || '';
-      
+
       let explanation = '';
       let impact = '';
       let action = '';
-      
+
       if (metric === 'http_req_duration' && condition.includes('p(95)')) {
         const match = condition.match(/p\(95\)\s*<\s*(\d+)/);
         const targetMs = match ? match[1] : 'N/A';
         const actualMs = dur['p(95)'] ? Math.round(dur['p(95)']) : 'N/A';
-        
+
         explanation = `<strong>Response Time (95th Percentile)</strong>: Target was ${targetMs}ms, but 95% of requests took ${actualMs}ms or less.`;
         impact = `This means <strong>5% of requests</strong> took longer than ${actualMs}ms. Users may experience slower page loads or delays.`;
         action = `<em>Action:</em> Investigate slow API endpoints, database queries, or external service calls that are causing delays.`;
       } else if (metric === 'iteration_duration' && condition.includes('p(95)')) {
         const match = condition.match(/p\(95\)\s*<\s*(\d+)/);
-        const targetMs = match ? match[1] : 'N/A';
+        // const targetMs = match ? match[1] : 'N/A'; // TODO: Use for detailed metrics
         const targetSec = match ? (parseInt(match[1]) / 1000).toFixed(1) : 'N/A';
-        const actualMs = iterationDur['p(95)'] ? Math.round(iterationDur['p(95)']) : 'N/A';
+        // const actualMs = iterationDur['p(95)'] ? Math.round(iterationDur['p(95)']) : 'N/A'; // TODO: Use for detailed metrics
         const actualSec = iterationDur['p(95)'] ? (iterationDur['p(95)'] / 1000).toFixed(1) : 'N/A';
-        
+
         explanation = `<strong>Complete Test Iteration Time</strong>: Target was ${targetSec} seconds, but 95% of iterations took ${actualSec} seconds or less.`;
         impact = `This measures the <strong>total time</strong> to complete all operations in a test scenario (creating cases, journal posts, uploading documents, etc.).`;
         action = `<em>Action:</em> Break down which specific operations are slow. Check document upload times, API response times, and network latency.`;
@@ -560,7 +565,7 @@ export function generateHtmlReport(data, options = {}) {
         impact = `Performance metric exceeded acceptable threshold.`;
         action = `<em>Action:</em> Review detailed metrics below to identify the root cause.`;
       }
-      
+
       explanations.push(`
         <div class="threshold-item">
           <div class="threshold-metric">${explanation}</div>
@@ -569,23 +574,27 @@ export function generateHtmlReport(data, options = {}) {
         </div>
       `);
     });
-    
+
     explanations.push('</div>'); // close threshold-explanations
     explanations.push('<p class="threshold-summary"><strong>📊 Overall Impact:</strong> ');
-    
+
     if (thresholdSummary.failed === 1) {
-      explanations.push('One performance target was not met. This requires attention but may not be critical.');
+      explanations.push(
+        'One performance target was not met. This requires attention but may not be critical.'
+      );
     } else if (thresholdSummary.failed === 2) {
       explanations.push('Two performance targets were not met. Performance optimization is recommended.');
     } else {
-      explanations.push(`${thresholdSummary.failed} performance targets were not met. Immediate performance optimization is strongly recommended.`);
+      explanations.push(
+        `${thresholdSummary.failed} performance targets were not met. Immediate performance optimization is strongly recommended.`
+      );
     }
-    
+
     explanations.push('</p></div>');
-    
+
     return explanations.join('\n');
   }
-  
+
   function buildRecommendations() {
     const recs = [];
     if (p95Target && p95Val && p95Val > p95Target)
@@ -870,10 +879,14 @@ export function generateHtmlReport(data, options = {}) {
       <div class="kpi ${neutralKpi}"><h4>VUs</h4><p>${vusVal}</p><div class="muted">Test Length ${fmt(testDurationSeconds, 2)} s</div></div>
     </div>
 
-    ${thresholdSummary.failed > 0 ? `
+    ${
+      thresholdSummary.failed > 0
+        ? `
     <h2>📋 Understanding the Results (For Stakeholders)</h2>
     ${explainThresholds()}
-    ` : ''}
+    `
+        : ''
+    }
 
     <h2>Overall Success Rate (Checks & Thresholds)</h2>
     <div class="flex-row">
@@ -962,29 +975,32 @@ export function generateHtmlReport(data, options = {}) {
     <h2>Endpoint / Group Breakdown <button class="toggle-btn" data-target="sec-groups">Toggle</button></h2>
     <div id="sec-groups" class="panel section-body">${typeof data.groupBreakdown !== 'undefined' ? data.groupBreakdown : '<div class="notes"><em>Group breakdown unavailable.</em></div>'}</div>
 
-    ${data.errorSamples && data.errorSamples.length ? `
+    ${
+      data.errorSamples && data.errorSamples.length
+        ? `
     <h2>📊 Error Analysis for Stakeholders <button class="toggle-btn" data-target="sec-error-samples">Toggle</button></h2>
     <div id="sec-error-samples" class="panel section-body">
-      ${data.errorSamples.map((sample) => {
-        // Handle new stakeholder-friendly format
-        if (sample['📊 Error Summary']) {
-          return `
+      ${data.errorSamples
+        .map((sample) => {
+          // Handle new stakeholder-friendly format
+          if (sample['📊 Error Summary']) {
+            return `
             <div style="margin-bottom: 30px;">
               <h3 style="color: #d32f2f; margin-top: 0;">📊 Error Summary</h3>
               <table class="compact">
                 <tbody>
-                  ${Object.entries(sample['📊 Error Summary']).map(([key, val]) => 
-                    `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`
-                  ).join('')}
+                  ${Object.entries(sample['📊 Error Summary'])
+                    .map(([key, val]) => `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`)
+                    .join('')}
                 </tbody>
               </table>
 
               <h3 style="color: #d32f2f; margin-top: 20px;">❌ Issue Description</h3>
               <table class="compact">
                 <tbody>
-                  ${Object.entries(sample['❌ Issue Description']).map(([key, val]) => 
-                    `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`
-                  ).join('')}
+                  ${Object.entries(sample['❌ Issue Description'])
+                    .map(([key, val]) => `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`)
+                    .join('')}
                 </tbody>
               </table>
 
@@ -1001,9 +1017,9 @@ export function generateHtmlReport(data, options = {}) {
               <h3 style="color: #7b1fa2; margin-top: 20px;">📍 Where to Find Full Details</h3>
               <table class="compact">
                 <tbody>
-                  ${Object.entries(sample['📍 Where to Find Full Details']).map(([key, val]) => 
-                    `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`
-                  ).join('')}
+                  ${Object.entries(sample['📍 Where to Find Full Details'])
+                    .map(([key, val]) => `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`)
+                    .join('')}
                 </tbody>
               </table>
 
@@ -1015,25 +1031,32 @@ export function generateHtmlReport(data, options = {}) {
               <h3 style="color: #0288d1; margin-top: 20px;">🎯 For Stakeholders</h3>
               <table class="compact">
                 <tbody>
-                  ${Object.entries(sample['🎯 For Stakeholders']).map(([key, val]) => 
-                    `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`
-                  ).join('')}
+                  ${Object.entries(sample['🎯 For Stakeholders'])
+                    .map(([key, val]) => `<tr><th style="width: 200px;">${key}</th><td>${val}</td></tr>`)
+                    .join('')}
                 </tbody>
               </table>
             </div>
           `;
-        } else {
-          // Fallback for old format
-          return `<div class="notes"><strong>Status:</strong> ${sample.status || 'N/A'} | <strong>Endpoint:</strong> ${sample.endpoint || 'N/A'} | <strong>Message:</strong> ${sample.message || 'No details available'}</div>`;
-        }
-      }).join('<hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">')}
+          } else {
+            // Fallback for old format
+            return `<div class="notes"><strong>Status:</strong> ${sample.status || 'N/A'} | <strong>Endpoint:</strong> ${sample.endpoint || 'N/A'} | <strong>Message:</strong> ${sample.message || 'No details available'}</div>`;
+          }
+        })
+        .join('<hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">')}
     </div>
-    ` : ''}
+    `
+        : ''
+    }
 
-    ${data.topFailingEndpoints && data.topFailingEndpoints.length ? `
+    ${
+      data.topFailingEndpoints && data.topFailingEndpoints.length
+        ? `
     <h2>Top Failing Endpoints</h2>
     <div class="panel"><table class="compact"><thead><tr><th>Endpoint</th><th>Failures</th></tr></thead><tbody>${data.topFailingEndpoints.map((e) => `<tr><td>${e.endpoint}</td><td>${e.count}</td></tr>`).join('')}</tbody></table></div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <h2>Environment / Metadata</h2>
     <table class="compact"><tbody>

@@ -71,7 +71,11 @@ export function getTemplates(config, authHeaders, vuId) {
       timeout: '30s',
       tags: { name: 'getTemplates', group: 'case' }
     });
-    recordError(templatesResponse, { endpoint: 'templates:list', errorType: 'http_error', message: 'Get Templates failed' });
+    recordError(templatesResponse, {
+      endpoint: 'templates:list',
+      errorType: 'http_error',
+      message: 'Get Templates failed'
+    });
 
     // Validate templates response
     const templatesSuccess = check(templatesResponse, {
@@ -195,10 +199,14 @@ export function createCase(
         url: endpoint
       }
     });
-    recordError(createResponse, { endpoint: 'cases:create', errorType: 'http_error', message: 'Create Case failed' });
+    recordError(createResponse, {
+      endpoint: 'cases:create',
+      errorType: 'http_error',
+      message: 'Create Case failed'
+    });
 
     // Validate case creation response
-    const createSuccess = check(createResponse, {
+    check(createResponse, {
       'create: status is 200 or 201': (r) => {
         if (r.status !== 200 && r.status !== 201) {
           console.error(`🔥 ${vuId}: Case creation failed - Status: ${r.status}`);
@@ -310,7 +318,7 @@ export function resolveIdsFromNames(config, selectedTemplate, sakstyper, avgjore
 
   // Resolve avgjkodeid from AvgjkodeName
   // Allow environment override of decision code name
-  let avgjkodeName =
+  const avgjkodeName =
     (__ENV.AVGJKODE_NAME || __ENV.AVGJCODE || __ENV.AVGJKODE || '').trim() ||
     config?.apiConfig?.standardTemplate?.avgjkodeName;
   if (avgjkodeName && avgjorelsekoder.length > 0) {

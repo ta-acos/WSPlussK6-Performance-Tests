@@ -7,7 +7,7 @@
  *  k6 run tests/create-jp.js --vus 1 --duration 10s
  */
 
-import { sleep } from 'k6';
+// import { sleep } from 'k6'; // TODO: Use if manual sleep needed
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
@@ -170,17 +170,22 @@ export function teardown() {
  * Rich summary artifacts (HTML, JSON, Markdown) produced for distribution.
  */
 export function handleSummary(data) {
-  const m = data.metrics || {};
-  const dur = m.http_req_duration?.values || {};
-  const failedRate = m.http_req_failed?.values?.rate || 0;
-  const totalReqs = m.http_reqs?.values?.count || 0;
-  const runSecs = (data.state?.testRunDurationMs || 0) / 1000;
+  // const m = data.metrics || {};
+  // const dur = m.http_req_duration?.values || {}; // TODO: Use for detailed metrics analysis
+  // const failedRate = m.http_req_failed?.values?.rate || 0; // TODO: Use for failure analysis
+  // const totalReqs = m.http_reqs?.values?.count || 0; // TODO: Use for throughput analysis
+  // const runSecs = (data.state?.testRunDurationMs || 0) / 1000; // TODO: Use for rate calculations
   // Markdown summary intentionally disabled (user request to avoid .md artifact)
 
   const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T;
   const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
   // Add environment and metadata information for reporting
-  const testConfig = loadTestConfig('create-jp', ORIGINAL_TEST_CONFIG, USE_DATA_FILE_CONFIG, CONFIG_ENVIRONMENT);
+  const testConfig = loadTestConfig(
+    'create-jp',
+    ORIGINAL_TEST_CONFIG,
+    USE_DATA_FILE_CONFIG,
+    CONFIG_ENVIRONMENT
+  );
   const envMetadata = getEnvironmentMetadata(testConfig);
   data.setup_data = {
     ...envMetadata
