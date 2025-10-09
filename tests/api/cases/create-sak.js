@@ -3,6 +3,8 @@
  * PERFORMANCE TEST: Create Cases (Basic Case Creation)
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS TEST DOES:
  * This test simulates users creating new cases in the case management system.
  * Think of this like creating a new case file for a client matter, incident,
@@ -39,8 +41,15 @@ import {
   executeCaseCreationFlow
 } from '../../../src/utils/test-workflow.js';
 import { performSimpleTeardown } from '../../../src/utils/test-teardown.js';
-import { performSimpleSummary } from '../../../src/utils/test-summary.js';
+import { performTestSummary } from '../../../src/utils/test-summary.js';
 import { getSakstyper, getAvgjorelsekoder } from '../../../src/lib/case-module.js';
+import {
+  initVerboseLogging,
+  generateEnhancedVerboseReport,
+  logVUActivity,
+  logAuth,
+  logAPIRequest
+} from '../../../src/utils/k6-verbose-logger.js';
 
 // ========================================
 // CONFIGURATION SETTINGS
@@ -92,12 +101,24 @@ export const options = generateK6Options(
  * Test Setup
  */
 export function setup() {
-  return performTestSetup('🚀 Starting Create Sak LOAD TEST');
+  // Initialize verbose logging for enhanced reporting
+  initVerboseLogging();
+
+  return performTestSetup('🚀 Starting Create Sak Test');
 }
 
 // Main VU iteration: end‑to‑end workflow for creating a case
 export default function (data) {
-  const vuId = __VU;
+  const vuId = `VU${__VU}`;
+  const iterationId = `Iter${__ITER}`;
+  const testId = `${vuId}-${iterationId}`;
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`🎯 ${vuId}: Starting iteration ${__ITER + 1}`);
+  console.log(`${'='.repeat(80)}\n`);
+
+  // Log VU activity for verbose reporting
+  logVUActivity(vuId, `Starting iteration ${__ITER + 1}`, `Test ID: ${testId}`);
 
   // Initialize test execution with user validation
   const execution = initializeTestExecution(
@@ -105,40 +126,55 @@ export default function (data) {
     ORIGINAL_TEST_CONFIG,
     USE_DATA_FILE_CONFIG,
     CONFIG_ENVIRONMENT,
-    vuId
+    __VU
   );
 
   if (!execution.success) {
     console.error(`❌ ${vuId}: ${execution.error}`);
+    logVUActivity(vuId, 'Initialization failed', execution.error);
     return;
   }
 
   const { testConfig, user } = execution;
 
   // Step 1: Execute authentication workflow
-  const authResult = executeAuthenticationFlow(testConfig, user, vuId);
+  logVUActivity(vuId, 'Authenticating user', user.username);
+  const authResult = executeAuthenticationFlow(testConfig, user, __VU);
   if (!authResult.success) {
     console.error(`❌ ${vuId}: Authentication failed - ${authResult.error}`);
+    logAuth(vuId, user.username, false, authResult.error);
     return;
   }
+  logAuth(vuId, user.username, true);
 
   // Step 2: Execute case creation workflow with supporting data
-  const caseResult = executeCaseCreationFlow(testConfig, authResult.authHeaders, vuId, {
+  logVUActivity(vuId, 'Creating case', 'Getting templates and creating new case');
+  const caseResult = executeCaseCreationFlow(testConfig, authResult.authHeaders, __VU, {
     caseNamePrefix: 'Test Case',
     preferredTemplate: 'ny sak'
   });
 
   if (!caseResult.success) {
     console.error(`❌ ${vuId}: Case creation failed - ${caseResult.error}`);
+    logAPIRequest(vuId, 'Case Creation', false, caseResult.error);
     return;
   }
+  logAPIRequest(
+    vuId,
+    'Case Creation',
+    true,
+    `Case ID: ${caseResult.caseData ? caseResult.caseData.id : 'unknown'}`
+  );
 
   // Step 3: Fetch supporting register data for validation (Sakstyper and Avgjorelsekoder)
+  logVUActivity(vuId, 'Fetching reference data', 'Getting case types and decision codes');
   console.log(`📋 ${vuId}: Fetching sakstyper (case types)`);
-  getSakstyper(testConfig, authResult.authHeaders, vuId);
+  const sakstyper = getSakstyper(testConfig, authResult.authHeaders, __VU);
+  logAPIRequest(vuId, 'Case Types (Sakstyper)', true, `Retrieved case types data`);
 
   console.log(`📋 ${vuId}: Fetching avgjorelsekoder (decision codes)`);
-  getAvgjorelsekoder(testConfig, authResult.authHeaders, vuId);
+  const avgjorelsekoder = getAvgjorelsekoder(testConfig, authResult.authHeaders, __VU);
+  logAPIRequest(vuId, 'Decision Codes (Avgjorelsekoder)', true, `Retrieved decision codes data`);
 
   randomSleep(0.2, 0.7);
 
@@ -150,6 +186,13 @@ export default function (data) {
   } else {
     console.log(`⚠️ ${vuId}: Workflow completed with issues for ${user.UserName}`);
   }
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`🏁 ${vuId}: Test Complete`);
+  console.log(`   👤 User: ${user.username}`);
+  console.log(`   📁 Case created: ${caseResult.caseData ? caseResult.caseData.id : 'failed'}`);
+  console.log(`   📋 Reference data retrieved: Yes`);
+  console.log(`${'='.repeat(80)}\n`);
 
   randomSleep(0.2, 0.7);
 }
@@ -164,8 +207,26 @@ export function teardown() {
  * HTML is generated via reusable generator in utils/report-generator.js
  */
 export function handleSummary(data) {
-  return performSimpleSummary('create-sak', data, ORIGINAL_TEST_CONFIG, {
+  // Get scenario name from environment variable (e.g., 'smoke', 'load', 'stress')
+  const scenarioName = __ENV.SCENARIO_NAME || null;
+
+  const options = {
     USE_DATA_FILE_CONFIG,
-    CONFIG_ENVIRONMENT
-  });
+    CONFIG_ENVIRONMENT,
+    includeErrorAnalytics: true,
+    scenarioName: scenarioName
+  };
+
+  // Include enhanced verbose report for detailed VU activity logging
+  if (__ENV.ENABLE_VERBOSE_REPORT === 'true') {
+    const enhancedReport = generateEnhancedVerboseReport(data);
+    console.log(`🔍 handleSummary: Generated enhanced verbose report (${enhancedReport.length} chars)`);
+    options.consoleLogBuffer = enhancedReport;
+  }
+
+  // Log the report naming for transparency
+  const reportName = scenarioName ? `create-sak-${scenarioName}` : 'create-sak';
+  console.log(`📊 Generating report: ${reportName}-report.html`);
+
+  return performTestSummary('create-sak', data, ORIGINAL_TEST_CONFIG, options);
 }

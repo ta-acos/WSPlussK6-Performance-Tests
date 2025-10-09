@@ -3,6 +3,8 @@
  * TEST SUMMARY & REPORT GENERATION MODULE
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS MODULE DOES:
  * After a performance test finishes, this module processes all the collected
  * data and creates reports that show how well the system performed. It's like
@@ -57,7 +59,8 @@ export function performTestSummary(testName, data, originalTestConfig, options =
     USE_DATA_FILE_CONFIG = true,
     CONFIG_ENVIRONMENT = 'autotest',
     includeErrorAnalytics = true,
-    includeBaseline = true
+    includeBaseline = true,
+    scenarioName = null
   } = options;
 
   // Attach error sampling data (if any)
@@ -100,14 +103,147 @@ export function performTestSummary(testName, data, originalTestConfig, options =
     ...envMetadata
   };
 
-  const html = generateHtmlReport(data, { apdexT });
+  // Check if verbose report is enabled and capture console logs
+  let verboseLogs = null;
+  if (__ENV.ENABLE_VERBOSE_REPORT === 'true') {
+    // Use captured console logs if available, otherwise generate from metrics
+    if (options.consoleLogBuffer) {
+      console.log(`🔍 test-summary: Using captured console logs (${options.consoleLogBuffer.length} chars)`);
+      verboseLogs = options.consoleLogBuffer;
+    } else {
+      console.log(`🔍 test-summary: No console logs in options, using fallback metrics`);
+      // Fallback to metrics-based verbose section
+      verboseLogs = generateVerboseLogSection(data, envMetadata);
+    }
+  }
 
-  const reportPaths = getReportPaths(testName);
+  const html = generateHtmlReport(data, { apdexT, verboseLogs });
+
+  const reportPaths = getReportPaths(testName, scenarioName);
   return {
     [reportPaths.json]: JSON.stringify(data, null, 2),
     [reportPaths.html]: html,
     stdout: '' // keep console summary clean (k6 still prints its default)
   };
+}
+
+/**
+ * Generate a comprehensive verbose log section from K6 data and metadata
+ * @param {Object} data - K6 summary data
+ * @param {Object} envMetadata - Environment metadata
+ * @returns {string} - Formatted verbose log content
+ */
+function generateVerboseLogSection(data, envMetadata) {
+  const timestamp = new Date().toISOString();
+  const metrics = data.metrics || {};
+
+  let verboseContent = `=== K6 VERBOSE DEBUG OUTPUT ===
+Generated: ${timestamp}
+Environment: ${envMetadata.configEnvironment || 'default'}
+Test Duration: ${data.state?.testRunDurationMs ? (data.state.testRunDurationMs / 1000).toFixed(2) : 'unknown'} seconds
+
+=== CONFIGURATION DETAILS ===
+API Host: ${envMetadata.apiHost || 'not configured'}
+Config File: ${envMetadata.configFile || 'default'}
+Scenario Override: ${envMetadata.scenarioOverride || 'none'}
+Total Users Available: ${envMetadata.totalUsers || 'unknown'}
+Use Data File Config: ${envMetadata.useDataFileConfig || 'false'}
+
+=== PERFORMANCE METRICS BREAKDOWN ===`;
+
+  // Add detailed metrics information
+  Object.keys(metrics).forEach((metricName) => {
+    const metric = metrics[metricName];
+    if (metric.values) {
+      verboseContent += `\n\n--- ${metricName.toUpperCase()} ---`;
+      verboseContent += `\nType: ${metric.type || 'unknown'}`;
+      verboseContent += `\nValues: ${JSON.stringify(metric.values, null, 2)}`;
+      if (metric.thresholds) {
+        verboseContent += `\nThresholds: ${JSON.stringify(metric.thresholds, null, 2)}`;
+      }
+    }
+  });
+
+  // Add threshold analysis
+  if (data.root_group && data.root_group.checks) {
+    verboseContent += `\n\n=== CHECK RESULTS ===`;
+    data.root_group.checks.forEach((check, index) => {
+      verboseContent += `\nCheck ${index + 1}: ${check.name || 'unnamed'}`;
+      verboseContent += `\n  Passes: ${check.passes || 0}`;
+      verboseContent += `\n  Fails: ${check.fails || 0}`;
+    });
+  }
+
+  // Add VU and iteration information
+  verboseContent += `\n\n=== VIRTUAL USER DETAILS ===`;
+  verboseContent += `\nMax VUs: ${metrics.vus_max?.values?.max || 'unknown'}`;
+  verboseContent += `\nIterations: ${metrics.iterations?.values?.count || 0}`;
+  verboseContent += `\nIteration Duration: ${metrics.iteration_duration?.values ? JSON.stringify(metrics.iteration_duration.values) : 'unknown'}`;
+
+  // Add HTTP request details
+  verboseContent += `\n\n=== HTTP REQUEST ANALYSIS ===`;
+  verboseContent += `\nTotal Requests: ${metrics.http_reqs?.values?.count || 0}`;
+  verboseContent += `\nRequest Rate: ${metrics.http_reqs?.values?.rate || 0} req/sec`;
+  verboseContent += `\nData Received: ${metrics.data_received?.values?.count || 0} bytes`;
+  verboseContent += `\nData Sent: ${metrics.data_sent?.values?.count || 0} bytes`;
+
+  if (metrics.http_req_duration?.values) {
+    verboseContent += `\n\nRequest Duration Breakdown:`;
+    verboseContent += `\n  Average: ${metrics.http_req_duration.values.avg?.toFixed(2) || 'unknown'} ms`;
+    verboseContent += `\n  Min: ${metrics.http_req_duration.values.min?.toFixed(2) || 'unknown'} ms`;
+    verboseContent += `\n  Max: ${metrics.http_req_duration.values.max?.toFixed(2) || 'unknown'} ms`;
+    verboseContent += `\n  p50: ${metrics.http_req_duration.values['p(50)']?.toFixed(2) || 'unknown'} ms`;
+    verboseContent += `\n  p90: ${metrics.http_req_duration.values['p(90)']?.toFixed(2) || 'unknown'} ms`;
+    verboseContent += `\n  p95: ${metrics.http_req_duration.values['p(95)']?.toFixed(2) || 'unknown'} ms`;
+    verboseContent += `\n  p99: ${metrics.http_req_duration.values['p(99)']?.toFixed(2) || 'unknown'} ms`;
+  }
+
+  // Add error analysis
+  verboseContent += `\n\n=== ERROR ANALYSIS ===`;
+  const httpReqFailed = metrics.http_req_failed?.values?.rate || 0;
+  const totalReqs = metrics.http_reqs?.values?.count || 0;
+  const failedReqs = Math.round(totalReqs * httpReqFailed);
+
+  verboseContent += `\nHTTP Failures: ${failedReqs} of ${totalReqs} requests (${(httpReqFailed * 100).toFixed(2)}%)`;
+
+  if (httpReqFailed > 0) {
+    verboseContent += `\n\n⚠️  DETECTED ${failedReqs} FAILED REQUESTS!`;
+    verboseContent += `\nThis likely explains any "check failures" you're seeing.`;
+    verboseContent += `\nRecommended actions:`;
+    verboseContent += `\n  - Check server logs for HTTP 500/400 errors`;
+    verboseContent += `\n  - Verify API endpoints are responding correctly`;
+    verboseContent += `\n  - Check authentication tokens and permissions`;
+    verboseContent += `\n  - Monitor server resources (CPU, memory, database)`;
+  }
+
+  // Add threshold status
+  if (metrics) {
+    verboseContent += `\n\n=== THRESHOLD VALIDATION ===`;
+    let thresholdFailures = 0;
+    Object.keys(metrics).forEach((metricName) => {
+      const metric = metrics[metricName];
+      if (metric.thresholds) {
+        Object.keys(metric.thresholds).forEach((threshold) => {
+          const result = metric.thresholds[threshold];
+          const status = result.ok ? 'PASS' : 'FAIL';
+          verboseContent += `\n${metricName} ${threshold}: ${status}`;
+          if (!result.ok) {
+            thresholdFailures++;
+            verboseContent += ` ⚠️`;
+          }
+        });
+      }
+    });
+
+    if (thresholdFailures > 0) {
+      verboseContent += `\n\n🚨 FOUND ${thresholdFailures} THRESHOLD FAILURES!`;
+      verboseContent += `\nThis explains the "X fail" count in your test results.`;
+    }
+  }
+
+  verboseContent += `\n\n=== END OF VERBOSE OUTPUT ===`;
+
+  return verboseContent;
 }
 
 /**

@@ -1,20 +1,8 @@
 {
+  "_comment_environment": "Environment-specific settings (api, auth) are now loaded from environments.json",
   "environment": "Automated Test",
   "useDataFileConfig": true,
   "configEnvironment": "autotest",
-
-  "api": {
-    "protocol": "https",
-    "host": "autotest01.acoscloud.no",
-    "port": 443,
-    "referer": "https://autotest01.acoscloud.no/"
-  },
-
-  "auth": {
-    "tokenEndpoint": "/identityserver/connect/token",
-    "grantType": "client_credentials",
-    "scope": "websak"
-  },
 
   "loadTest": {
     "useAllUsers": true,

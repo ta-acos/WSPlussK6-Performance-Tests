@@ -1,6 +1,8 @@
 /**
  * WebSak Authentication Module
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * This module provides authentication functions for WebSak Plus API.
  * Handles OAuth2 client credentials flow with comprehensive error handling.
  *

@@ -1,7 +1,65 @@
 /**
- * Data Validation Utilities for K6 Tests
+ * ===================================================================
+ * DATA VALIDATION UTILITIES MODULE
+ * ===================================================================
  *
- * This module provides validation functions for test data and responses
+ * @author Senthilkumar Sengottuvel
+ *
+ * WHAT THIS MODULE DOES:
+ * This module provides comprehensive validation functions for test data, configuration,
+ * and API responses. It ensures data integrity and helps identify configuration
+ * issues before they cause test failures.
+ *
+ * MAIN CAPABILITIES:
+ *
+ * 1. 📋 TEST DATA VALIDATION:
+ *    - Validates CSV and JSON data structures
+ *    - Checks for required fields and data completeness
+ *    - Identifies missing or empty data values
+ *    - Provides detailed validation error reporting
+ *
+ * 2. 👤 USER CONFIGURATION VALIDATION:
+ *    - Validates user credentials from users-config.json
+ *    - Ensures all required authentication fields are present
+ *    - Checks for proper data formatting and structure
+ *    - Prevents authentication failures due to missing data
+ *
+ * 3. 🌐 API RESPONSE VALIDATION:
+ *    - Validates HTTP response status codes
+ *    - Checks response timing and performance
+ *    - Validates JSON response structure and content
+ *    - Provides standardized response validation patterns
+ *
+ * 4. 🔧 CONFIGURATION VALIDATION:
+ *    - Validates API configuration objects
+ *    - Ensures required configuration fields are present
+ *    - Checks configuration format and structure
+ *    - Provides fallback behavior for invalid configurations
+ *
+ * 5. ✅ STANDARDIZED CHECKING:
+ *    - Integrates with K6's check system for pass/fail tracking
+ *    - Provides consistent validation patterns across tests
+ *    - Detailed error messages for troubleshooting
+ *    - Supports custom validation criteria
+ *
+ * WHY THIS MODULE EXISTS:
+ * Validation failures during test execution can be difficult to debug and
+ * often lead to misleading performance results. This module provides
+ * comprehensive upfront validation to catch issues early and ensure
+ * test data is properly formatted.
+ *
+ * EXAMPLE USAGE:
+ * ```javascript
+ * import { validateUsers, validateResponse } from '../utils/validation.js';
+ *
+ * // Validate user configuration
+ * if (!validateUsers(users)) {
+ *   throw new Error('Invalid user configuration');
+ * }
+ *
+ * // Validate API response
+ * validateResponse(response, 'Get Cases', 200);
+ * ```
  */
 
 import { check } from 'k6';

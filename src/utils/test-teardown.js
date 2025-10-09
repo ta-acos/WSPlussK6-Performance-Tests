@@ -1,6 +1,8 @@
 /**
  * Reusable Test Teardown Utilities
  * Centralizes common teardown patterns used across K6 performance tests
+ *
+ * @author Senthilkumar Sengottuvel
  */
 
 import { logValidationTroubleshootingGuide } from './test-validation.js';

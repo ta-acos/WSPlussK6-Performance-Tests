@@ -11,7 +11,7 @@
     },
     
     "testData": {
-      "baseDir": "src/data",
+      "baseDir": "src/data", 
       "testDocuments": "src/data/testDocuments",
       "usersConfig": "src/data/users-config.json",
       "apiConfig": "src/data/websak-api-config.json"

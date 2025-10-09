@@ -1,16 +1,6 @@
 {
+  "_comment_environment": "Environment-specific settings (api, auth) are now loaded from environments.json",
   "environment": "development",
-  "api": {
-    "protocol": "https",
-    "host": "autotest01.acoscloud.no",
-    "port": 443,
-    "referer": "https://autotest01.acoscloud.no/"
-  },
-  "auth": {
-    "tokenEndpoint": "/identityserver/connect/token",
-    "grantType": "client_credentials",
-    "scope": "websak"
-  },
   "thresholds": {
     "http_req_duration": ["p(95)<2000"],
     "http_req_failed": ["rate<0.05"]

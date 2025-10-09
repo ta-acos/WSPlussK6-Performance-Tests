@@ -1,5 +1,7 @@
 /**
  * WebSak Journal Post (JP) Management Module
+ * 
+ * @author Senthilkumar Sengottuvel
  *
  * This module provides functions for creating and managing Journal Posts in WebSak cases.
  * Includes JP template retrieval, JP creation, and document attachment.

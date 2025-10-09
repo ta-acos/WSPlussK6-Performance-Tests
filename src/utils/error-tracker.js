@@ -1,17 +1,91 @@
-// Error tracking utility using k6 Custom Metrics (works across contexts!)
-// This replaces the globalThis approach which doesn't work due to k6 context isolation.
+/**
+ * ===================================================================
+ * ERROR TRACKING UTILITY MODULE
+ * ===================================================================
+ *
+ * @author Senthilkumar Sengottuvel
+ *
+ * WHAT THIS MODULE DOES:
+ * This module provides comprehensive error tracking and analysis for K6 performance tests.
+ * It captures detailed information about HTTP errors, timeouts, and logical failures,
+ * making it easier to identify and troubleshoot issues during test execution.
+ *
+ * MAIN CAPABILITIES:
+ *
+ * 1. 📊 METRICS-BASED ERROR TRACKING:
+ *    - Uses K6 custom metrics to persist error data across test contexts
+ *    - Tracks total error counts, errors by endpoint, and errors by status code
+ *    - Stores detailed error information that survives context isolation
+ *    - Integrates seamlessly with K6's built-in metrics system
+ *
+ * 2. 🔍 DETAILED ERROR ANALYSIS:
+ *    - Records HTTP status codes, endpoints, and error types
+ *    - Captures response times and request details
+ *    - Stores error messages and context information
+ *    - Tracks both HTTP errors and logical failures
+ *
+ * 3. 📈 ERROR CATEGORIZATION:
+ *    - Separates errors by endpoint for targeted analysis
+ *    - Groups errors by HTTP status code patterns
+ *    - Distinguishes between different error types (timeouts, auth failures, etc.)
+ *    - Provides error trends over time for pattern analysis
+ *
+ * 4. 🛠️ DEBUGGING SUPPORT:
+ *    - Includes response body samples for error investigation
+ *    - Records request context and metadata
+ *    - Provides error injection for test reports
+ *    - Supports custom error tagging and categorization
+ *
+ * WHY THIS MODULE EXISTS:
+ * K6's default error tracking is limited and doesn't persist detailed error
+ * information across test contexts. This module provides comprehensive error
+ * tracking that helps identify root causes of performance issues and failures.
+ *
+ * TECHNICAL NOTES:
+ * - Uses K6 Custom Metrics instead of globalThis due to context isolation
+ * - Error data persists from VU context to handleSummary context
+ * - Metrics are automatically included in K6 test results and reports
+ *
+ * EXAMPLE USAGE:
+ * ```javascript
+ * import { recordError } from '../utils/error-tracker.js';
+ *
+ * const response = http.get(url, params);
+ * recordError(response, {
+ *   endpoint: 'auth:token',
+ *   errorType: 'http_error',
+ *   message: 'Authentication failed'
+ * });
+ * ```
+ */
 
-import { Counter } from 'k6/metrics';
-import { Trend } from 'k6/metrics';
+import { Counter, Trend } from 'k6/metrics';
 
-// Create custom metrics for error tracking
+// ========================================
+// CUSTOM METRICS FOR ERROR TRACKING
+// ========================================
 // These metrics WILL persist from VU context to handleSummary context
+// and appear in test results and reports
+
+/**
+ * Counts total number of errors encountered during the test
+ */
 const errorCounter = new Counter('custom_errors');
+
+/**
+ * Tracks errors grouped by API endpoint for targeted analysis
+ */
 const errorsByEndpoint = new Counter('errors_by_endpoint');
+
+/**
+ * Tracks errors grouped by HTTP status code for pattern analysis
+ */
 const errorsByStatus = new Counter('errors_by_status');
 
-// Use a Trend metric to store error details as data points
-// Each error is logged with its details in tags
+/**
+ * Stores detailed error information as data points with tags
+ * The 'true' parameter enables time series data collection
+ */
 const errorDetailsTrend = new Trend('error_details', true);
 
 // const MAX_BODY_BYTES = parseInt(__ENV.ERROR_SAMPLE_BODY_BYTES || '500', 10); // TODO: Use when body truncation needed

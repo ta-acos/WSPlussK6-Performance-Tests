@@ -3,6 +3,8 @@
  * PAYLOAD GENERATION MODULE
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS MODULE DOES:
  * This module creates the data structures (payloads) that are sent to the API
  * when creating cases, journal posts, and other items. Think of it as filling

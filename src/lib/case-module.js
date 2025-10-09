@@ -1,6 +1,8 @@
 /**
  * WebSak Case Management Module
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * Responsibilities:
  *  - Retrieve case templates (sakmaler)
  *  - Resolve supporting register data (sakstyper, avgjorelsekoder, etc.)

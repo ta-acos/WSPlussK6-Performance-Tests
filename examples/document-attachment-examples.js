@@ -1,6 +1,8 @@
 /**
  * Document Attachment Utility - Usage Examples
  * 
+ * @author Senthilkumar Sengottuvel
+ * 
  * This example demonstrates how to use the new document attachment utility 
  * in your K6 performance tests for WebSAK API document uploads.
  */

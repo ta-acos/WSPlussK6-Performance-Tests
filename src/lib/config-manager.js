@@ -3,6 +3,8 @@
  * CONFIGURATION MANAGER MODULE
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS MODULE DOES:
  * This module is the "control center" for all test configuration. It loads
  * settings from configuration files, manages test user accounts, and provides
@@ -50,6 +52,68 @@ import { SharedArray } from 'k6/data';
 // Note: External URL import must be resolved at init time, so we use the configured URL
 // This could be made dynamic in the future by loading the config in a separate init phase
 // import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js'; // TODO: Use when CSV parsing needed
+
+// Load Environment Configuration from JSON - INIT PHASE
+let environmentsConfig;
+const envCandidates = [
+  '../config/environments.json', // expected (./src/config/ relative to this file)
+  './src/config/environments.json', // if resolution is relative to project root
+  'src/config/environments.json' // alternative project root resolution
+];
+
+for (const p of envCandidates) {
+  try {
+    environmentsConfig = JSON.parse(open(p));
+    console.log(`✅ Loaded environments configuration from: ${p}`);
+    break;
+  } catch (e) {
+    // try next
+  }
+}
+if (!environmentsConfig) {
+  console.error('No environments configuration found, using fallback');
+  // Fallback environment configuration
+  environmentsConfig = {
+    environments: {
+      autotest: {
+        api: {
+          protocol: 'https',
+          host: 'autotest01.acoscloud.no',
+          port: 443,
+          baseUrl: 'https://autotest01.acoscloud.no',
+          referer: 'https://autotest01.acoscloud.no'
+        },
+        auth: {
+          tokenEndpoint: '/identityserver/connect/token',
+          grantType: 'client_credentials',
+          scope: 'acos.websak.api'
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Get current environment name from environment variable or default
+ * @returns {string} Environment name
+ */
+function getEnvironment() {
+  return __ENV.ENVIRONMENT || 'autotest';
+}
+
+/**
+ * Load environment-specific configuration
+ * @param {string} envName - Environment name
+ * @returns {Object} Environment configuration
+ */
+function loadEnvironmentConfig(envName = 'autotest') {
+  const env = environmentsConfig?.environments?.[envName];
+  if (!env) {
+    console.warn(`⚠️ Environment '${envName}' not found, using autotest`);
+    return environmentsConfig?.environments?.autotest || {};
+  }
+  return env;
+}
 
 // Load API Configuration from JSON (simpler maintenance) - INIT PHASE
 const apiConfigData = new SharedArray('apiConfigJson', function () {
@@ -161,25 +225,33 @@ function getConfigData(configFile = 'autotest') {
 }
 
 /**
- * Build API configuration from CSV data
+ * Build API configuration - UPDATED to use centralized environment config
+ * @param {string} environment - Environment name (defaults to current environment)
  * @returns {Object} API configuration object
  */
-function buildApiConfig() {
+function buildApiConfig(environment = null) {
+  // Get environment-specific configuration from centralized config
+  const currentEnv = environment || getEnvironment();
+  const envConfig = loadEnvironmentConfig(currentEnv);
+
+  // Get WebSak-specific configuration (templates, defaults, endpoints)
   const root = apiConfigData[0] || {};
   const api = root.api || {};
   const standardTemplate = root.standardTemplate || {};
   const jpDefaults = root.jpDefaults || {};
 
   return {
-    host: api.host,
-    protocol: api.protocol || 'https',
-    port: api.port,
-    referer: api.referer,
+    // Use environment-specific settings from centralized config
+    host: envConfig.api.host,
+    protocol: envConfig.api.protocol,
+    port: envConfig.api.port,
+    referer: envConfig.api.referer,
     oauth: {
-      tokenUrl: api.oauth?.tokenPath,
-      grantType: api.oauth?.grantType || 'client_credentials',
-      scope: api.oauth?.scope || ''
+      tokenUrl: envConfig.auth.tokenEndpoint,
+      grantType: envConfig.auth.grantType,
+      scope: envConfig.auth.scope || ''
     },
+    // Keep WebSak-specific endpoints and configuration
     endpoints: {
       ...api.endpoints
     },
@@ -213,7 +285,7 @@ export function loadTestConfig(
   useDataFileConfig = true,
   configEnvironment = 'autotest'
 ) {
-  const apiConfig = buildApiConfig();
+  const apiConfig = buildApiConfig(configEnvironment);
   const users = usersData;
 
   let testConfig;
@@ -462,24 +534,52 @@ export function getPathsConfig() {
 }
 
 /**
- * Get report paths for a specific test
- * @param {string} testName - Name of the test (e.g., 'create-sak')
- * @returns {Object} Report file paths
+ * Get report file paths for a test
+ * @param {string} testName - Name of the test
+ * @param {string} scenarioName - Optional scenario name (e.g., 'smoke', 'load', 'stress')
+ * @returns {Object} Object with html and json file paths
  */
-export function getReportPaths(testName) {
+export function getReportPaths(testName, scenarioName = null) {
   const paths = pathsConfig.paths.reports;
+
+  // If scenario is provided, include it in the filename
+  const baseFileName = scenarioName ? `${testName}-${scenarioName}` : testName;
+
   return {
-    html: `${paths.baseDir}/${testName}${paths.htmlSuffix}`,
-    json: `${paths.baseDir}/${testName}${paths.jsonSuffix}`
+    html: `${paths.baseDir}/${baseFileName}${paths.htmlSuffix}`,
+    json: `${paths.baseDir}/${baseFileName}${paths.jsonSuffix}`
   };
 }
 
 /**
- * Get test data paths
- * @returns {Object} Test data paths
+ * Get test data paths with proper resolution from any test file location
+ * @returns {Object} Test data paths resolved relative to project root
  */
 export function getTestDataPaths() {
-  return pathsConfig.paths.testData;
+  const testDataPaths = pathsConfig.paths.testData;
+  
+  // Dynamic path resolution based on execution context
+  // When running from project root: use direct paths (no prefix)
+  // When running from tests/api/journalposts/: use ../../../ prefix
+  let pathPrefix = '';
+  
+  try {
+    // Test if we can access a known file directly (indicates we're in project root)
+    const testPath = import.meta.resolve ? import.meta.resolve('src/config/autotest.json') : 'src/config/autotest.json';
+    open(testPath, 'b');
+    pathPrefix = ''; // Success - running from project root
+  } catch (e) {
+    // Direct access failed, we need the prefix for subdirectory execution
+    pathPrefix = '../../../';
+  }
+  
+  return {
+    ...testDataPaths,
+    baseDir: `${pathPrefix}${testDataPaths.baseDir}`,
+    testDocuments: `${pathPrefix}${testDataPaths.testDocuments}`,
+    usersConfig: `${pathPrefix}${testDataPaths.usersConfig || 'src/data/users-config.json'}`,
+    apiConfig: `${pathPrefix}${testDataPaths.apiConfig || 'src/data/websak-api-config.json'}`
+  };
 }
 
 /**
@@ -525,7 +625,9 @@ export function getExternalUrls() {
  * @returns {Object} Environment and metadata object
  */
 export function getEnvironmentMetadata(testConfig = null) {
-  const apiConfig = buildApiConfig();
+  // Determine environment for API config
+  const configEnv = testConfig?.configEnvironment || getEnvironment();
+  const apiConfig = buildApiConfig(configEnv);
 
   // If no testConfig provided, try to determine environment from available data
   let environment = 'Unknown';

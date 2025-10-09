@@ -293,7 +293,8 @@ export function preloadTestDocuments(options = {}) {
 
       if (mode === 'base64') {
         // Load as binary and convert to base64
-        fileData = open(filePath, 'b');
+        const resolvedPath = import.meta.resolve ? import.meta.resolve(filePath) : filePath;
+        fileData = open(resolvedPath, 'b');
         const base64Data = encoding.b64encode(fileData, { std: 'RFC4648' });
         processedData = {
           base64Content: base64Data,
@@ -301,7 +302,8 @@ export function preloadTestDocuments(options = {}) {
         };
       } else {
         // Load as binary
-        fileData = open(filePath, 'b');
+        const resolvedPath = import.meta.resolve ? import.meta.resolve(filePath) : filePath;
+        fileData = open(resolvedPath, 'b');
         processedData = {
           binaryData: fileData
         };
@@ -392,7 +394,8 @@ export function preloadExternalFiles(filePaths, options = {}) {
         let rawBinary = null;
         let binaryOk = false;
         try {
-          rawBinary = open(relPath, 'b');
+          const resolvedRelPath = import.meta.resolve ? import.meta.resolve(relPath) : relPath;
+          rawBinary = open(resolvedRelPath, 'b');
           binaryOk = Array.isArray(rawBinary) || rawBinary instanceof Uint8Array;
         } catch (e) {
           // ignore, will fallback to text
@@ -401,7 +404,8 @@ export function preloadExternalFiles(filePaths, options = {}) {
         let textContent = null;
         if (!binaryOk) {
           try {
-            textContent = open(relPath);
+            const resolvedRelPath = import.meta.resolve ? import.meta.resolve(relPath) : relPath;
+            textContent = open(resolvedRelPath);
           } catch (e2) {
             console.error(`🔥 Failed to open external file '${relPath}': ${e2.message}`);
             return null;

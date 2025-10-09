@@ -1,6 +1,8 @@
 /**
  * Pacing helpers for k6 VU flows.
  * Keeps all random sleep logic in one place for consistency and future tuning.
+ *
+ * @author Senthilkumar Sengottuvel
  */
 import { sleep } from 'k6';
 

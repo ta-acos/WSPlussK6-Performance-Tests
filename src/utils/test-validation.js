@@ -1,6 +1,8 @@
 /**
  * Reusable Test Validation Utilities
  * Centralizes common validation patterns used across K6 performance tests
+ *
+ * @author Senthilkumar Sengottuvel
  */
 
 /**

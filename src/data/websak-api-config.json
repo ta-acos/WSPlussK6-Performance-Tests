@@ -1,15 +1,8 @@
 {
+  "_comment": "Environment-specific API settings (protocol, host, port, referer, oauth) are loaded from environments.json",
+  "_note": "This file now contains only WebSak-specific endpoints and configuration that don't change between environments",
+  
   "api": {
-    "protocol": "https",
-    "host": "autotest01.acoscloud.no",
-    "port": 443,
-    "referer": "https://autotest01.acoscloud.no/",
-    "oauth": {
-      "tokenPath": "/identityserver/connect/token",
-      "grantType": "client_credentials",
-      "scope": "",
-      "useBasicAuth": false
-    },
     "endpoints": {
       "sakmaler": "/api/websak/api/register/sakmaler",
       "sak": "/api/websak/api/sak/ny",

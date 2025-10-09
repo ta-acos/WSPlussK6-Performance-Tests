@@ -1,9 +1,77 @@
+/**
+ * ===================================================================
+ * API CLIENT UTILITY MODULE
+ * ===================================================================
+ *
+ * @author Senthilkumar Sengottuvel
+ *
+ * WHAT THIS MODULE DOES:
+ * This module provides a standardized way to make HTTP requests to API endpoints
+ * with consistent error handling, metrics collection, and retry logic. It acts
+ * as a wrapper around K6's HTTP module with additional functionality.
+ *
+ * MAIN CAPABILITIES:
+ *
+ * 1. 🌐 HTTP REQUEST HANDLING:
+ *    - Supports all standard HTTP methods (GET, POST, PUT, DELETE)
+ *    - Automatically constructs full URLs from paths and configuration
+ *    - Includes proper request headers and authentication
+ *    - Handles request timeouts and error conditions
+ *
+ * 2. 📊 METRICS COLLECTION:
+ *    - Tracks API error rates across all requests
+ *    - Measures response times for performance analysis
+ *    - Tags requests for detailed breakdown in reports
+ *    - Custom metrics that appear in K6 results
+ *
+ * 3. 🔄 RETRY LOGIC:
+ *    - Automatic retry for transient failures
+ *    - Configurable retry attempts and backoff delays
+ *    - Smart retry conditions (network errors, 5xx responses)
+ *    - Preserves original error details for troubleshooting
+ *
+ * 4. ✅ RESPONSE VALIDATION:
+ *    - Built-in checks for successful responses
+ *    - Validates response structure and content
+ *    - Consistent error reporting across all API calls
+ *    - Integration with K6's check system for pass/fail tracking
+ *
+ * WHY THIS MODULE EXISTS:
+ * Without a standardized API client, each test would handle HTTP requests
+ * differently, leading to inconsistent error handling and metrics collection.
+ * This module ensures all API calls follow the same patterns and provide
+ * consistent data for performance analysis.
+ *
+ * EXAMPLE USAGE:
+ * ```javascript
+ * import { callEndpoint } from '../utils/api-client.js';
+ *
+ * // Make a GET request
+ * const response = callEndpoint('GET', '/api/cases', null, authHeaders, config, 'Get Cases');
+ *
+ * // Make a POST request with data
+ * const response = callEndpoint('POST', '/api/cases', caseData, authHeaders, config, 'Create Case');
+ * ```
+ */
+
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
-// Custom metrics
+// ========================================
+// CUSTOM METRICS FOR API MONITORING
+// ========================================
+
+/**
+ * Tracks the rate of API errors (4xx and 5xx responses)
+ * This metric helps identify when the API is experiencing issues
+ */
 export const apiErrorRate = new Rate('api_errors');
+
+/**
+ * Measures API response times for performance analysis
+ * The 'true' parameter enables time series data collection
+ */
 export const apiResponseTime = new Trend('api_response_time', true);
 
 /**

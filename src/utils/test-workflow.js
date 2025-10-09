@@ -3,6 +3,8 @@
  * TEST WORKFLOW UTILITIES MODULE
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS MODULE DOES:
  * This module contains common workflow patterns that are used by multiple tests.
  * Instead of each test repeating the same setup and execution code, they can
@@ -220,9 +222,10 @@ export function selectTemplateByName(templates, preferredName, vuId = '') {
     return null;
   }
 
-  const preferred = templates.find((t) =>
-    (t.tittel || '').toLowerCase().includes(preferredName.toLowerCase())
-  );
+  const preferred = templates.find((t) => {
+    const templateTitle = t.tittel || t.name || '';
+    return templateTitle.toLowerCase().includes(preferredName.toLowerCase());
+  });
 
   if (preferred) {
     console.log(`🎯 ${vuId}: Selected preferred template: "${preferred.tittel}" (ID: ${preferred.id})`);

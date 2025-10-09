@@ -3,6 +3,8 @@
  * PERFORMANCE TEST: Create Journal Posts with Multiple Documents
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS TEST DOES:
  * This test simulates a real user creating a case, then creating a journal post
  * (like an email or document entry), and then attaching multiple files to it.
@@ -59,11 +61,20 @@ import {
   validateCaseCreation
 } from '../../../src/utils/test-validation.js';
 import { performSimpleTeardown } from '../../../src/utils/test-teardown.js';
-import { performSimpleSummary } from '../../../src/utils/test-summary.js';
+import { performTestSummary } from '../../../src/utils/test-summary.js';
 import {
   preloadExternalFiles,
   attachDocumentsWithVerification
 } from '../../../src/utils/document-attachment.js';
+import {
+  initVerboseLogging,
+  generateEnhancedVerboseReport,
+  logVUActivity,
+  logAuth,
+  logAPIRequest,
+  logJPCreation,
+  logDocumentAttachment
+} from '../../../src/utils/k6-verbose-logger.js';
 
 // ========================================
 // CONFIGURATION SETTINGS
@@ -158,6 +169,9 @@ export const options = USE_DATA_FILE_CONFIG
 // ========================================
 // This runs once at the start of the test to prepare everything
 export function setup() {
+  // Initialize verbose logging for enhanced reporting
+  initVerboseLogging();
+
   console.log('🚀 Starting Create JP with Multiple Documents Test');
   console.log(`📎 Documents per JP: ${DOC_COUNT}`);
   printConfigSummary(config);
@@ -187,6 +201,15 @@ export default function () {
 
   // Create a unique identifier for this virtual user (for logging purposes)
   const vuId = `VU${__VU}`;
+  const iterationId = `Iter${__ITER}`;
+  const testId = `${vuId}-${iterationId}`;
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`🎯 ${vuId}: Starting iteration ${__ITER + 1}`);
+  console.log(`${'='.repeat(80)}\n`);
+
+  // Log VU activity for verbose reporting
+  logVUActivity(vuId, `Starting iteration ${__ITER + 1}`, `Test ID: ${testId}`);
 
   // ========================================
   // STEP 1: VALIDATE USER DATA
@@ -209,23 +232,28 @@ export default function () {
   // STEP 2: USER LOGIN (AUTHENTICATION)
   // ========================================
   // Simulate a user logging into the system
+  logVUActivity(vuId, 'Authenticating user', user.username);
   console.log(`🔐 ${vuId}: Attempting login for user ${user.username}`);
   const accessToken = authenticate(testConfig, user, vuId);
   if (!validateAuthentication(accessToken, user, vuId)) {
+    logAuth(vuId, user.username, false, 'Authentication validation failed');
     return; // Stop if login failed
   }
 
   // Create authorization headers for API calls (like a session cookie)
   const authHeaders = createAuthHeaders(accessToken);
   console.log(`✅ ${vuId}: Successfully logged in`);
+  logAuth(vuId, user.username, true);
 
   // ========================================
   // STEP 3: GET AVAILABLE CASE TEMPLATES
   // ========================================
   // Get the list of case types that the user can create
+  logVUActivity(vuId, 'Retrieving case templates', 'Getting available case templates');
   console.log(`📋 ${vuId}: Getting available case templates`);
   const caseTemplates = getCaseTemplates(testConfig, authHeaders, vuId);
   if (!validateTemplates(caseTemplates, user, vuId, 'case templates')) {
+    logAPIRequest(vuId, 'Case Templates', false, 'No valid case templates found');
     return; // Stop if no case templates available
   }
 
@@ -233,11 +261,18 @@ export default function () {
   const nySakTemplate = caseTemplates.find((t) => (t.tittel || '').toLowerCase() === 'ny sak');
   const selectedCaseTemplate = nySakTemplate || caseTemplates[0];
   console.log(`📋 ${vuId}: Using case template: ${selectedCaseTemplate.tittel || 'Unknown'}`);
+  logAPIRequest(
+    vuId,
+    'Case Templates',
+    true,
+    `Retrieved ${caseTemplates.length} templates, using: ${selectedCaseTemplate.tittel}`
+  );
 
   // ========================================
   // STEP 4: CREATE A NEW CASE
   // ========================================
   // Generate test data for the case and create it
+  logVUActivity(vuId, 'Creating new case', `Using template: ${selectedCaseTemplate.tittel}`);
   console.log(`📁 ${vuId}: Creating new case`);
   const caseTestData = generateCaseTestData('PerfTestCaseMultiDoc', vuId);
   const caseData = createCase(
@@ -249,17 +284,21 @@ export default function () {
     selectedCaseTemplate
   );
   if (!validateCaseCreation(caseData, vuId)) {
+    logAPIRequest(vuId, 'Case Creation', false, 'Case creation validation failed');
     return; // Stop if case creation failed
   }
   console.log(`✅ ${vuId}: Case created with ID: ${caseData.id}`);
+  logAPIRequest(vuId, 'Case Creation', true, `Case ID: ${caseData.id}`);
 
   // ========================================
   // STEP 5: GET JOURNAL POST TEMPLATES
   // ========================================
   // Get the types of journal posts (document entries) that can be created in this case
+  logVUActivity(vuId, 'Getting JP templates', `For case ID: ${caseData.id}`);
   console.log(`📄 ${vuId}: Getting journal post templates for case ${caseData.id}`);
   const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
   if (!validateTemplates(jpTemplates, user, vuId, 'JP templates')) {
+    logAPIRequest(vuId, 'JP Templates', false, 'No valid JP templates found');
     return; // Stop if no journal post templates available
   }
 
@@ -271,11 +310,22 @@ export default function () {
     if (idx > 0) jpTemplates.unshift(jpTemplates.splice(idx, 1)[0]);
   }
   console.log(`📄 ${vuId}: Using JP template: ${jpTemplates[0]?.tittel || 'Unknown'}`);
+  logAPIRequest(
+    vuId,
+    'JP Templates',
+    true,
+    `Retrieved ${jpTemplates.length} templates, using: ${jpTemplates[0]?.tittel}`
+  );
 
   // ========================================
   // STEP 6: CREATE JOURNAL POST
   // ========================================
   // Generate test data for the journal post and create it
+  logVUActivity(
+    vuId,
+    'Creating journal post',
+    `In case ${caseData.id} using template: ${jpTemplates[0]?.tittel}`
+  );
   console.log(`✉️ ${vuId}: Creating journal post in case ${caseData.id}`);
   const jpTestData = generateJpTestData('PerfTestJP-MultiDoc', vuId);
   const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, vuId);
@@ -283,10 +333,12 @@ export default function () {
   // Verify the journal post was created successfully
   if (!jpData || !jpData.id) {
     console.warn(`⚠️ ${vuId}: JP creation returned no ID - skipping document attachments`);
+    logJPCreation(vuId, jpTestData.jpName, 'unknown', 'JP creation returned no ID');
     randomSleep(0.3, 1.1); // Small delay before ending
     return;
   }
   console.log(`✅ ${vuId}: Journal post created with ID: ${jpData.id}`);
+  logJPCreation(vuId, jpTestData.jpName, jpData.id, 'Journal post created successfully');
 
   // ========================================
   // STEP 7: ATTACH DOCUMENTS TO JOURNAL POST
@@ -294,11 +346,16 @@ export default function () {
   // Now attach multiple documents to the journal post and verify they were attached correctly
   const USE_BATCH_UPLOAD = (__ENV.USE_BATCH_UPLOAD || 'true').toLowerCase() === 'true';
 
+  logVUActivity(
+    vuId,
+    'Attaching documents',
+    `${DOC_COUNT} documents to JP ${jpData.id} via ${USE_BATCH_UPLOAD ? 'batch' : 'individual'} upload`
+  );
   console.log(`📎 ${vuId}: Starting document attachment process (${DOC_COUNT} documents)`);
   console.log(`📎 ${vuId}: Upload mode: ${USE_BATCH_UPLOAD ? 'batch' : 'individual'}`);
 
   // This function handles the complete workflow: attach documents + verify they're there
-  attachDocumentsWithVerification(testConfig, authHeaders, jpData.id, {
+  const attachResult = attachDocumentsWithVerification(testConfig, authHeaders, jpData.id, {
     documentCount: DOC_COUNT, // How many documents to attach
     useBatchUpload: USE_BATCH_UPLOAD, // Upload all at once vs one-by-one
     preloadedDocuments: preloadedFileAttachments, // Use specific files if provided
@@ -312,7 +369,26 @@ export default function () {
     verificationDelay: 0.5 // Wait time before checking (0.5 seconds)
   });
 
+  // Log document attachment results
+  if (attachResult && attachResult.success !== false) {
+    logDocumentAttachment(
+      vuId,
+      jpData.id,
+      DOC_COUNT,
+      `Documents attached successfully via ${USE_BATCH_UPLOAD ? 'batch' : 'individual'} upload`
+    );
+  } else {
+    logDocumentAttachment(vuId, jpData.id, 0, 'Document attachment failed or was disabled');
+  }
+
   console.log(`✅ ${vuId}: Completed full workflow - case + journal post + ${DOC_COUNT} documents`);
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`🏁 ${vuId}: Test Complete`);
+  console.log(`   📁 Case created: ${caseData.id}`);
+  console.log(`   📝 Journal post created: ${jpData.id}`);
+  console.log(`   📎 Documents attached: ${DOC_COUNT}`);
+  console.log(`${'='.repeat(80)}\n`);
 
   // Add a small random delay between iterations to simulate real user behavior
   randomSleep(0.3, 1.1);
@@ -337,8 +413,28 @@ export function teardown() {
  * that show response times, success rates, and whether performance thresholds were met.
  */
 export function handleSummary(data) {
-  return performSimpleSummary('create-jp-with-multiple-document', data, ORIGINAL_TEST_CONFIG, {
+  // Get scenario name from environment variable (e.g., 'smoke', 'load', 'stress')
+  const scenarioName = __ENV.SCENARIO_NAME || null;
+
+  const options = {
     USE_DATA_FILE_CONFIG,
-    CONFIG_ENVIRONMENT
-  });
+    CONFIG_ENVIRONMENT,
+    includeErrorAnalytics: true,
+    scenarioName: scenarioName
+  };
+
+  // Include enhanced verbose report for detailed VU activity logging
+  if (__ENV.ENABLE_VERBOSE_REPORT === 'true') {
+    const enhancedReport = generateEnhancedVerboseReport(data);
+    console.log(`🔍 handleSummary: Generated enhanced verbose report (${enhancedReport.length} chars)`);
+    options.consoleLogBuffer = enhancedReport;
+  }
+
+  // Log the report naming for transparency
+  const reportName = scenarioName
+    ? `create-jp-with-multiple-document-${scenarioName}`
+    : 'create-jp-with-multiple-document';
+  console.log(`📊 Generating report: ${reportName}-report.html`);
+
+  return performTestSummary('create-jp-with-multiple-document', data, ORIGINAL_TEST_CONFIG, options);
 }

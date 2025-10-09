@@ -3,6 +3,8 @@
  * PERFORMANCE TEST: Create Journal Posts (Basic Workflow)
  * ===================================================================
  *
+ * @author Senthilkumar Sengottuvel
+ *
  * WHAT THIS TEST DOES:
  * This test simulates users creating cases and then adding journal posts to them.
  * A journal post is like adding an email, phone call record, or document entry
@@ -40,7 +42,15 @@ import { getJpTemplates, createJournalPost } from '../../../src/lib/jp-module.js
 import { generateJpTestData } from '../../../src/lib/payload-module.js';
 import { validateTemplates } from '../../../src/utils/test-validation.js';
 import { performSimpleTeardown } from '../../../src/utils/test-teardown.js';
-import { performSimpleSummary } from '../../../src/utils/test-summary.js';
+import { performTestSummary } from '../../../src/utils/test-summary.js';
+import {
+  initVerboseLogging,
+  generateEnhancedVerboseReport,
+  logVUActivity,
+  logAuth,
+  logAPIRequest,
+  logJPCreation
+} from '../../../src/utils/k6-verbose-logger.js';
 
 // ========================================
 // CONFIGURATION SETTINGS
@@ -85,11 +95,23 @@ export const options = generateK6Options(
 );
 
 export function setup() {
-  return performTestSetup('🚀 Starting Create JP Modular Test');
+  // Initialize verbose logging for enhanced reporting
+  initVerboseLogging();
+
+  return performTestSetup('🚀 Starting Create JP Test');
 }
 
 export default function createJournalPostTest(data) {
-  const vuId = __VU;
+  const vuId = `VU${__VU}`;
+  const iterationId = `Iter${__ITER}`;
+  const testId = `${vuId}-${iterationId}`;
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`🎯 ${vuId}: Starting iteration ${__ITER + 1}`);
+  console.log(`${'='.repeat(80)}\n`);
+
+  // Log VU activity for verbose reporting
+  logVUActivity(vuId, `Starting iteration ${__ITER + 1}`, `Test ID: ${testId}`);
 
   // Initialize test execution
   const { testConfig, user } = initializeTestExecution(
@@ -97,37 +119,67 @@ export default function createJournalPostTest(data) {
     ORIGINAL_TEST_CONFIG,
     USE_DATA_FILE_CONFIG,
     CONFIG_ENVIRONMENT,
-    vuId
+    __VU
   );
   if (!testConfig || !user) return;
 
-  // Execute authentication flow
-  const authHeaders = executeAuthenticationFlow(testConfig, user, vuId);
-  if (!authHeaders) return;
+  // Step 1: Authentication
+  logVUActivity(vuId, 'Authenticating user', user.username);
+  const authResult = executeAuthenticationFlow(testConfig, user, __VU);
+  if (!authResult || !authResult.success) {
+    logAuth(vuId, user.username, false, 'Authentication flow failed');
+    return;
+  }
+  logAuth(vuId, user.username, true);
+  const authHeaders = authResult.authHeaders;
 
-  // Execute case creation flow
-  const caseData = executeCaseCreationFlow(testConfig, authHeaders, vuId);
-  if (!caseData) return;
-
-  // Get JP templates for the created case
-  const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
-  if (!validateTemplates(jpTemplates, 'JP', vuId)) {
+  // Step 2: Create Case
+  logVUActivity(vuId, 'Creating new case', 'Getting case templates and creating case');
+  const caseResult = executeCaseCreationFlow(testConfig, authHeaders, __VU);
+  if (!caseResult || !caseResult.success) {
+    logAPIRequest(vuId, 'Case Creation', false, 'Case creation flow failed');
     return;
   }
 
-  // Select preferred template (prioritize by config or use first available)
-  const selectedTemplate = selectTemplateByName(jpTemplates, testConfig.templates?.jp) || jpTemplates[0];
-  console.log(`🎯 ${vuId}: Using JP template: "${selectedTemplate.tittel}" (ID: ${selectedTemplate.id})`);
+  const caseData = caseResult.caseData;
+  logAPIRequest(vuId, 'Case Creation', true, `Case ID: ${caseData.id}`);
+
+  // Step 3: Get JP templates for the created case
+  logVUActivity(vuId, 'Getting JP templates', `For case ID: ${caseData.id}`);
+  const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, __VU);
+  if (!validateTemplates(jpTemplates, 'JP', __VU)) {
+    logAPIRequest(vuId, 'JP Templates', false, 'No valid JP templates found');
+    return;
+  }
+  logAPIRequest(vuId, 'JP Templates', true, `Retrieved ${jpTemplates.length} templates`);
+
+  // Step 4: Select and create journal post
+  const outgoingTemplate = jpTemplates.find((t) => (t.tittel || '').toLowerCase().includes('utgående'));
+  if (outgoingTemplate) {
+    // Move outgoing template to front of array
+    const idx = jpTemplates.indexOf(outgoingTemplate);
+    if (idx > 0) jpTemplates.unshift(jpTemplates.splice(idx, 1)[0]);
+  }
+  console.log(`📄 ${vuId}: Using JP template: ${jpTemplates[0]?.tittel || 'Unknown'}`);
+
+  logVUActivity(vuId, 'Creating journal post', `Using template: ${jpTemplates[0]?.tittel || 'Unknown'}`);
 
   // Generate JP test data and create journal post
   const jpTestData = generateJpTestData('PerfTestJP', vuId);
-  const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, vuId);
+  const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, __VU);
 
   if (jpData && jpData.id) {
     console.log(`✅ ${vuId}: Successfully created JP "${jpTestData.jpName}" with ID: ${jpData.id}`);
+    logJPCreation(vuId, jpTestData.jpName, jpData.id, 'Journal post created successfully');
   } else {
     console.warn(`⚠️ ${vuId}: JP creation completed but no ID returned`);
+    logJPCreation(vuId, jpTestData.jpName, 'unknown', 'JP creation completed but no ID returned');
   }
+
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`🏁 ${vuId}: Test Complete`);
+  console.log(`   📝 Journal Post created: ${jpData && jpData.id ? 'Success' : 'Warning'}`);
+  console.log(`${'='.repeat(80)}\n`);
 
   // Optional pacing between iterations
   randomSleep(testConfig);
@@ -141,8 +193,26 @@ export function teardown() {
  * Rich summary artifacts (HTML, JSON, Markdown) produced for distribution.
  */
 export function handleSummary(data) {
-  return performSimpleSummary('create-jp', data, ORIGINAL_TEST_CONFIG, {
+  // Get scenario name from environment variable (e.g., 'smoke', 'load', 'stress')
+  const scenarioName = __ENV.SCENARIO_NAME || null;
+
+  const options = {
     USE_DATA_FILE_CONFIG,
-    CONFIG_ENVIRONMENT
-  });
+    CONFIG_ENVIRONMENT,
+    includeErrorAnalytics: true,
+    scenarioName: scenarioName
+  };
+
+  // Include enhanced verbose report for detailed VU activity logging
+  if (__ENV.ENABLE_VERBOSE_REPORT === 'true') {
+    const enhancedReport = generateEnhancedVerboseReport(data);
+    console.log(`🔍 handleSummary: Generated enhanced verbose report (${enhancedReport.length} chars)`);
+    options.consoleLogBuffer = enhancedReport;
+  }
+
+  // Log the report naming for transparency
+  const reportName = scenarioName ? `create-jp-${scenarioName}` : 'create-jp';
+  console.log(`📊 Generating report: ${reportName}-report.html`);
+
+  return performTestSummary('create-jp', data, ORIGINAL_TEST_CONFIG, options);
 }

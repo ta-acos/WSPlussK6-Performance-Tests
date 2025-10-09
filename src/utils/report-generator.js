@@ -1,9 +1,74 @@
 /**
- * generateHtmlReport(data)
- * Build a single self-contained HTML file (no external assets) summarizing a k6 run.
- * Focuses on stakeholder readability: KPIs, latency, thresholds, raw metric statistics.
+ * ===================================================================
+ * HTML REPORT GENERATOR MODULE
+ * ===================================================================
+ *
+ * @author Senthilkumar Sengottuvel
+ *
+ * WHAT THIS MODULE DOES:
+ * This module generates comprehensive, self-contained HTML reports from K6 test results.
+ * It transforms raw performance data into visually appealing, stakeholder-friendly
+ * reports with charts, graphs, and detailed analysis.
+ *
+ * MAIN CAPABILITIES:
+ *
+ * 1. 📊 VISUAL REPORT GENERATION:
+ *    - Creates self-contained HTML files with embedded CSS and JavaScript
+ *    - Generates charts and graphs for performance visualization
+ *    - Includes donut charts for success/failure rates
+ *    - Responsive design that works on all devices
+ *
+ * 2. 📈 PERFORMANCE ANALYSIS:
+ *    - Calculates key performance indicators (KPIs)
+ *    - Analyzes response time percentiles and trends
+ *    - Evaluates threshold compliance and failure rates
+ *    - Provides performance summaries and recommendations
+ *
+ * 3. 🎯 STAKEHOLDER FOCUSED:
+ *    - Non-technical summaries for business stakeholders
+ *    - Executive dashboard with high-level metrics
+ *    - Color-coded status indicators (green/yellow/red)
+ *    - Easy-to-understand performance interpretations
+ *
+ * 4. 🔍 DETAILED TECHNICAL DATA:
+ *    - Raw metric statistics for technical analysis
+ *    - Error breakdown and categorization
+ *    - Request/response details and timing data
+ *    - Threshold evaluation and compliance reporting
+ *
+ * 5. 📋 COMPREHENSIVE REPORTING:
+ *    - Test configuration and environment details
+ *    - User load patterns and scenario information
+ *    - Error analysis and troubleshooting guidance
+ *    - Historical trend analysis (when baseline data available)
+ *
+ * WHY THIS MODULE EXISTS:
+ * K6's default output is technical and hard for non-technical stakeholders
+ * to understand. This module creates business-friendly reports that clearly
+ * communicate performance results and their implications.
+ *
+ * EXAMPLE USAGE:
+ * ```javascript
+ * import { generateHtmlReport } from '../utils/report-generator.js';
+ *
+ * export function handleSummary(data) {
+ *   const html = generateHtmlReport(data, { apdexT: 500 });
+ *   return { 'report.html': html };
+ * }
+ * ```
  */
 
+// ========================================
+// UTILITY FUNCTIONS FOR DATA FORMATTING
+// ========================================
+
+/**
+ * Format numeric values with specified decimal places
+ * Handles null, undefined, and NaN values gracefully
+ * @param {number} num - Number to format
+ * @param {number} digits - Number of decimal places (default: 2)
+ * @returns {string} Formatted number string
+ */
 function fmt(num, digits = 2) {
   if (num === undefined || num === null || isNaN(num)) return 'n/a';
   return Number(num).toFixed(digits);
@@ -307,6 +372,7 @@ function buildAllMetricsTable(metrics) {
 export function generateHtmlReport(data, options = {}) {
   const env = (typeof __ENV !== 'undefined' && __ENV) || {};
   const cfg = options.thresholds || {};
+  const verboseLogs = options.verboseLogs || null; // NEW: Accept verbose logs
   // Initial dark mode preference: default true if not explicitly set to false
   const startDark = (function () {
     // Default is LIGHT mode now; require explicit opt-in for dark.
@@ -1058,6 +1124,38 @@ export function generateHtmlReport(data, options = {}) {
         : ''
     }
 
+    ${
+      verboseLogs
+        ? `
+    <h2>🔍 Verbose Debug Logs <button class="toggle-btn" data-target="sec-verbose-logs">Expand</button></h2>
+    <div id="sec-verbose-logs" class="section-body collapsed">
+      <div class="notes" style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #666; margin-bottom: 20px;">
+        <h4 style="margin: 0 0 10px 0; color: #333;">📊 What's in the Verbose Logs</h4>
+        <p style="margin: 0; font-size: 13px;">Complete K6 debug output including HTTP request/response details, threshold crossings, authentication flows, performance metrics, error details, and step-by-step execution flow. Perfect for troubleshooting the "<strong>8 fail</strong>" type issues!</p>
+      </div>
+      
+      <div style="background: #1e1e1e; color: #f0f0f0; padding: 20px; border-radius: 8px; overflow: auto; max-height: 600px; font-family: 'Courier New', Consolas, monospace; font-size: 12px; line-height: 1.4;">
+        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;">
+          <h4 style="margin: 0; color: #4fc3f7;">🔍 K6 Verbose Debug Output</h4>
+          <small style="color: #888;">Generated: ${new Date().toISOString()}</small>
+        </div>
+        <pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word; color: #f0f0f0;">${verboseLogs.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+      </div>
+      
+      <div class="notes" style="margin-top: 15px; padding: 12px; background-color: #e8f4fd; border-left: 4px solid #2196f3;">
+        <h4 style="margin: 0 0 8px 0; color: #1976d2;">💡 How to Use These Logs</h4>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+          <li><strong>Find Threshold Failures:</strong> Search for "DEBU" + "Thresholds on" to see which performance thresholds were crossed</li>
+          <li><strong>HTTP Error Details:</strong> Look for HTTP status codes (500, 404, etc.) to identify failing API calls</li>
+          <li><strong>Authentication Issues:</strong> Search for "auth" or "token" to debug login problems</li>
+          <li><strong>Performance Bottlenecks:</strong> Check request durations and look for patterns in slow responses</li>
+          <li><strong>Configuration Problems:</strong> Review environment settings and test parameters at the top</li>
+        </ul>
+      </div>
+    </div>`
+        : ''
+    }
+
     <h2>Environment / Metadata</h2>
     <table class="compact"><tbody>
       <tr><th>Environment</th><td>${safe(data, 'setup_data.configEnvironment', 'n/a')}</td></tr>
@@ -1069,6 +1167,7 @@ export function generateHtmlReport(data, options = {}) {
       <tr><th>Test Execution Time</th><td>${safe(data, 'setup_data.testExecutionTime', 'n/a')}</td></tr>
       <tr><th>Duration (s)</th><td>${fmt(testDurationSeconds, 2)}</td></tr>
       <tr><th>Summary Stats</th><td>${(safe(data, 'options.summaryTrendStats', []) || []).join(', ')}</td></tr>
+      ${verboseLogs ? `<tr><th>Verbose Logging</th><td><span style="color: #1B873F; font-weight: bold;">✓ Enabled</span> - Debug logs included below</td></tr>` : `<tr><th>Verbose Logging</th><td><span style="color: #666;">✗ Disabled</span> - Use :verbose:report commands for detailed logs</td></tr>`}
     </tbody></table>
 
     <footer>Generated by custom k6 report generator &middot; ${new Date().getFullYear()}</footer>
