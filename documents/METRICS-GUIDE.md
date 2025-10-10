@@ -177,53 +177,100 @@ The JSON summary provides raw data for programmatic analysis:
 }
 ```
 
-## Threshold Configuration
+## Threshold Governance & uiBands
 
-### Setting Performance Thresholds
+All performance enforcement (k6 pass/fail criteria) and visual classification bands are centrally managed in `src/config/performance-thresholds.json` – **not** inside individual test scripts or environment scenario files.
 
-Thresholds are defined in test configuration files:
-
-```javascript
-thresholds: {
-  'http_req_duration': ['p(95)<800', 'p(99)<1200'],
-  'http_req_failed': ['rate<0.05'],
-  'http_reqs': ['rate>5']
-}
-```
-
-### Environment-Specific Thresholds
-
-Different environments may have different performance characteristics:
+### File Structure (abridged)
 
 ```json
 {
-  "autotest": {
-    "thresholds": {
-      "http_req_duration": "p(95)<800",
-      "http_req_failed": "rate<0.05"
+  "defaults": {
+    "k6": {
+      "http_req_duration": { "p95": 3000, "p99": 6000 },
+      "http_req_failed": { "rate": 0.05 }
     }
   },
-  "dev": {
-    "thresholds": {
-      "http_req_duration": "p(95)<1200",
-      "http_req_failed": "rate<0.10"  
-    }
+  "operations": {
+    "Create Case": { "k6": { "group_duration{group:::Create New Case}": { "p95": 3000 } } }
+  },
+  "uiBands": {
+    "latencyMs": { "good": 800, "watch": 2000, "investigate": 2000 },
+    "errorRate": { "good": 0.01, "watch": 0.05, "investigate": 0.05 },
+    "checkFailureRate": { "good": 0.0, "watch": 0.02, "investigate": 0.02 }
   }
 }
 ```
+
+### Responsibilities
+
+| Section | Role |
+|---------|------|
+| `defaults.k6` | Global baseline SLOs (applied to all operations) |
+| `operations.*.k6` | Optional tighter / additional group-based thresholds for specific flows |
+| `uiBands` | Presentation-only color/status mapping (Good / Watch / Investigate) – does not affect exit code |
+
+### Why Centralization?
+
+1. **Consistency** – Single source of truth eliminates drift among test files.
+2. **Auditability** – Diffs on one JSON file show exactly what changed.
+3. **Separation of Concerns** – Runtime configuration (scenarios) vs governance (thresholds) vs visualization (`uiBands`).
+
+### Enforcement vs Presentation
+
+| Aspect | Source | Effect |
+|--------|--------|--------|
+| Pass/Fail (k6 thresholds) | `defaults.k6` + merged `operations.*.k6` | Influences test status / CI gate |
+| Visual Bands (latency/error/check) | `uiBands` | Drives HTML report coloring only |
+
+### Ordering Rule for uiBands
+
+`good <= watch <= investigate` for each metric band. The validator warns if values are out of order or collapsed unintentionally.
+
+### Changing a Threshold
+
+1. Edit `performance-thresholds.json` (modify `defaults`, add/update an `operations` entry, or tune `uiBands`).
+2. Run `npm run validate:perf` (schema + inline threshold guard).
+3. Commit (Husky pre-commit hook re-validates).
+4. Re-run representative tests; review updated colors and pass/fail states in the HTML report.
+
+### Validation Commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run validate:thresholds` | Schema + ordering validation for `performance-thresholds.json`. |
+| `npm run validate:no-inline-thresholds` | Ensures no test file reintroduces inline `thresholds:` blocks. |
+| `npm run validate:perf` | Aggregates both (run before pushing changes). |
+
+### Typical Anti-Patterns Rejected
+
+| Anti-Pattern | Why Rejected | Fix |
+|--------------|--------------|-----|
+| Adding `thresholds` in a test script | Fragments governance, bypasses review | Move values into central JSON |
+| Editing scenario files to tweak thresholds | Couples load shape with SLOs | Adjust `performance-thresholds.json` only |
+| Hard-coding band colors or numbers in report code | Creates stale or divergent UI | Use `uiBands` values at runtime |
+
+### Interpreting Bands vs SLOs
+
+It’s possible for a test to PASS all k6 thresholds while some metrics display a Watch or Investigate color (early signal) or vice versa if SLOs are strict but bands are broad. Treat `uiBands` as an operational narrative layer, not a gate.
+
+> Policy: All performance governance modifications MUST pass `npm run validate:perf`; CI should fail otherwise.
 
 ## Troubleshooting by Metrics
 
 ### High Response Times
 
 **Symptoms**: p95 > targets, increasing trend over test duration
+
 **Possible Causes**:
+
 - Database query performance  
 - Memory pressure
 - Network latency
 - Resource contention
 
 **Investigation Steps**:
+
 1. Check `http_req_waiting` vs `http_req_duration` ratio
 2. Monitor connection establishment times
 3. Review server-side logs for slow queries
@@ -232,7 +279,9 @@ Different environments may have different performance characteristics:
 ### High Error Rates
 
 **Symptoms**: `http_req_failed` > 5%
+
 **Common Error Patterns**:
+
 - **Authentication failures**: Check token refresh logic
 - **Timeout errors**: System capacity exceeded
 - **5xx errors**: Server-side application issues
@@ -241,7 +290,9 @@ Different environments may have different performance characteristics:
 ### Low Throughput
 
 **Symptoms**: `http_reqs` below expected rates
+
 **Possible Causes**:
+
 - Connection limits
 - Rate limiting  
 - Resource bottlenecks
@@ -270,7 +321,7 @@ Compare your results against industry benchmarks:
 
 Track metrics over time to identify trends:
 
-```
+```text
 Week 1: p95=650ms, errors=0.8%
 Week 2: p95=720ms, errors=1.2%  
 Week 3: p95=850ms, errors=2.1%
@@ -282,16 +333,19 @@ Trend: Performance degrading - investigate system changes
 ## Metric Collection Best Practices
 
 ### Test Design
+
 - **Consistent Load Patterns**: Use same ramp-up/down profiles for comparability
 - **Sufficient Duration**: Run tests long enough for steady-state metrics
 - **Environment Isolation**: Minimize external factors affecting results
 
 ### Data Quality
+
 - **Multiple Runs**: Execute tests multiple times to ensure consistency
 - **Outlier Analysis**: Investigate unusually high or low values
 - **Context Documentation**: Record system state, versions, configurations
 
 ### Reporting Standards
+
 - **Standardized Formats**: Use consistent metric presentation across reports
 - **Threshold Documentation**: Clearly define pass/fail criteria
 - **Historical Comparison**: Include previous test results for trend analysis
@@ -299,9 +353,10 @@ Trend: Performance degrading - investigate system changes
 ## Advanced Analysis Techniques
 
 ### Percentile Analysis
+
 Understanding the full distribution of response times:
 
-```
+```text
 p50: 400ms  - Typical user experience
 p90: 800ms  - 90% of users satisfied
 p95: 1200ms - 5% experience slower responses
@@ -310,6 +365,7 @@ p99.9: 8900ms - Outliers that may indicate issues
 ```
 
 ### Load Pattern Analysis
+
 Different load patterns reveal different characteristics:
 
 **Constant Load**: Steady-state performance
@@ -318,9 +374,10 @@ Different load patterns reveal different characteristics:
 **Step Load**: Threshold identification
 
 ### Error Pattern Analysis
+
 Categorize errors to identify root causes:
 
-```
+```text
 HTTP 401 Unauthorized: 23% - Authentication issues
 HTTP 408 Request Timeout: 45% - Performance bottleneck  
 HTTP 500 Internal Server Error: 18% - Application bugs

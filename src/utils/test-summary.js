@@ -40,7 +40,12 @@
 
 import { generateHtmlReport } from './report-generator.js';
 import { injectErrorAnalytics } from './error-tracker.js';
-import { loadTestConfig, getEnvironmentMetadata, getReportPaths } from '../lib/config-manager.js';
+import {
+  loadTestConfig,
+  getEnvironmentMetadata,
+  getReportPaths,
+  getPerformanceThresholds
+} from '../lib/config-manager.js';
 
 /**
  * Generic handleSummary function for performance tests
@@ -73,8 +78,9 @@ export function performTestSummary(testName, data, originalTestConfig, options =
   }
 
   // Get APDex threshold from environment variables
+  const perfThresholds = getPerformanceThresholds();
   const apdexEnv = __ENV.APDex_T || __ENV.APDEX_T; // allow both spellings
-  const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : 500;
+  const apdexT = apdexEnv ? parseInt(apdexEnv, 10) : perfThresholds.defaults?.apdexT || 500;
 
   // Auto-load baseline (best-effort): look for latest previous summary JSON in reports excluding current run
   let baseline = null;
@@ -117,7 +123,40 @@ export function performTestSummary(testName, data, originalTestConfig, options =
     }
   }
 
-  const html = generateHtmlReport(data, { apdexT, verboseLogs });
+  // Derive per-operation metrics if operation names exist in performance thresholds and metrics contain matching trend keys
+  const operationMetrics = {};
+  try {
+    const ops = perfThresholds.operations || {};
+    const allMetrics = data.metrics || {};
+    Object.keys(ops).forEach((op) => {
+      // Normalize: look for metric keys that include a simplified op label (remove spaces)
+      const simplified = op.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const matchKey = Object.keys(allMetrics).find((k) =>
+        k
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .includes(simplified)
+      );
+      const values =
+        matchKey && allMetrics[matchKey] && allMetrics[matchKey].values ? allMetrics[matchKey].values : null;
+      if (values) {
+        operationMetrics[op] = {
+          p95: values['p(95)'],
+          p99: values['p(99)'],
+          count: values.count || values.passes || undefined
+        };
+      }
+    });
+  } catch (_) {
+    /* best-effort only */
+  }
+
+  const html = generateHtmlReport(data, {
+    apdexT,
+    verboseLogs,
+    performanceThresholds: perfThresholds,
+    operationMetrics
+  });
 
   const reportPaths = getReportPaths(testName, scenarioName);
   return {

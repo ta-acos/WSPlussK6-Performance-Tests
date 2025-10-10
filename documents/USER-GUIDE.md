@@ -235,8 +235,10 @@ When you open a report, you'll see:
 
 ### Key Metrics to Watch
 
-| Metric | Good | Warning | Critical | Action Required |
-|--------|------|---------|----------|-----------------|
+Values below are driven by centrally managed `uiBands` (visual classification) in `src/config/performance-thresholds.json`. They provide guidance, while actual pass/fail comes from k6 thresholds defined in the same file under `defaults.k6` and any `operations.*.k6` overrides.
+
+| Metric | Good | Watch | Investigate | Action (Bands Only) |
+|--------|------|-------|-------------|---------------------|
 | **Response Time (p95)** | <800ms | 800-2000ms | >2000ms | Investigate slow queries, optimize code |
 | **Success Rate** | >99% | 95-99% | <95% | Check error logs, fix application issues |
 | **Error Rate** | <1% | 1-5% | >5% | Review application errors, check system resources |
@@ -420,6 +422,35 @@ npm run load
 ```
 
 ## Getting Help
+
+---
+
+## 🛡️ Performance Governance & Validation (Summary)
+
+All performance SLOs (k6 pass/fail thresholds) and visual classification bands live in a single file: `src/config/performance-thresholds.json`.
+
+| Section | Purpose |
+|---------|---------|
+| `defaults.k6` | Global baseline thresholds (e.g. p95/p99, error rate) applied to all operations |
+| `operations.*.k6` | Optional tighter operation/group-specific thresholds |
+| `uiBands` | Visual Good / Watch / Investigate coloring (does not affect exit code) |
+
+Validation commands:
+
+| Command | Description |
+|---------|-------------|
+| `npm run validate:thresholds` | Schema + ordering validation for central thresholds file |
+| `npm run validate:no-inline-thresholds` | Ensures no inline `thresholds:` blocks reappear in tests |
+| `npm run validate:perf` | Runs both (Husky pre-commit hook enforces) |
+
+Change workflow:
+
+1. Edit `performance-thresholds.json` (adjust defaults, add operation entry, tweak `uiBands`).
+2. Run `npm run validate:perf` until passing.
+3. Commit (hook re-validates) and execute representative tests.
+4. Review updated HTML report for new colors and pass/fail status.
+
+> Policy: Inline thresholds in test scripts are prohibited—always modify the central file.
 
 ### Documentation Resources
 

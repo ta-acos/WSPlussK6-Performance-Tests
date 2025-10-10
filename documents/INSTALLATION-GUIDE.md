@@ -199,32 +199,69 @@ This file contains test user credentials. Update with valid test accounts:
 
 **File: `src/config/autotest.json`**
 
-Review and adjust test scenarios and thresholds:
+Contains ONLY scenario execution shapes (executors, VUs, durations). **Performance thresholds are NOT defined here anymore** – they are centrally governed in `src/config/performance-thresholds.json`.
+
+Minimal example (abridged):
 
 ```json
 {
   "scenarios": {
-    "smoke_test": {
-      "executor": "constant-vus",
-      "vus": 1,
-      "duration": "30s"
-    },
-    "load_test": {
-      "executor": "ramping-vus", 
-      "startVUs": 1,
-      "stages": [
-        { "duration": "1m", "target": 5 },
-        { "duration": "2m", "target": 5 },
-        { "duration": "1m", "target": 0 }
-      ]
-    }
-  },
-  "thresholds": {
-    "http_req_duration": ["p(95)<800"],
-    "http_req_failed": ["rate<0.05"]
+    "smoke_test": { "executor": "constant-vus", "vus": 1, "duration": "30s" },
+    "load_test":  { "executor": "ramping-vus", "startVUs": 1, "stages": [
+      { "duration": "1m", "target": 5 },
+      { "duration": "2m", "target": 5 },
+      { "duration": "1m", "target": 0 }
+    ] }
   }
 }
 ```
+
+> Note: Any legacy `thresholds` block previously present here has been removed to enforce single-source-of-truth governance.
+
+#### Central Performance Thresholds & uiBands
+
+All performance SLOs (k6 pass/fail thresholds) and presentation bands (Good/Watch/Investigate) live in:
+
+```text
+src/config/performance-thresholds.json
+```
+
+Structure (abridged):
+
+```json
+{
+  "defaults": { "k6": { "http_req_duration": { "p95": 3000, "p99": 6000 }, "http_req_failed": { "rate": 0.05 } } },
+  "operations": { "Create Case": { "k6": { "group_duration{group:::Create New Case}": { "p95": 3000 } } } },
+  "uiBands": { "latencyMs": { "good": 800, "watch": 2000, "investigate": 2000 } }
+}
+```
+
+| Section | Purpose |
+|---------|---------|
+| `defaults.k6` | Global p95/p99 + error/check failure targets applied to all operations unless overridden. |
+| `operations` | Optional operation-specific group overrides for more granular SLOs. |
+| `uiBands` | Drives HTML report coloring (does not influence test exit code). |
+
+#### Validation & Governance
+
+Automated scripts enforce correctness and prevent regression to inline thresholds:
+
+| Command | Purpose |
+|---------|---------|
+| `npm run validate:thresholds` | Schema & ordering validation for `performance-thresholds.json`. |
+| `npm run validate:no-inline-thresholds` | Scans test sources for disallowed inline `thresholds:` blocks. |
+| `npm run validate:perf` | Runs both validations (recommended before commit). |
+
+Husky `pre-commit` hook (installed via `npm run prepare`) automatically runs `validate:perf` and blocks non‑compliant commits.
+
+Recommended workflow for changing a threshold:
+
+1. Edit `performance-thresholds.json` (adjust `defaults`, add an `operations` entry, or tune `uiBands`).
+2. Run `npm run validate:perf`.
+3. Commit changes (hook re-validates).
+4. Re-run representative tests and open the HTML report to review updated colors and pass/fail.
+
+> Policy: Do not add `thresholds:` inside test files—central governance ensures consistency and reviewability.
 
 ## Verification & Testing
 
@@ -274,6 +311,7 @@ npm run simple
 ```
 
 **Successful Test Indicators:**
+
 - No error messages during execution
 - Test completes with metrics summary
 - HTML report generated in `src/reports/`
@@ -336,18 +374,20 @@ cp src/reports/* $CI_ARTIFACTS_DIR/
 
 ### Production Monitoring
 
-For production performance monitoring:
+For production performance validation:
 
 ```bash
 # Configure production environment
-# Update src/config/environments.json with production URLs
+# Add / update prod entry in src/config/environments.json
 
-# Set production-specific thresholds
-# Update src/config/prod.json (create if needed)
+# (Optional) Add prod scenario file if load pattern differs: src/config/prod.json
+# Do NOT duplicate thresholds – they remain in performance-thresholds.json
 
-# Run production smoke tests
+# Run production smoke test (ensure appropriate credentials & safety)
 npm run test:prod:smoke
 ```
+
+When production performance expectations change, adjust only `performance-thresholds.json` (not per-environment scenario files) so governance stays centralized.
 
 ## Troubleshooting Installation
 
@@ -356,6 +396,7 @@ npm run test:prod:smoke
 #### K6 Installation Issues
 
 **Problem**: K6 not found in PATH
+ 
 ```bash
 # Windows - Add K6 to PATH manually
 $env:PATH += ";C:\Program Files\k6"
@@ -366,6 +407,7 @@ which k6
 ```
 
 **Problem**: K6 version compatibility
+ 
 ```bash
 # Check K6 version
 k6 version
@@ -379,6 +421,7 @@ k6 version
 #### Node.js Issues
 
 **Problem**: Node version too old
+ 
 ```bash
 # Check current version
 node --version
@@ -390,6 +433,7 @@ node --version
 ```
 
 **Problem**: npm permissions (Linux/macOS)
+ 
 ```bash
 # Fix npm permissions
 mkdir ~/.npm-global
@@ -401,6 +445,7 @@ source ~/.profile
 #### Framework Issues
 
 **Problem**: Dependencies installation fails
+ 
 ```bash
 # Clear npm cache
 npm cache clean --force
@@ -411,6 +456,7 @@ npm install
 ```
 
 **Problem**: Tests fail immediately
+ 
 ```bash
 # Check configuration files exist
 ls src/config/
@@ -426,12 +472,14 @@ npm run test:simple -- --verbose
 #### Configuration Issues
 
 **Problem**: Authentication failures
+
 1. Verify user credentials in `src/data/users-config.json`
 2. Test credentials manually in target application
 3. Check environment URLs in `src/config/environments.json`
 4. Confirm network connectivity to target environment
 
 **Problem**: Permission denied errors
+
 1. Check file permissions: `chmod +x` on script files
 2. Verify user account has required permissions in target system
 3. Check firewall/proxy settings
@@ -466,7 +514,7 @@ If you encounter issues not covered here:
 After successful installation:
 
 1. **Read the README**: Review `README.md` for overview and quick start
-2. **Explore Commands**: Check `documents/NPM-COMMANDS-GUIDE.md` for all available commands
+2. **Explore Commands**: Check `documents/NPM-COMMANDS-REFERENCE.md` for all available commands
 3. **Understand Metrics**: Read `documents/METRICS-GUIDE.md` for performance analysis
 4. **Review Architecture**: Study `documents/ARCHITECTURE.md` for system understanding
 

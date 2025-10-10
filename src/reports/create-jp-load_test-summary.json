@@ -1,119 +1,92 @@
 {
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [],
+    "checks": []
+  },
   "options": {
     "summaryTrendStats": [
-      "avg",
       "min",
+      "avg",
       "med",
-      "max",
       "p(90)",
-      "p(95)"
+      "p(95)",
+      "max"
     ],
     "summaryTimeUnit": "",
     "noColor": false
   },
   "state": {
-    "isStdOutTTY": true,
     "isStdErrTTY": true,
-    "testRunDurationMs": 126883.328
+    "testRunDurationMs": 129964.8097,
+    "isStdOutTTY": true
   },
+  "totalCustomErrors": 0,
   "metrics": {
-    "http_req_blocked": {
-      "type": "trend",
-      "contains": "time",
+    "vus": {
+      "contains": "default",
       "values": {
-        "p(90)": 0,
-        "p(95)": 0,
-        "avg": 1.1836790235081374,
-        "min": 0,
-        "med": 0,
-        "max": 95.406
-      }
-    },
-    "data_sent": {
-      "type": "counter",
-      "contains": "data",
-      "values": {
-        "rate": 2527.124761418616,
-        "count": 320650
-      }
-    },
-    "data_received": {
-      "type": "counter",
-      "contains": "data",
-      "values": {
-        "count": 7534329,
-        "rate": 59379.97622508766
-      }
+        "value": 1,
+        "min": 1,
+        "max": 7
+      },
+      "type": "gauge"
     },
     "http_req_duration{expected_response:true}": {
       "type": "trend",
       "contains": "time",
       "values": {
-        "max": 5477.5969,
-        "p(90)": 3354.86872,
-        "p(95)": 3833.2154199999995,
-        "avg": 1036.8479649186258,
-        "min": 17.8389,
-        "med": 297.1896
+        "min": 22.8794,
+        "avg": 1502.1940630170309,
+        "med": 426.9672,
+        "p(90)": 4534.0738,
+        "p(95)": 5130.815,
+        "max": 7853.289
       }
     },
-    "vus_max": {
-      "type": "gauge",
-      "contains": "default",
-      "values": {
-        "value": 7,
-        "min": 7,
-        "max": 7
-      }
-    },
-    "http_req_waiting": {
+    "group_duration{group:::Authentication}": {
       "type": "trend",
       "contains": "time",
       "values": {
-        "min": 17.5261,
-        "med": 297.1896,
-        "max": 5476.9663,
-        "p(90)": 3352.9427800000003,
-        "p(95)": 3831.5476599999993,
-        "avg": 1036.0903976491863
-      }
-    },
-    "group_duration": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "p(90)": 3357.45844,
-        "p(95)": 3836.1449799999996,
-        "avg": 1039.8582960216997,
-        "min": 24.0571,
-        "med": 298.2243,
-        "max": 5480.0223
-      }
-    },
-    "vus": {
-      "contains": "default",
-      "values": {
-        "value": 4,
-        "min": 4,
-        "max": 7
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 0,
+        "min": 0,
+        "avg": 0,
+        "med": 0
       },
-      "type": "gauge"
-    },
-    "iterations": {
-      "type": "counter",
-      "contains": "default",
-      "values": {
-        "count": 111,
-        "rate": 0.8748194246607403
+      "thresholds": {
+        "p(95)<2000": {
+          "ok": true
+        }
       }
+    },
+    "group_duration{group:::Get JP Templates}": {
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 0,
+        "min": 0,
+        "avg": 0
+      },
+      "thresholds": {
+        "p(95)<3000": {
+          "ok": true
+        }
+      },
+      "type": "trend"
     },
     "http_req_failed": {
       "type": "rate",
       "contains": "default",
       "values": {
+        "fails": 411,
         "rate": 0,
-        "passes": 0,
-        "fails": 553
+        "passes": 0
       },
       "thresholds": {
         "rate<0.05": {
@@ -125,128 +98,281 @@
       "type": "trend",
       "contains": "time",
       "values": {
+        "min": 0,
+        "avg": 0.80849099756691,
+        "med": 0,
         "p(90)": 0,
         "p(95)": 0,
-        "avg": 0.9699627486437613,
-        "min": 0,
-        "med": 0,
-        "max": 79
+        "max": 53.5566
       }
     },
-    "http_reqs": {
-      "thresholds": {
-        "rate>0.5": {
-          "ok": true
-        }
-      },
-      "type": "counter",
-      "contains": "default",
-      "values": {
-        "count": 553,
-        "rate": 4.358334611147652
-      }
-    },
-    "http_req_duration": {
+    "group_duration{group:::Verify JP Documents}": {
       "type": "trend",
       "contains": "time",
       "values": {
-        "avg": 1036.8479649186258,
-        "min": 17.8389,
-        "med": 297.1896,
-        "max": 5477.5969,
-        "p(90)": 3354.86872,
-        "p(95)": 3833.2154199999995
+        "avg": 0,
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 0,
+        "min": 0
       },
       "thresholds": {
-        "p(99)<5000": {
-          "ok": true
-        },
         "p(95)<2000": {
-          "ok": false
+          "ok": true
         }
       }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 238868,
+        "rate": 1837.9436753024386
+      }
+    },
+    "http_req_sending": {
+      "contains": "time",
+      "values": {
+        "min": 0,
+        "avg": 0.1547158150851581,
+        "med": 0,
+        "p(90)": 0.5657,
+        "p(95)": 0.69285,
+        "max": 1.2734
+      },
+      "type": "trend"
     },
     "checks": {
       "type": "rate",
       "contains": "default",
       "values": {
-        "fails": 76,
-        "rate": 0.9541892706449668,
-        "passes": 1583
+        "passes": 1147,
+        "fails": 86,
+        "rate": 0.9302514193025142
       }
     },
-    "http_req_sending": {
+    "group_duration{group:::Get Case Templates}": {
+      "contains": "time",
+      "values": {
+        "max": 0,
+        "min": 0,
+        "avg": 0,
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0
+      },
+      "thresholds": {
+        "p(95)<2500": {
+          "ok": true
+        }
+      },
+      "type": "trend"
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 7,
+        "min": 7,
+        "max": 7
+      }
+    },
+    "iterations": {
+      "values": {
+        "rate": 0.638634413358434,
+        "count": 83
+      },
+      "type": "counter",
+      "contains": "default"
+    },
+    "group_duration{group:::Attach Documents to JP}": {
+      "thresholds": {
+        "p(95)<5000": {
+          "ok": true
+        }
+      },
       "type": "trend",
       "contains": "time",
       "values": {
-        "avg": 0.13731338155515363,
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 0,
         "min": 0,
-        "med": 0,
-        "max": 0.7985,
-        "p(90)": 0.5452400000000001,
-        "p(95)": 0.6687
+        "avg": 0,
+        "med": 0
+      }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 411,
+        "rate": 3.1623945047026067
+      }
+    },
+    "group_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 23.2139,
+        "avg": 1505.4285761557176,
+        "med": 429.054,
+        "p(90)": 4539.9973,
+        "p(95)": 5140.8127,
+        "max": 7855.4886
       }
     },
     "http_req_receiving": {
+      "values": {
+        "min": 0,
+        "avg": 0.7842070559610703,
+        "med": 0,
+        "p(90)": 1.5531,
+        "p(95)": 5.4498,
+        "max": 11.6787
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 426.9672,
+        "p(90)": 4534.0738,
+        "p(95)": 5130.815,
+        "max": 7853.289,
+        "min": 22.8794,
+        "avg": 1502.1940630170309
+      },
+      "thresholds": {
+        "p(95)<4500": {
+          "ok": false
+        },
+        "p(99)<8000": {
+          "ok": true
+        }
+      }
+    },
+    "group_duration{group:::Create Journal Post}": {
       "type": "trend",
       "contains": "time",
       "values": {
         "min": 0,
+        "avg": 0,
         "med": 0,
-        "max": 14.4891,
-        "p(90)": 1.3386,
-        "p(95)": 2.751339999999996,
-        "avg": 0.6202538878842679
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 0
+      },
+      "thresholds": {
+        "p(95)<3500": {
+          "ok": true
+        }
       }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 5563734,
+        "rate": 42809.54215870329
+      }
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 0,
+        "avg": 1.1374693430656935,
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 67.7474
+      }
+    },
+    "group_duration{group:::Create New Case}": {
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "max": 0,
+        "min": 0,
+        "avg": 0
+      },
+      "thresholds": {
+        "p(95)<3000": {
+          "ok": true
+        }
+      },
+      "type": "trend"
     },
     "iteration_duration": {
       "type": "trend",
       "contains": "time",
       "values": {
-        "avg": 7966.863935135136,
-        "min": 4333.0693,
-        "med": 7938.6869,
-        "max": 10489.3401,
-        "p(90)": 9361.8832,
-        "p(95)": 9551.34315
-      },
-      "thresholds": {
-        "p(95)<30000": {
-          "ok": true
-        }
+        "min": 7104.4039,
+        "avg": 10449.71071566265,
+        "med": 10287.5893,
+        "p(90)": 11616.876999999999,
+        "p(95)": 14723.285299999996,
+        "max": 15218.2153
       }
     },
     "http_req_connecting": {
+      "contains": "time",
+      "values": {
+        "max": 23.1028,
+        "min": 0,
+        "avg": 0.2977333333333333,
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0
+      },
+      "type": "trend"
+    },
+    "http_req_waiting": {
       "type": "trend",
       "contains": "time",
       "values": {
-        "med": 0,
-        "max": 16.8747,
+        "min": 20.6494,
+        "avg": 1501.2551401459846,
+        "med": 426.2695,
+        "p(90)": 4533.0012,
+        "p(95)": 5129.830749999999,
+        "max": 7850.3915
+      }
+    },
+    "group_duration{group:::Attach Document to JP}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
         "p(90)": 0,
         "p(95)": 0,
-        "avg": 0.18133725135623868,
-        "min": 0
+        "max": 0,
+        "min": 0,
+        "avg": 0,
+        "med": 0
+      },
+      "thresholds": {
+        "p(95)<3500": {
+          "ok": true
+        }
       }
     }
   },
   "setup_data": {
-    "testExecutionTime": "2025-10-10T08:03:30.444Z",
-    "configEnvironment": "Auto Test",
-    "useDataFileConfig": "Yes",
     "configFile": "autotest",
     "apiHost": "autotest01.acoscloud.no",
     "totalUsers": 7,
-    "scenarioOverride": "load_test"
+    "scenarioOverride": "load_test",
+    "testExecutionTime": "2025-10-10T13:08:47.417Z",
+    "configEnvironment": "Auto Test",
+    "useDataFileConfig": "Yes"
   },
-  "totalCustomErrors": 0,
-  "groupBreakdown": "<div class=\"notes\">\n      <p><strong>Overall Group Metrics:</strong></p>\n      <ul>\n        <li>Average: 1039.86 ms</li>\n        <li>Median: 298.22 ms</li>\n        <li>p(95): 3836.14 ms</li>\n        <li>Max: 5480.02 ms</li>\n      </ul>\n    </div>",
-  "root_group": {
-    "name": "",
-    "path": "",
-    "id": "d41d8cd98f00b204e9800998ecf8427e",
-    "groups": [],
-    "checks": []
-  },
+  "errorSamples": [],
   "topFailingEndpoints": [],
-  "errorSamples": []
+  "groupBreakdown": "<div class=\"notes\"><p><strong>No populated group metrics detected.</strong></p><p>This usually means either:</p><ul><li>Group blocks executed too quickly / no iterations completed</li><li>K6 summary did not include trend stats (now forced via summaryTrendStats)</li><li>Test exited early on errors before groups finished</li></ul><p>Re-run a longer test or verify groups are executed. If still empty, capture raw summary JSON and inspect metric keys beginning with <code>group_duration{group:::</code>.</p></div>"
 }

@@ -53,6 +53,11 @@ import { authenticate, createAuthHeaders } from '../../../src/lib/auth-module.js
 import { getTemplates as getCaseTemplates, createCase } from '../../../src/lib/case-module.js';
 import { getJpTemplates, createJournalPost } from '../../../src/lib/jp-module.js';
 import { generateCaseTestData, generateJpTestData } from '../../../src/lib/payload-module.js';
+// --- Auto classification flags (added 2025-10-10) ---
+if (!__ENV.FLOW_TYPE) {
+  __ENV.FLOW_TYPE = 'jp';
+}
+__ENV.JP_ENDPOINT_HIT = 'true';
 import {
   validateUserData,
   validateUser,
@@ -118,26 +123,9 @@ const DOC_FILE_REPEAT = (__ENV.DOC_FILE_REPEAT || 'true').toLowerCase() === 'tru
 // These define what we consider "acceptable" performance for each operation.
 
 const ORIGINAL_TEST_CONFIG = {
-  vus: 5, // Number of virtual users (simulated users running the test)
-  duration: '10s', // How long to run the test
-
-  // Performance thresholds - what response times are acceptable:
-  thresholds: {
-    // Overall HTTP request response times - 95% must be under 3.5 seconds
-    http_req_duration: ['p(95)<3500'],
-
-    // Error rate - less than 5% of requests should fail
-    http_req_failed: ['rate<0.05'],
-
-    // Specific operation thresholds (95% of operations must complete within these times):
-    'group_duration{group:::Authentication}': ['p(95)<2000'], // Login: under 2 seconds
-    'group_duration{group:::Get Case Templates}': ['p(95)<2500'], // Get templates: under 2.5 seconds
-    'group_duration{group:::Create New Case}': ['p(95)<3000'], // Create case: under 3 seconds
-    'group_duration{group:::Get JP Templates}': ['p(95)<3000'], // Get JP templates: under 3 seconds
-    'group_duration{group:::Create Journal Post}': ['p(95)<3500'], // Create journal post: under 3.5 seconds
-    'group_duration{group:::Attach Document to JP}': ['p(95)<3500'], // Attach documents: under 3.5 seconds
-    'group_duration{group:::Verify JP Documents}': ['p(95)<2000'] // Verify documents: under 2 seconds
-  }
+  vus: 5,
+  duration: '10s'
+  // thresholds removed – now centrally generated from performance-thresholds.json
 };
 
 // ========================================

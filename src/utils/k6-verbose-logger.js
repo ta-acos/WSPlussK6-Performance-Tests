@@ -1,18 +1,24 @@
 /**
  * ===================================================================
- * SIMPLE K6 VERBOSE LOGGER WITH TE    if (hasHttpErrors) {
-      const errorRate = Math.round((testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) * 100);
-      report += `- HTTP Errors: ${errorRate}% of requests failed\n`;
-    }
-    if (hasTimeouts) {
-      const p95Duration = Math.round(p95Value);
-      report += `- Performance Issues: 95th percentile response time is ${p95Duration}ms (threshold: 5000ms)\n`;
-    }OG PARSING
+ * SIMPLE K6 VERBOSE LOGGER WITH TEMPLATE PARSING
  * ===================================================================
  *
- * This logger uses console.log with special prefixes that can be
- * captured from the terminal output and parsed into the HTML report.
- * This works across all K6 execution phases.
+ * Generates a rich textual “verbose execution report” summarising
+ * authentication, workflow steps, performance and errors. Output is
+ * embedded inside the HTML performance report.
+ *
+ * NOTE (2025-10-10): Detection of "case only" SAK tests previously
+ * mis‑classified long running create-sak load tests as JP/document
+ * tests because they naturally issue many HTTP calls (>6) during
+ * ramp / iterations. This caused Journal Post and Document flows to
+ * appear in pure case creation reports. Logic below has been
+ * hardened to:
+ *  - Recognise scenario names containing create-sak / sak (word
+ *    boundary aware) as case-only even with many requests.
+ *  - Allow explicit override via env vars FLOW_TYPE=case-only or
+ *    IS_CASE_ONLY=true.
+ *  - Use a negative indicator: if no env flags for JP counts / doc
+ *    uploads are present, prefer case-only for create-sak scenarios.
  */
 
 // Simple flag to track if logging is enabled
@@ -57,9 +63,11 @@ export function generateEnhancedVerboseReport(testData) {
   report += `- Virtual Users: ${testData?.vus_max || testData?.metrics?.vus_max?.values?.max || 1}\n`;
   report += `- Iterations: ${testData?.iterations?.values?.count || testData?.metrics?.iterations?.values?.count || 'N/A'}\n`;
   report += `- Total HTTP Requests: ${testData?.http_reqs?.values?.count || testData?.metrics?.http_reqs?.values?.count || 'N/A'}\n`;
-  const avgDuration = testData?.metrics?.http_req_duration?.values?.avg || testData?.http_req_duration?.values?.avg;
+  const avgDuration =
+    testData?.metrics?.http_req_duration?.values?.avg || testData?.http_req_duration?.values?.avg;
   report += `- Average Response Time: ${avgDuration ? Math.round(avgDuration) + 'ms' : 'N/A'}\n`;
-  const failureRate = testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0;
+  const failureRate =
+    testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0;
   report += `- Success Rate: ${failureRate !== undefined ? Math.round((1 - failureRate) * 100) + '%' : 'N/A'}\n\n`;
 
   // VU Activity Summary - Dynamic based on actual test activities
@@ -68,37 +76,109 @@ export function generateEnhancedVerboseReport(testData) {
   report += '- Authentication: Successfully authenticated user TA_ARK\n';
 
   // Determine test type based on environment or script context
-  const scenarioName = __ENV.SCENARIO_NAME || '';
+  const scenarioName = (__ENV.SCENARIO_NAME || '').toLowerCase();
   const httpRequestCount = testData?.http_reqs?.values?.count || 0;
 
-  // More reliable test type detection based on test context and metrics
-  const isCaseOnlyTest =
-    scenarioName.includes('sak') ||
-    (httpRequestCount > 0 && httpRequestCount <= 6) ||
-    __ENV.SCENARIO_NAME?.includes('quick_smoke');
+  // Explicit overrides first (highest precedence)
+  const explicitCaseOnly =
+    __ENV.FLOW_TYPE === 'case-only' || __ENV.IS_CASE_ONLY === 'true' || __ENV.FORCE_CASE_ONLY === 'true';
+  const explicitJPFlow = __ENV.FLOW_TYPE === 'jp' || __ENV.FLOW_TYPE === 'journalpost';
 
-  // Detect document upload tests by scenario name, environment variables, or HTTP request count
-  const hasDocumentUploads =
-    scenarioName.includes('document') ||
-    scenarioName.includes('multiple-jp') ||
-    scenarioName.includes('multiplejp') ||
-    __ENV.USE_TEST_DOCS === 'true' ||
-    __ENV.DOC_COUNT ||
-    __ENV.INCOMING_COUNT ||
-    __ENV.OUTGOING_COUNT ||
-    (httpRequestCount > 15); // Complex tests with many HTTP requests likely have document uploads
+  // Heuristic: case-only if scenario clearly references create-sak / sak and
+  // no explicit JP or document indicators are present.
+  const scenarioIndicatesSak =
+    /(^|[-_])create-sak($|[-_])/.test(scenarioName) || /(^|[-_])sak($|[-_])/.test(scenarioName);
+
+  // Indicators that this is a JP / document heavy flow
+  const jpOrDocIndicators = [
+    scenarioName.includes('journal'),
+    scenarioName.includes('jp'),
+    scenarioName.includes('multiple-jp'),
+    scenarioName.includes('document'),
+    !!__ENV.DOC_COUNT,
+    !!__ENV.INCOMING_COUNT,
+    !!__ENV.OUTGOING_COUNT,
+    __ENV.USE_TEST_DOCS === 'true'
+  ];
+  const hasJPIndicators = jpOrDocIndicators.some(Boolean);
+
+  // Document uploads: explicit env flags OR scenario mentions OR very high request volume
+  const hasDocumentUploads = hasJPIndicators || httpRequestCount > 40; // raise threshold from 15 -> 40 to avoid misclassification
+
+  // Revised classification
+  let isCaseOnlyTest;
+  if (explicitCaseOnly) {
+    isCaseOnlyTest = true;
+  } else if (explicitJPFlow) {
+    isCaseOnlyTest = false;
+  } else if (scenarioIndicatesSak && !hasJPIndicators) {
+    isCaseOnlyTest = true;
+  } else if (scenarioName.includes('quick_smoke')) {
+    isCaseOnlyTest = true;
+  } else {
+    isCaseOnlyTest = false; // default to complex/JP flow
+  }
 
   console.log(
-    `🔍 DEBUG: Scenario: ${scenarioName}, HTTP requests: ${httpRequestCount}, Case-only: ${isCaseOnlyTest}, Has documents: ${hasDocumentUploads}`
+    `🔍 DEBUG: Scenario: ${scenarioName}, HTTP requests: ${httpRequestCount}, Case-only: ${isCaseOnlyTest}, Has documents: ${hasDocumentUploads}, FORCE_CASE_ONLY=${__ENV.FORCE_CASE_ONLY || 'false'}`
   );
 
+  // Early classification summary written above; however FORCE_CASE_ONLY or runtime hints
+  // may arrive late. Adjust BEFORE emitting workflow specific sections below.
+  try {
+    const jpEndpointHit = __ENV.JP_ENDPOINT_HIT === 'true';
+    if (__ENV.FORCE_CASE_ONLY === 'true') {
+      isCaseOnlyTest = true;
+    } else if (jpEndpointHit && isCaseOnlyTest) {
+      isCaseOnlyTest = false;
+      console.log('\uD83D\uDD0D DEBUG: Runtime override -> JP_ENDPOINT_HIT detected; switching to JP flow');
+    } else if (!jpEndpointHit && !hasJPIndicators && !explicitJPFlow && scenarioIndicatesSak) {
+      isCaseOnlyTest = true;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+
+  // -------------------------------------------------------------------
+  // Metric-based auto classification (JP / Document groups observed)
+  // -------------------------------------------------------------------
+  // Even if scenario names or env vars were ambiguous, the presence of
+  // group metrics that only appear in JP or document flows is a strong
+  // runtime signal we actually executed those steps. Use this as a
+  // late override (unless the user explicitly forced case-only).
+  try {
+    if (!explicitCaseOnly) {
+      const metrics = testData.metrics || {};
+      const metricKeys = Object.keys(metrics);
+      const sawJPGroup = metricKeys.some(
+        (k) =>
+          k.includes('Create Journal Post') ||
+          k.includes('Create Incoming JP') ||
+          k.includes('Create Outgoing JP')
+      );
+      const sawDocGroup = metricKeys.some(
+        (k) =>
+          k.includes('Attach Document') ||
+          k.includes('Attach Documents to JP') ||
+          k.includes('Verify JP Documents')
+      );
+      if ((sawJPGroup || sawDocGroup) && isCaseOnlyTest) {
+        // Override: actual JP/doc operations occurred
+        isCaseOnlyTest = false;
+        console.log(
+          '\uD83D\uDD0D DEBUG: Metric-based override -> Detected JP/document groups in metrics; switching classification to JP flow'
+        );
+      }
+    }
+  } catch (_) {
+    /* ignore metric scan errors */
+  }
+
   if (isCaseOnlyTest) {
-    // Case creation only test (create-sak has ~4-6 HTTP requests)
     report += '- Case Creation: Retrieved case templates and created new case\n';
     report += '- Reference Data: Retrieved case types (sakstyper) and decision codes (avgjorelsekoder)\n';
     report += '- Test Completion: Case creation workflow completed successfully\n\n';
   } else {
-    // JP creation test or complex test (has many more HTTP requests)
     report += '- Case Creation: Retrieved case templates and created new case\n';
     report += '- JP Templates: Retrieved journal post templates\n';
     report += '- JP Creation: Created incoming and outgoing journal posts\n';
@@ -110,20 +190,29 @@ export function generateEnhancedVerboseReport(testData) {
   }
 
   // Error Detection and Analysis
-  const hasHttpErrors = (testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) > 0;
-  const hasTimeouts = (testData?.metrics?.http_req_duration?.values?.['p(95)'] || testData?.http_req_duration?.values?.p95 || 0) > 5000;
-  
+  const hasHttpErrors =
+    (testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) > 0;
+  const hasTimeouts =
+    (testData?.metrics?.http_req_duration?.values?.['p(95)'] ||
+      testData?.http_req_duration?.values?.p95 ||
+      0) > 5000;
+
   // Check for threshold failures by examining p95 performance threshold (common failure point)
   // Access p95 from the correct k6 data structure (same as report-generator.js)
-  const p95Value = testData?.metrics?.http_req_duration?.values?.['p(95)'] || 
-                   testData?.http_req_duration?.values?.['p(95)'] || 
-                   testData?.http_req_duration?.values?.p95 || 0;
+  const p95Value =
+    testData?.metrics?.http_req_duration?.values?.['p(95)'] ||
+    testData?.http_req_duration?.values?.['p(95)'] ||
+    testData?.http_req_duration?.values?.p95 ||
+    0;
   const hasThresholdFailures = p95Value > 2000; // Common p95 threshold
-  
+
   if (hasHttpErrors || hasTimeouts || hasThresholdFailures) {
     report += '⚠️ ISSUES DETECTED\n';
     if (hasHttpErrors) {
-      const errorRate = Math.round((testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) * 100);
+      const errorRate = Math.round(
+        (testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) *
+          100
+      );
       report += `- HTTP Errors: ${errorRate}% of requests failed\n`;
     }
     if (hasTimeouts) {
@@ -155,7 +244,10 @@ export function generateEnhancedVerboseReport(testData) {
   if (hasHttpErrors || hasThresholdFailures) {
     report += '❌ ERROR ANALYSIS\n';
     if (hasHttpErrors) {
-      const errorRate = Math.round((testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) * 100);
+      const errorRate = Math.round(
+        (testData?.metrics?.http_req_failed?.values?.rate || testData?.http_req_failed?.values?.rate || 0) *
+          100
+      );
       report += `- Failed Requests: ${errorRate}%\n`;
       report += '- Check K6 terminal output for specific HTTP error details\n';
     }
@@ -178,7 +270,7 @@ export function generateEnhancedVerboseReport(testData) {
   report += '- Token Validation: Bearer token obtained and validated\n';
   report += '- API Authorization: All subsequent API calls authenticated\n\n';
 
-  // Dynamic workflow sections based on test type
+  // Dynamic workflow sections based on final test classification
   if (!isCaseOnlyTest) {
     // Journal Post Creation Flow (only for JP tests)
     report += '📝 JOURNAL POST CREATION FLOW\n';
@@ -194,7 +286,7 @@ export function generateEnhancedVerboseReport(testData) {
       report += '- Upload Endpoint: POST /api/websak/api/jp/uploadfiletodokument/\n';
       report += '- Document Types: Mixed PDF, DOCX, XLSX files from testDocuments folder\n';
       report += '- Document Verification: GET /api/websak/api/jp/{id}/dokumenter to verify attachments\n';
-      
+
       // Determine upload success based on error rate
       if (hasHttpErrors || hasTimeouts || hasThresholdFailures) {
         report += '- Upload Issues: Some document attachments experienced timeouts or failures\n';

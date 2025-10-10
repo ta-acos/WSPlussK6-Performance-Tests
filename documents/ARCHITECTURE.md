@@ -16,10 +16,11 @@ Acos GRAF Load Test v3.0 is a comprehensive K6-based performance testing framewo
 - **Centralized Settings**: All configuration in dedicated JSON files
 - **Dynamic Loading**: Runtime environment and scenario selection
 
-### 3. Enhanced Reporting
+### 3. Enhanced Reporting & Governance
 - **Verbose Logging**: Detailed activity tracking with smart content detection
 - **Multi-format Reports**: HTML dashboards, JSON summaries, CSV exports
-- **Performance Benchmarking**: Industry-standard threshold comparisons
+- **Central Threshold Governance**: All performance & presentation bands centrally defined
+- **Automated Validation**: Schema + inline threshold guard executed pre-commit
 
 ## System Architecture
 
@@ -81,13 +82,15 @@ Acos GRAF Load Test v3.0 is a comprehensive K6-based performance testing framewo
 - Runtime parameter override
 - Error handling with fallbacks
 
-**Configuration Files**:
-```
+**Configuration Files (Core)**:
+
+```text
 src/config/
-├── environments.json       # Environment definitions
-├── autotest.json          # Test scenarios and thresholds
-├── dev.json              # Development environment settings
-└── paths-config.json     # Path and endpoint configurations
+├── environments.json            # Environment definitions (URLs, metadata)
+├── autotest.json                # Scenario shapes (NO thresholds here)
+├── dev.json                     # Dev scenario overrides (if any)
+├── paths-config.json            # Path and endpoint configurations
+└── performance-thresholds.json  # Single source of truth for performance SLOs + UI bands
 ```
 
 **Usage Pattern**:
@@ -233,15 +236,14 @@ export function teardown(data) {
 ### Environment Management
 **File**: `src/config/environments.json`
 
+Only connection & descriptive metadata live here (no performance thresholds anymore):
+
 ```json
 {
   "autotest": {
     "baseUrl": "https://autotest01.acoscloud.no",
     "description": "Auto-test environment",
-    "thresholds": {
-      "http_req_duration": "p(95)<2000",
-      "http_req_failed": "rate<0.05"
-    }
+    "timeout": 30000
   }
 }
 ```
@@ -249,26 +251,81 @@ export function teardown(data) {
 ### Scenario Configuration
 **File**: `src/config/autotest.json`
 
+Contains ONLY scenario execution shapes; thresholds resolved dynamically from `performance-thresholds.json` at runtime:
+
 ```json
 {
   "scenarios": {
-    "smoke_test": {
-      "executor": "constant-vus",
-      "vus": 1,
-      "duration": "30s"
-    },
-    "load_test": {
-      "executor": "ramping-vus",
-      "startVUs": 1,
-      "stages": [
-        { "duration": "1m", "target": 5 },
-        { "duration": "2m", "target": 5 },
-        { "duration": "1m", "target": 0 }
-      ]
-    }
+    "smoke_test": { "executor": "constant-vus", "vus": 1, "duration": "30s" },
+    "load_test":  { "executor": "ramping-vus", "startVUs": 1, "stages": [
+      { "duration": "1m", "target": 5 },
+      { "duration": "2m", "target": 5 },
+      { "duration": "1m", "target": 0 }
+    ] }
   }
 }
 ```
+
+### Central Performance Threshold Model
+**File**: `src/config/performance-thresholds.json`
+
+Purpose: Single source of truth for both k6 threshold enforcement (SLO/SLA) and UI classification bands shown in HTML reports.
+
+Structure (abridged):
+
+```json
+{
+  "defaults": {
+    "maxResponseTimeMs": 5000,
+    "apdexT": 500,
+    "k6": {
+      "http_req_duration": { "p95": 3000, "p99": 6000 },
+      "http_req_failed": { "rate": 0.05 }
+    }
+  },
+  "operations": {
+    "Create Case": { "maxResponseTimeMs": 4000, "k6": { "group_duration{group:::Create New Case}": { "p95": 3000 } } },
+    "Create Journal Post": { "maxResponseTimeMs": 6000, "k6": { "group_duration{group:::Create Journal Post}": { "p95": 3500 } } },
+    "Upload Document": { "maxResponseTimeMs": 8000, "k6": { "group_duration{group:::Attach Documents to JP}": { "p95": 5000 } } }
+  },
+  "uiBands": {
+    "latencyMs": { "good": 800, "watch": 2000, "investigate": 2000 },
+    "errorRate": { "good": 0.01, "watch": 0.05, "investigate": 0.05 },
+    "checkFailureRate": { "good": 0.0, "watch": 0.02, "investigate": 0.02 }
+  }
+}
+```
+
+Key Concepts:
+1. defaults.k6.* define global baseline thresholds (e.g. p95 / p99 for duration)
+2. operations.* optionally override p95 (or add operation-specific groups) for semantic grouping in k6 metrics
+3. uiBands.* drive color/status classification in HTML reports (presentation only, not test pass/fail)
+4. Ordering Rule: For each band object, `good <= watch <= investigate` (validator warns if violated)
+5. No inline / scattered thresholds elsewhere – enforced by validation tooling
+
+Evolution Workflow:
+1. Propose change (e.g. tighten p95) – edit JSON
+2. Run `npm run validate:perf` (schema + inline guard)
+3. Commit (Husky runs validation automatically pre-commit)
+4. Observe impact in next report (legend + classification update)
+
+### Validation & Governance Tooling
+- Schema Validation: `scripts/validate-thresholds.js` (Ajv) ensures structure + band ordering
+- Inline Threshold Guard: `scripts/validate-no-inline-thresholds.js` scans test sources to prevent regressions
+- Aggregate Command: `npm run validate:perf` executes both; wired into `.husky/pre-commit`
+- Policy: All performance changes MUST go through central JSON + pass validation before commit
+
+### Report Classification Flow
+1. Raw k6 metrics collected
+2. Operation-level thresholds applied (pass/fail markers)
+3. uiBands applied to latency/error/check failure aggregates for Good / Watch / Investigate labeling
+4. HTML legend generated dynamically (no hard-coded numbers in templates)
+
+### Migration Notes (v3.0 Governance Upgrade)
+- Removed legacy file: `performance-thresholds-override.json` (now deleted)
+- Purged inline `thresholds:` blocks from test scripts (guard enforces)
+- Added `uiBands` for consistent visual storytelling separate from strict SLOs
+- Introduced Husky pre-commit hook invoking `validate:perf` prior to lint/format
 
 ### Test Data Management
 **Files**:

@@ -63,6 +63,7 @@
  */
 
 import { check } from 'k6';
+import { getPerformanceThresholds } from '../lib/config-manager.js';
 
 /**
  * Validate CSV data structure
@@ -142,10 +143,33 @@ export function validateAPIInfo(apiInfo) {
  * @param {number} expectedStatus - Expected HTTP status code (default: 200)
  * @returns {boolean} Validation result
  */
-export function validateResponse(response, operationName, expectedStatus = 200) {
+export function validateResponse(response, operationName, expectedStatus = 200, opts = {}) {
+  // Allow overriding the max acceptable response time via:
+  // 1. Function option: opts.maxResponseTimeMs
+  // 2. Environment variable: MAX_RESPONSE_TIME_MS or OP_RESPONSE_MAX_MS
+  // 3. Fallback default: 5000 ms
+  const envOverride = (__ENV && (__ENV.MAX_RESPONSE_TIME_MS || __ENV.OP_RESPONSE_MAX_MS)) || null;
+  // Pull operation-specific threshold if defined
+  const perfCfg = getPerformanceThresholds();
+  const opOverride = perfCfg.operations?.[operationName]?.maxResponseTimeMs;
+  const baseDefault = perfCfg.defaults?.maxResponseTimeMs || 5000;
+  const maxResponseTimeMs = parseInt(
+    (opts.maxResponseTimeMs != null
+      ? opts.maxResponseTimeMs
+      : envOverride || opOverride || baseDefault
+    ).toString(),
+    10
+  );
+
+  // Build a human friendly label (show seconds if >= 1000ms)
+  const thresholdLabel =
+    maxResponseTimeMs >= 1000
+      ? `${(maxResponseTimeMs / 1000).toFixed(maxResponseTimeMs % 1000 === 0 ? 0 : 2)}s`
+      : `${maxResponseTimeMs}ms`;
+
   return check(response, {
     [`${operationName} - status ${expectedStatus}`]: (r) => r.status === expectedStatus,
-    [`${operationName} - response time < 5s`]: (r) => r.timings.duration < 5000,
+    [`${operationName} - response time < ${thresholdLabel}`]: (r) => r.timings.duration < maxResponseTimeMs,
     [`${operationName} - has response body`]: (r) => r.body && r.body.length > 0
   });
 }

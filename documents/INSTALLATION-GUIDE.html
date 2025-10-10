@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Installation & Setup Guide</title>
+<style>
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin: 2rem; line-height: 1.5; }
+  pre { background:#1e1e1e; color:#ddd; padding:12px; border-radius:6px; overflow:auto; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  h1,h2,h3,h4 { scroll-margin-top: 80px; }
+  table { border-collapse: collapse; width: 100%; margin:1rem 0; }
+  th, td { border:1px solid #ccc; padding:6px 10px; text-align:left; }
+  th { background:#f5f5f5; }
+  a { color:#0366d6; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .meta { font-size: 0.8rem; color:#666; margin-top:3rem; border-top:1px solid #eee; padding-top:0.5rem; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:1rem; border-radius:6px; }
+  .anchor { text-decoration:none; }
+</style>
+</head>
+<body>
+<h1 id="installation-setup-guide" tabindex="-1">Installation &amp; Setup Guide <a class="header-anchor" href="#installation-setup-guide" aria-hidden="true">#</a></h1>
+<p>Complete setup instructions for the Acos GRAF Load Test v3.0 performance testing framework.</p>
+<h2 id="prerequisites" tabindex="-1">Prerequisites <a class="header-anchor" href="#prerequisites" aria-hidden="true">#</a></h2>
+<p>Before installing the framework, ensure your system meets the following requirements:</p>
+<h3 id="system-requirements" tabindex="-1">System Requirements <a class="header-anchor" href="#system-requirements" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Minimum</th>
+<th>Recommended</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Operating System</strong></td>
+<td>Windows 10, macOS 10.14, Ubuntu 18.04+</td>
+<td>Latest stable versions</td>
+</tr>
+<tr>
+<td><strong>RAM</strong></td>
+<td>4GB</td>
+<td>8GB+ for large-scale tests</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>2GB free space</td>
+<td>5GB+ for reports and logs</td>
+</tr>
+<tr>
+<td><strong>Network</strong></td>
+<td>Stable internet connection</td>
+<td>Low-latency connection to test environments</td>
+</tr>
+</tbody>
+</table>
+<h3 id="required-software" tabindex="-1">Required Software <a class="header-anchor" href="#required-software" aria-hidden="true">#</a></h3>
+<h4 id="1-node-js-installation" tabindex="-1">1. Node.js Installation <a class="header-anchor" href="#1-node-js-installation" aria-hidden="true">#</a></h4>
+<p><strong>Version Required</strong>: 14.0.0 or higher (18.x LTS recommended)</p>
+<p><strong>Installation Methods</strong>:</p>
+<p><strong>Windows:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Using Chocolatey</span>
+choco install nodejs
+
+<span class="hljs-comment"># Using Winget</span>
+winget install OpenJS.NodeJS
+
+<span class="hljs-comment"># Or download from https://nodejs.org/</span>
+</code></pre>
+<p><strong>macOS:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Using Homebrew</span>
+brew install node
+
+<span class="hljs-comment"># Using MacPorts</span>
+<span class="hljs-built_in">sudo</span> port install nodejs18
+</code></pre>
+<p><strong>Linux (Ubuntu/Debian):</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Using NodeSource repository</span>
+curl -fsSL https://deb.nodesource.com/setup_18.x | <span class="hljs-built_in">sudo</span> -E bash -
+<span class="hljs-built_in">sudo</span> apt-get install -y nodejs
+
+<span class="hljs-comment"># Using snap</span>
+<span class="hljs-built_in">sudo</span> snap install node --classic
+</code></pre>
+<p><strong>Verification:</strong></p>
+<pre class="hljs"><code>node --version    <span class="hljs-comment"># Should show v14.0.0 or higher</span>
+npm --version     <span class="hljs-comment"># Should show corresponding npm version</span>
+</code></pre>
+<h4 id="2-k6-installation" tabindex="-1">2. K6 Installation <a class="header-anchor" href="#2-k6-installation" aria-hidden="true">#</a></h4>
+<p><strong>Version Required</strong>: Latest stable (v0.40.0+)</p>
+<p><strong>Windows:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Using Chocolatey (recommended)</span>
+choco install k6
+
+<span class="hljs-comment"># Using Scoop</span>
+scoop install k6
+
+<span class="hljs-comment"># Using MSI installer from https://k6.io/docs/getting-started/installation/</span>
+</code></pre>
+<p><strong>macOS:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Using Homebrew (recommended)</span>
+brew install k6
+
+<span class="hljs-comment"># Using MacPorts</span>
+<span class="hljs-built_in">sudo</span> port install k6
+</code></pre>
+<p><strong>Linux:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Ubuntu/Debian using APT</span>
+<span class="hljs-built_in">sudo</span> gpg -k
+<span class="hljs-built_in">sudo</span> gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main&quot;</span> | <span class="hljs-built_in">sudo</span> <span class="hljs-built_in">tee</span> /etc/apt/sources.list.d/k6.list
+<span class="hljs-built_in">sudo</span> apt-get update
+<span class="hljs-built_in">sudo</span> apt-get install k6
+
+<span class="hljs-comment"># CentOS/RHEL using YUM</span>
+<span class="hljs-built_in">sudo</span> dnf install https://dl.k6.io/rpm/repo.rpm
+<span class="hljs-built_in">sudo</span> dnf install k6
+
+<span class="hljs-comment"># Using Docker (all platforms)</span>
+docker pull grafana/k6:latest
+</code></pre>
+<p><strong>Verification:</strong></p>
+<pre class="hljs"><code>k6 version    <span class="hljs-comment"># Should show current version information</span>
+</code></pre>
+<h2 id="framework-installation" tabindex="-1">Framework Installation <a class="header-anchor" href="#framework-installation" aria-hidden="true">#</a></h2>
+<h3 id="1-project-download-clone" tabindex="-1">1. Project Download/Clone <a class="header-anchor" href="#1-project-download-clone" aria-hidden="true">#</a></h3>
+<p><strong>Option A: Download ZIP</strong></p>
+<ol>
+<li>Download the project ZIP file</li>
+<li>Extract to your desired location</li>
+<li>Navigate to the extracted directory</li>
+</ol>
+<p><strong>Option B: Git Clone</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Clone the repository</span>
+git <span class="hljs-built_in">clone</span> &lt;repository-url&gt;
+<span class="hljs-built_in">cd</span> WSPlussK6-Performance-Tests
+</code></pre>
+<h3 id="2-dependency-installation" tabindex="-1">2. Dependency Installation <a class="header-anchor" href="#2-dependency-installation" aria-hidden="true">#</a></h3>
+<p>Navigate to the project directory and install dependencies:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Navigate to project directory</span>
+<span class="hljs-built_in">cd</span> WSPlussK6-Performance-Tests
+
+<span class="hljs-comment"># Install all dependencies</span>
+npm install
+
+<span class="hljs-comment"># Verify installation</span>
+npm list --depth=0
+</code></pre>
+<p><strong>Expected Output:</strong></p>
+<pre class="hljs"><code>acos-graf-load-test@3.0.0
+├── eslint@8.x.x
+├── prettier@2.x.x
+└── husky@8.x.x
+</code></pre>
+<h3 id="3-configuration-setup" tabindex="-1">3. Configuration Setup <a class="header-anchor" href="#3-configuration-setup" aria-hidden="true">#</a></h3>
+<h4 id="environment-configuration" tabindex="-1">Environment Configuration <a class="header-anchor" href="#environment-configuration" aria-hidden="true">#</a></h4>
+<p>The framework comes with pre-configured environments, but you may need to customize them:</p>
+<p><strong>File: <code>src/config/environments.json</code></strong></p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;autotest&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;baseUrl&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://autotest01.acoscloud.no&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Auto-test environment&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;timeout&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">30000</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;dev&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;baseUrl&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://dev.acoscloud.no&quot;</span><span class="hljs-punctuation">,</span> 
+    <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Development environment&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;timeout&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">30000</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p><strong>Customization Steps:</strong></p>
+<ol>
+<li>Open <code>src/config/environments.json</code></li>
+<li>Modify URLs to match your target environments</li>
+<li>Adjust timeout values if needed</li>
+<li>Save the file</li>
+</ol>
+<h4 id="user-configuration" tabindex="-1">User Configuration <a class="header-anchor" href="#user-configuration" aria-hidden="true">#</a></h4>
+<p><strong>File: <code>src/data/users-config.json</code></strong></p>
+<p>This file contains test user credentials. Update with valid test accounts:</p>
+<pre class="hljs"><code><span class="hljs-punctuation">[</span>
+  <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;username&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;testuser1@domain.com&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;password&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SecurePassword123&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;role&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;case_worker&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;username&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;testuser2@domain.com&quot;</span><span class="hljs-punctuation">,</span> 
+    <span class="hljs-attr">&quot;password&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SecurePassword456&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;role&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;administrator&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">]</span>
+</code></pre>
+<p><strong>Security Note</strong>: Never commit real passwords to version control. Use dedicated test accounts with minimal permissions.</p>
+<h4 id="test-scenario-configuration" tabindex="-1">Test Scenario Configuration <a class="header-anchor" href="#test-scenario-configuration" aria-hidden="true">#</a></h4>
+<p><strong>File: <code>src/config/autotest.json</code></strong></p>
+<p>Contains ONLY scenario execution shapes (executors, VUs, durations). <strong>Performance thresholds are NOT defined here anymore</strong> – they are centrally governed in <code>src/config/performance-thresholds.json</code>.</p>
+<p>Minimal example (abridged):</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;scenarios&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;smoke_test&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;executor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;constant-vus&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;vus&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;30s&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;load_test&quot;</span><span class="hljs-punctuation">:</span>  <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;executor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ramping-vus&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;startVUs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;stages&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1m&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2m&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1m&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<blockquote>
+<p>Note: Any legacy <code>thresholds</code> block previously present here has been removed to enforce single-source-of-truth governance.</p>
+</blockquote>
+<h4 id="central-performance-thresholds-uibands" tabindex="-1">Central Performance Thresholds &amp; uiBands <a class="header-anchor" href="#central-performance-thresholds-uibands" aria-hidden="true">#</a></h4>
+<p>All performance SLOs (k6 pass/fail thresholds) and presentation bands (Good/Watch/Investigate) live in:</p>
+<pre class="hljs"><code>src/config/performance-thresholds.json
+</code></pre>
+<p>Structure (abridged):</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;http_req_duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;p99&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">6000</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;http_req_failed&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;operations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;Create Case&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;group_duration{group:::Create New Case}&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3000</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;uiBands&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;latencyMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">800</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2000</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>defaults.k6</code></td>
+<td>Global p95/p99 + error/check failure targets applied to all operations unless overridden.</td>
+</tr>
+<tr>
+<td><code>operations</code></td>
+<td>Optional operation-specific group overrides for more granular SLOs.</td>
+</tr>
+<tr>
+<td><code>uiBands</code></td>
+<td>Drives HTML report coloring (does not influence test exit code).</td>
+</tr>
+</tbody>
+</table>
+<h4 id="validation-governance" tabindex="-1">Validation &amp; Governance <a class="header-anchor" href="#validation-governance" aria-hidden="true">#</a></h4>
+<p>Automated scripts enforce correctness and prevent regression to inline thresholds:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run validate:thresholds</code></td>
+<td>Schema &amp; ordering validation for <code>performance-thresholds.json</code>.</td>
+</tr>
+<tr>
+<td><code>npm run validate:no-inline-thresholds</code></td>
+<td>Scans test sources for disallowed inline <code>thresholds:</code> blocks.</td>
+</tr>
+<tr>
+<td><code>npm run validate:perf</code></td>
+<td>Runs both validations (recommended before commit).</td>
+</tr>
+</tbody>
+</table>
+<p>Husky <code>pre-commit</code> hook (installed via <code>npm run prepare</code>) automatically runs <code>validate:perf</code> and blocks non‑compliant commits.</p>
+<p>Recommended workflow for changing a threshold:</p>
+<ol>
+<li>Edit <code>performance-thresholds.json</code> (adjust <code>defaults</code>, add an <code>operations</code> entry, or tune <code>uiBands</code>).</li>
+<li>Run <code>npm run validate:perf</code>.</li>
+<li>Commit changes (hook re-validates).</li>
+<li>Re-run representative tests and open the HTML report to review updated colors and pass/fail.</li>
+</ol>
+<blockquote>
+<p>Policy: Do not add <code>thresholds:</code> inside test files—central governance ensures consistency and reviewability.</p>
+</blockquote>
+<h2 id="verification-testing" tabindex="-1">Verification &amp; Testing <a class="header-anchor" href="#verification-testing" aria-hidden="true">#</a></h2>
+<h3 id="1-installation-verification" tabindex="-1">1. Installation Verification <a class="header-anchor" href="#1-installation-verification" aria-hidden="true">#</a></h3>
+<p>Run the verification script to ensure everything is properly installed:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Check all dependencies</span>
+npm run lint --version
+npm run format --version  
+
+<span class="hljs-comment"># Verify K6 installation</span>
+k6 version
+
+<span class="hljs-comment"># Check Node.js version</span>
+node --version
+npm --version
+</code></pre>
+<h3 id="2-configuration-test" tabindex="-1">2. Configuration Test <a class="header-anchor" href="#2-configuration-test" aria-hidden="true">#</a></h3>
+<p>Test the configuration loading:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Test basic configuration</span>
+k6 run --dry-run tests/api/cases/create-sak.js
+
+<span class="hljs-comment"># Should show:</span>
+<span class="hljs-comment"># - Test file loaded successfully</span>
+<span class="hljs-comment"># - Configuration loaded</span>
+<span class="hljs-comment"># - No execution (dry run)</span>
+</code></pre>
+<h3 id="3-first-test-run" tabindex="-1">3. First Test Run <a class="header-anchor" href="#3-first-test-run" aria-hidden="true">#</a></h3>
+<p>Execute your first test to verify the complete setup:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Run simple smoke test</span>
+npm run simple
+
+<span class="hljs-comment"># Expected output:</span>
+<span class="hljs-comment"># ✓ Test execution completes without errors</span>
+<span class="hljs-comment"># ✓ Report generated in src/reports/</span>
+<span class="hljs-comment"># ✓ Performance metrics displayed</span>
+</code></pre>
+<p><strong>Successful Test Indicators:</strong></p>
+<ul>
+<li>No error messages during execution</li>
+<li>Test completes with metrics summary</li>
+<li>HTML report generated in <code>src/reports/</code></li>
+<li>Success rate &gt; 95%</li>
+</ul>
+<h3 id="4-report-verification" tabindex="-1">4. Report Verification <a class="header-anchor" href="#4-report-verification" aria-hidden="true">#</a></h3>
+<p>Check that reports are generated correctly:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Open the generated report</span>
+npm run report:open
+
+<span class="hljs-comment"># Should open HTML report in default browser showing:</span>
+<span class="hljs-comment"># - Performance metrics dashboard</span>
+<span class="hljs-comment"># - Test execution timeline  </span>
+<span class="hljs-comment"># - Error analysis (if any)</span>
+<span class="hljs-comment"># - Threshold compliance status</span>
+</code></pre>
+<h2 id="environment-specific-setup" tabindex="-1">Environment-Specific Setup <a class="header-anchor" href="#environment-specific-setup" aria-hidden="true">#</a></h2>
+<h3 id="development-environment" tabindex="-1">Development Environment <a class="header-anchor" href="#development-environment" aria-hidden="true">#</a></h3>
+<p>For development and testing of the framework itself:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Install additional development tools</span>
+npm install --save-dev eslint-config-airbnb
+npm install --save-dev @eslint/js
+
+<span class="hljs-comment"># Set up pre-commit hooks</span>
+npx husky install
+npx husky add .husky/pre-commit <span class="hljs-string">&quot;npm run lint &amp;&amp; npm run format&quot;</span>
+
+<span class="hljs-comment"># Configure IDE settings (VS Code)</span>
+<span class="hljs-comment"># Add to .vscode/settings.json:</span>
+{
+  <span class="hljs-string">&quot;editor.formatOnSave&quot;</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-string">&quot;editor.defaultFormatter&quot;</span>: <span class="hljs-string">&quot;esbenp.prettier-vscode&quot;</span>,
+  <span class="hljs-string">&quot;eslint.validate&quot;</span>: [<span class="hljs-string">&quot;javascript&quot;</span>]
+}
+</code></pre>
+<h3 id="ci-cd-environment" tabindex="-1">CI/CD Environment <a class="header-anchor" href="#ci-cd-environment" aria-hidden="true">#</a></h3>
+<p>For automated testing in build pipelines:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Install dependencies (in CI script)</span>
+npm ci
+
+<span class="hljs-comment"># Run tests with CI-friendly output</span>
+npm run <span class="hljs-built_in">test</span>:simple -- --quiet --no-color
+
+<span class="hljs-comment"># Generate reports for CI artifacts</span>
+npm run <span class="hljs-built_in">test</span>:load
+<span class="hljs-built_in">cp</span> src/reports/* <span class="hljs-variable">$CI_ARTIFACTS_DIR</span>/
+</code></pre>
+<h3 id="production-monitoring" tabindex="-1">Production Monitoring <a class="header-anchor" href="#production-monitoring" aria-hidden="true">#</a></h3>
+<p>For production performance validation:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Configure production environment</span>
+<span class="hljs-comment"># Add / update prod entry in src/config/environments.json</span>
+
+<span class="hljs-comment"># (Optional) Add prod scenario file if load pattern differs: src/config/prod.json</span>
+<span class="hljs-comment"># Do NOT duplicate thresholds – they remain in performance-thresholds.json</span>
+
+<span class="hljs-comment"># Run production smoke test (ensure appropriate credentials &amp; safety)</span>
+npm run <span class="hljs-built_in">test</span>:prod:smoke
+</code></pre>
+<p>When production performance expectations change, adjust only <code>performance-thresholds.json</code> (not per-environment scenario files) so governance stays centralized.</p>
+<h2 id="troubleshooting-installation" tabindex="-1">Troubleshooting Installation <a class="header-anchor" href="#troubleshooting-installation" aria-hidden="true">#</a></h2>
+<h3 id="common-issues" tabindex="-1">Common Issues <a class="header-anchor" href="#common-issues" aria-hidden="true">#</a></h3>
+<h4 id="k6-installation-issues" tabindex="-1">K6 Installation Issues <a class="header-anchor" href="#k6-installation-issues" aria-hidden="true">#</a></h4>
+<p><strong>Problem</strong>: K6 not found in PATH</p>
+<pre class="hljs"><code><span class="hljs-comment"># Windows - Add K6 to PATH manually</span>
+<span class="hljs-variable">$env</span>:PATH += <span class="hljs-string">&quot;;C:\Program Files\k6&quot;</span>
+
+<span class="hljs-comment"># macOS/Linux - Check installation location</span>
+<span class="hljs-built_in">which</span> k6
+<span class="hljs-comment"># If not found, reinstall using package manager</span>
+</code></pre>
+<p><strong>Problem</strong>: K6 version compatibility</p>
+<pre class="hljs"><code><span class="hljs-comment"># Check K6 version</span>
+k6 version
+
+<span class="hljs-comment"># If version &lt; 0.40.0, update:</span>
+<span class="hljs-comment"># Windows: choco upgrade k6</span>
+<span class="hljs-comment"># macOS: brew upgrade k6  </span>
+<span class="hljs-comment"># Linux: Follow installation steps again</span>
+</code></pre>
+<h4 id="node-js-issues" tabindex="-1">Node.js Issues <a class="header-anchor" href="#node-js-issues" aria-hidden="true">#</a></h4>
+<p><strong>Problem</strong>: Node version too old</p>
+<pre class="hljs"><code><span class="hljs-comment"># Check current version</span>
+node --version
+
+<span class="hljs-comment"># Upgrade Node.js:</span>
+<span class="hljs-comment"># Windows: Download latest from nodejs.org</span>
+<span class="hljs-comment"># macOS: brew upgrade node</span>
+<span class="hljs-comment"># Linux: Use NodeSource repository for latest</span>
+</code></pre>
+<p><strong>Problem</strong>: npm permissions (Linux/macOS)</p>
+<pre class="hljs"><code><span class="hljs-comment"># Fix npm permissions</span>
+<span class="hljs-built_in">mkdir</span> ~/.npm-global
+npm config <span class="hljs-built_in">set</span> prefix <span class="hljs-string">&#x27;~/.npm-global&#x27;</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;export PATH=~/.npm-global/bin:$PATH&#x27;</span> &gt;&gt; ~/.profile
+<span class="hljs-built_in">source</span> ~/.profile
+</code></pre>
+<h4 id="framework-issues" tabindex="-1">Framework Issues <a class="header-anchor" href="#framework-issues" aria-hidden="true">#</a></h4>
+<p><strong>Problem</strong>: Dependencies installation fails</p>
+<pre class="hljs"><code><span class="hljs-comment"># Clear npm cache</span>
+npm cache clean --force
+
+<span class="hljs-comment"># Delete node_modules and reinstall</span>
+<span class="hljs-built_in">rm</span> -rf node_modules package-lock.json
+npm install
+</code></pre>
+<p><strong>Problem</strong>: Tests fail immediately</p>
+<pre class="hljs"><code><span class="hljs-comment"># Check configuration files exist</span>
+<span class="hljs-built_in">ls</span> src/config/
+<span class="hljs-built_in">ls</span> src/data/
+
+<span class="hljs-comment"># Verify user credentials format</span>
+<span class="hljs-built_in">cat</span> src/data/users-config.json
+
+<span class="hljs-comment"># Test with verbose output</span>
+npm run <span class="hljs-built_in">test</span>:simple -- --verbose
+</code></pre>
+<h4 id="configuration-issues" tabindex="-1">Configuration Issues <a class="header-anchor" href="#configuration-issues" aria-hidden="true">#</a></h4>
+<p><strong>Problem</strong>: Authentication failures</p>
+<ol>
+<li>Verify user credentials in <code>src/data/users-config.json</code></li>
+<li>Test credentials manually in target application</li>
+<li>Check environment URLs in <code>src/config/environments.json</code></li>
+<li>Confirm network connectivity to target environment</li>
+</ol>
+<p><strong>Problem</strong>: Permission denied errors</p>
+<ol>
+<li>Check file permissions: <code>chmod +x</code> on script files</li>
+<li>Verify user account has required permissions in target system</li>
+<li>Check firewall/proxy settings</li>
+</ol>
+<h3 id="environment-variables" tabindex="-1">Environment Variables <a class="header-anchor" href="#environment-variables" aria-hidden="true">#</a></h3>
+<p>Set environment variables for easier troubleshooting:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Enable debug logging</span>
+<span class="hljs-built_in">export</span> DEBUG=k6*
+
+<span class="hljs-comment"># Set custom configuration</span>
+<span class="hljs-built_in">export</span> CONFIG_ENV=dev
+<span class="hljs-built_in">export</span> SCENARIO=smoke_test
+
+<span class="hljs-comment"># Enable verbose reporting</span>
+<span class="hljs-built_in">export</span> ENABLE_VERBOSE_REPORT=<span class="hljs-literal">true</span>
+</code></pre>
+<h3 id="getting-help" tabindex="-1">Getting Help <a class="header-anchor" href="#getting-help" aria-hidden="true">#</a></h3>
+<p>If you encounter issues not covered here:</p>
+<ol>
+<li><strong>Check Configuration</strong>: Verify all configuration files are properly formatted</li>
+<li><strong>Review Logs</strong>: Examine console output for specific error messages</li>
+<li><strong>Test Incrementally</strong>: Start with simple tests before complex scenarios</li>
+<li><strong>Environment Check</strong>: Ensure target environment is accessible and responsive</li>
+</ol>
+<h2 id="next-steps" tabindex="-1">Next Steps <a class="header-anchor" href="#next-steps" aria-hidden="true">#</a></h2>
+<p>After successful installation:</p>
+<ol>
+<li><strong>Read the README</strong>: Review <code>README.md</code> for overview and quick start</li>
+<li><strong>Explore Commands</strong>: Check <code>documents/NPM-COMMANDS-REFERENCE.md</code> for all available commands</li>
+<li><strong>Understand Metrics</strong>: Read <code>documents/METRICS-GUIDE.md</code> for performance analysis</li>
+<li><strong>Review Architecture</strong>: Study <code>documents/ARCHITECTURE.md</code> for system understanding</li>
+</ol>
+<h2 id="maintenance" tabindex="-1">Maintenance <a class="header-anchor" href="#maintenance" aria-hidden="true">#</a></h2>
+<h3 id="regular-updates" tabindex="-1">Regular Updates <a class="header-anchor" href="#regular-updates" aria-hidden="true">#</a></h3>
+<p>Keep the framework updated:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Update npm dependencies</span>
+npm update
+
+<span class="hljs-comment"># Update K6</span>
+<span class="hljs-comment"># Windows: choco upgrade k6</span>
+<span class="hljs-comment"># macOS: brew upgrade k6</span>
+<span class="hljs-comment"># Linux: Follow installation steps for latest version</span>
+
+<span class="hljs-comment"># Update Node.js when needed</span>
+<span class="hljs-comment"># Check for LTS releases at nodejs.org</span>
+</code></pre>
+<h3 id="health-checks" tabindex="-1">Health Checks <a class="header-anchor" href="#health-checks" aria-hidden="true">#</a></h3>
+<p>Periodically verify the installation:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Monthly health check</span>
+npm run simple
+npm run report:open
+
+<span class="hljs-comment"># Verify all components working</span>
+npm run lint
+npm run format
+</code></pre>
+<p>This completes the installation and setup process. You should now have a fully functional performance testing framework ready for use.</p>
+
+<div class="meta">Generated from <code>documents/INSTALLATION-GUIDE.md</code> on 2025-10-10T11:24:15.260Z</div>
+</body>
+</html>

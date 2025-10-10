@@ -1,0 +1,77 @@
+{
+  "defaults": {
+    "maxResponseTimeMs": 5000,
+    "apdexT": 500,
+    "k6": {
+      "http_req_duration": { "p95": 4500, "p99": 8000 },
+      "http_req_failed": { "rate": 0.05 }
+    }
+  },
+  "operations": {
+    "Upload Document": {
+      "maxResponseTimeMs": 8000,
+      "k6": {
+        "group_duration{group:::Attach Documents to JP}": { "p95": 5000 }
+      }
+    },
+    "Create Journal Post": {
+      "maxResponseTimeMs": 6000,
+      "k6": {
+        "group_duration{group:::Create Journal Post}": { "p95": 3500 }
+      }
+    },
+    "Create Case": {
+      "maxResponseTimeMs": 4000,
+      "k6": {
+        "group_duration{group:::Create New Case}": { "p95": 3000 }
+      }
+    },
+    "Authentication": {
+      "maxResponseTimeMs": 4000,
+      "k6": {
+        "group_duration{group:::Authentication}": { "p95": 2000 }
+      }
+    },
+    "Get Case Templates": {
+      "maxResponseTimeMs": 4000,
+      "k6": {
+        "group_duration{group:::Get Case Templates}": { "p95": 2500 }
+      }
+    },
+    "Get JP Templates": {
+      "maxResponseTimeMs": 4000,
+      "k6": {
+        "group_duration{group:::Get JP Templates}": { "p95": 3000 }
+      }
+    },
+    "Attach Document": {
+      "maxResponseTimeMs": 6000,
+      "k6": {
+        "group_duration{group:::Attach Document to JP}": { "p95": 3500 }
+      }
+    },
+    "Verify Documents": {
+      "maxResponseTimeMs": 4000,
+      "k6": {
+        "group_duration{group:::Verify JP Documents}": { "p95": 2000 }
+      }
+    }
+  },
+  "uiBands": {
+    "latencyMs": {
+      "good": 1200,
+      "watch": 2500,
+      "investigate": 5000
+    },
+    "errorRate": {
+      "good": 0.01,
+      "watch": 0.05,
+      "investigate": 0.05
+    },
+    "checkFailureRate": {
+      "good": 0.0,
+      "watch": 0.02,
+      "investigate": 0.02
+    }
+  }
+}

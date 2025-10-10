@@ -43,16 +43,17 @@ The framework includes comprehensive documentation designed for different user n
 
 ## 🔧 For Technical Users
 
-### 4. **NPM-COMMANDS-GUIDE.md** - Command Reference
-**Purpose**: Complete reference of all available NPM commands
+ 
+### 4. **NPM-COMMANDS-REFERENCE.md** - Command Reference
+**Purpose**: Complete reference of all available NPM commands (with interactive HTML version)
 **Target Audience**: Power users, CI/CD engineers, technical users
 **Key Sections**:
 - All 50+ NPM commands organized by category
 - Usage patterns and examples
-- Performance expectations
-- Advanced usage techniques
+- Performance governance & validation commands (`validate:*`)
+- Advanced usage techniques & verbose reporting
 
-**When to Use**: Daily reference for running specific tests, automation setup
+**When to Use**: Daily reference for running specific tests, automation setup, locating validation commands
 
 ### 5. **ARCHITECTURE.md** - Technical Documentation
 **Purpose**: System design and technical architecture
@@ -78,23 +79,27 @@ The framework includes comprehensive documentation designed for different user n
 
 ## 📖 Reading Path Recommendations
 
-### 👋 New Users (First Time)
+### � New Users (First Time)
+
 1. **README.md** - Get overview and run first test
 2. **INSTALLATION-GUIDE.md** - Complete setup if needed
 3. **USER-GUIDE.md** - Learn daily usage patterns
-4. **NPM-COMMANDS-GUIDE.md** - Reference for commands
+4. **NPM-COMMANDS-REFERENCE.md** - Reference for commands & governance scripts
 
 ### 🔄 Daily Users
-1. **NPM-COMMANDS-GUIDE.md** - Find the right command
+
+1. **NPM-COMMANDS-REFERENCE.md** - Find the right command & validation scripts
 2. **METRICS-GUIDE.md** - Interpret results
 3. **USER-GUIDE.md** - Troubleshooting reference
 
 ### 🏗️ Technical Implementation
+
 1. **ARCHITECTURE.md** - Understand system design
-2. **NPM-COMMANDS-GUIDE.md** - Advanced usage patterns
+2. **NPM-COMMANDS-REFERENCE.md** - Advanced usage patterns & governance commands
 3. **METRICS-GUIDE.md** - Performance analysis techniques
 
 ### 🚀 Project Handover
+
 1. **README.md** - Project overview
 2. **INSTALLATION-GUIDE.md** - Setup procedures
 3. **USER-GUIDE.md** - Usage instructions
@@ -103,18 +108,21 @@ The framework includes comprehensive documentation designed for different user n
 ## 📋 Documentation Maintenance
 
 ### Content Updates
+
 - **README.md**: Update when adding new major features
-- **NPM-COMMANDS-GUIDE.md**: Update when adding new commands
+- **NPM-COMMANDS-REFERENCE.md**: Update when adding new commands
 - **ARCHITECTURE.md**: Update when changing system design
 - **METRICS-GUIDE.md**: Update when changing thresholds or metrics
 
 ### Quality Standards
+
 - All documentation follows consistent formatting
 - Code examples are tested and verified
 - Screenshots and examples reflect current system
 - Links between documents are maintained
 
 ### Version Control
+
 - Documentation versioned with code
 - Changes documented in commit messages
 - Breaking changes highlighted in documentation
@@ -122,6 +130,7 @@ The framework includes comprehensive documentation designed for different user n
 ## 🎯 Key Features Covered
 
 ### Framework Capabilities
+
 ✅ **Multi-Environment Support** - autotest, dev, prod configurations
 ✅ **Comprehensive Test Types** - smoke, load, stress, spike testing
 ✅ **Document Upload Testing** - File attachment performance validation
@@ -129,6 +138,7 @@ The framework includes comprehensive documentation designed for different user n
 ✅ **Verbose Logging** - Detailed activity tracking with smart content detection
 
 ### Usage Patterns
+
 ✅ **Quick Start** - 5-minute setup and first test
 ✅ **Daily Development** - Regular performance validation
 ✅ **Pre-Release Testing** - Comprehensive validation before deployments
@@ -136,6 +146,7 @@ The framework includes comprehensive documentation designed for different user n
 ✅ **CI/CD Integration** - Automated testing in build pipelines
 
 ### Technical Excellence
+
 ✅ **Modular Architecture** - Extensible and maintainable design
 ✅ **Configuration Management** - Centralized, environment-aware settings
 ✅ **Performance Benchmarking** - Industry-standard threshold comparisons
@@ -144,13 +155,16 @@ The framework includes comprehensive documentation designed for different user n
 ## 📞 Support Information
 
 ### Self-Service Resources
+
 1. **Quick Issues**: Check USER-GUIDE.md troubleshooting section
-2. **Command Questions**: Reference NPM-COMMANDS-GUIDE.md
+2. **Command Questions**: Reference NPM-COMMANDS-REFERENCE.md
 3. **Setup Problems**: Follow INSTALLATION-GUIDE.md step-by-step
 4. **Technical Details**: Review ARCHITECTURE.md
 
 ### Documentation Feedback
+
 When reporting documentation issues, please specify:
+
 - Which document needs improvement
 - Specific section or topic
 - Suggested improvements or corrections
@@ -159,6 +173,7 @@ When reporting documentation issues, please specify:
 ## 🏆 Success Metrics
 
 The documentation is successful when users can:
+
 - ✅ Complete setup in under 15 minutes
 - ✅ Run their first test within 5 minutes of setup
 - ✅ Find answers to common questions without external help  
@@ -168,6 +183,7 @@ The documentation is successful when users can:
 ## 📈 Continuous Improvement
 
 This documentation is designed to evolve with the project:
+
 - User feedback incorporated into updates
 - New features documented as they're developed
 - Examples updated to reflect current best practices

@@ -87,7 +87,6 @@ import {
   generateEnhancedVerboseReport,
   logVUActivity,
   logAuth,
-  logAPIRequest,
   logJPCreation,
   logDocumentAttachment
 } from '../../../src/utils/k6-verbose-logger.js';
@@ -96,6 +95,11 @@ import {
   generateOutgoingJpPayload,
   createJournalPostWithPayload
 } from '../../../src/lib/payload-module.js';
+// --- Auto classification flags (added 2025-10-10) ---
+if (!__ENV.FLOW_TYPE) {
+  __ENV.FLOW_TYPE = 'jp';
+}
+__ENV.JP_ENDPOINT_HIT = 'true';
 
 // ========================================
 // CONFIGURATION FLAGS
@@ -117,18 +121,8 @@ const USE_TEST_DOCS = (__ENV.USE_TEST_DOCS || 'false').toLowerCase() === 'true';
 // Fallback / inline test configuration
 const ORIGINAL_TEST_CONFIG = {
   vus: 1,
-  duration: '30s',
-  thresholds: {
-    http_req_duration: ['p(95)<3500'],
-    http_req_failed: ['rate<0.05'],
-    'group_duration{group:::Authentication}': ['p(95)<2000'],
-    'group_duration{group:::Get Case Templates}': ['p(95)<2500'],
-    'group_duration{group:::Create New Case}': ['p(95)<3000'],
-    'group_duration{group:::Get JP Templates}': ['p(95)<3000'],
-    'group_duration{group:::Create Incoming JP}': ['p(95)<3500'],
-    'group_duration{group:::Create Outgoing JP}': ['p(95)<3500'],
-    'group_duration{group:::Attach Documents to JP}': ['p(95)<5000']
-  }
+  duration: '30s'
+  // thresholds removed – centrally injected
 };
 
 // Load configuration

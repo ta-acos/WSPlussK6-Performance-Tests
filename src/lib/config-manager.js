@@ -49,6 +49,7 @@
  */
 
 import { SharedArray } from 'k6/data';
+import { buildThresholds } from '../utils/threshold-builder.js';
 // Note: External URL import must be resolved at init time, so we use the configured URL
 // This could be made dynamic in the future by loading the config in a separate init phase
 // import papaparse from 'https://jslib.k6.io/papaparse/5.1.1/index.js'; // TODO: Use when CSV parsing needed
@@ -206,6 +207,86 @@ if (!pathsConfig) {
       testData: { baseDir: 'src/data', testDocuments: 'src/data/testDocuments' }
     }
   };
+}
+
+// Load performance thresholds configuration (optional, now supports override via PERFORMANCE_THRESHOLDS_FILE)
+let performanceThresholds = { defaults: { maxResponseTimeMs: 5000, apdexT: 500 }, operations: {} };
+const overrideFile = __ENV.PERFORMANCE_THRESHOLDS_FILE;
+// Build candidate list honoring explicit override first (absolute kept as‑is, relative resolved like others)
+const perfThresholdCandidates = [];
+if (overrideFile) {
+  // If user supplied a path, try as given; if it's not obviously absolute and doesn't include a path separator,
+  // also try prefixing with standard config folders for convenience.
+  perfThresholdCandidates.push(overrideFile);
+  if (!overrideFile.includes('/') && !overrideFile.includes('\\')) {
+    perfThresholdCandidates.push(`../config/${overrideFile}`);
+    perfThresholdCandidates.push(`./src/config/${overrideFile}`);
+    perfThresholdCandidates.push(`src/config/${overrideFile}`);
+  }
+}
+// Default canonical file candidates
+perfThresholdCandidates.push(
+  '../config/performance-thresholds.json',
+  './src/config/performance-thresholds.json',
+  'src/config/performance-thresholds.json'
+);
+
+let perfLoadedFrom = null;
+for (const p of perfThresholdCandidates) {
+  try {
+    const parsed = JSON.parse(open(p));
+    performanceThresholds = parsed;
+    perfLoadedFrom = p;
+    console.log(`✅ Loaded performance thresholds from: ${p}`);
+    break;
+  } catch (e) {
+    // try next candidate silently
+  }
+}
+if (!perfLoadedFrom) {
+  console.warn(
+    '⚠️ Warning: Using built-in performance threshold defaults (could not load any file). Candidates tried: ' +
+      perfThresholdCandidates.join(', ')
+  );
+}
+
+// Load performance threshold profiles (scenario/environment modifiers)
+const perfProfileCandidates = [
+  '../config/performance-threshold-profiles.json',
+  './src/config/performance-threshold-profiles.json',
+  'src/config/performance-threshold-profiles.json'
+];
+let performanceThresholdProfiles = { scenarios: {}, environments: {} };
+for (const p of perfProfileCandidates) {
+  try {
+    performanceThresholdProfiles = JSON.parse(open(p));
+    console.log(`✅ Loaded performance threshold profiles from: ${p}`);
+    break;
+  } catch (e) {
+    // try next
+  }
+}
+
+/**
+ * Get performance thresholds configuration
+ * Precedence for overrides: env vars > file defaults
+ * Env overrides:
+ *   MAX_RESPONSE_TIME_MS / OP_RESPONSE_MAX_MS (global max)
+ *   APDEX_T / APDex_T (apdex threshold)
+ *   PERFORMANCE_THRESHOLDS_FILE (select alternate JSON at load time)
+ * @returns {Object}
+ */
+export function getPerformanceThresholds() {
+  const clone = JSON.parse(JSON.stringify(performanceThresholds));
+  if (__ENV.MAX_RESPONSE_TIME_MS || __ENV.OP_RESPONSE_MAX_MS) {
+    const v = parseInt(__ENV.MAX_RESPONSE_TIME_MS || __ENV.OP_RESPONSE_MAX_MS, 10);
+    if (!isNaN(v)) clone.defaults.maxResponseTimeMs = v;
+  }
+  if (__ENV.APDex_T || __ENV.APDEX_T) {
+    const a = parseInt(__ENV.APDex_T || __ENV.APDEX_T, 10);
+    if (!isNaN(a)) clone.defaults.apdexT = a;
+  }
+  return clone;
 }
 
 /**
@@ -424,6 +505,9 @@ export function getK6OptionsWithScenarios(config, scenarioName = null) {
     options.thresholds = config.thresholds;
   }
 
+  // Inject centrally generated thresholds (builder) unless disabled
+  injectCentralThresholds(options, config);
+
   // Add other options
   if (config.options) {
     Object.assign(options, config.options);
@@ -440,6 +524,11 @@ export function getK6OptionsWithScenarios(config, scenarioName = null) {
     'tls_version',
     'expected_response'
   ];
+
+  // Ensure consistent trend statistics (needed for group_duration tables)
+  if (!options.summaryTrendStats || !Array.isArray(options.summaryTrendStats)) {
+    options.summaryTrendStats = ['min', 'avg', 'med', 'p(90)', 'p(95)', 'max'];
+  }
 
   return options;
 }
@@ -473,6 +562,9 @@ export function getK6Options(config) {
     if (config.thresholds) options.thresholds = config.thresholds;
   }
 
+  // Inject centrally generated thresholds (builder) unless disabled
+  injectCentralThresholds(options, config);
+
   // Add systemTags to include URL and method in metrics for better reporting
   options.systemTags = [
     'name',
@@ -485,7 +577,53 @@ export function getK6Options(config) {
     'expected_response'
   ];
 
+  // Ensure consistent trend statistics (needed for group_duration tables)
+  if (!options.summaryTrendStats || !Array.isArray(options.summaryTrendStats)) {
+    options.summaryTrendStats = ['min', 'avg', 'med', 'p(90)', 'p(95)', 'max'];
+  }
+
   return options;
+}
+
+// ------------------------------------------------------------
+// Central Threshold Generation
+// ------------------------------------------------------------
+// Build k6 threshold strings from performance-thresholds.json so that
+// SLA / performance config becomes the single source of truth.
+// Precedence (most specific wins on a per-metric basis):
+//   1. Explicit script / data file thresholds (already in options.thresholds)
+//   2. Operation-level k6 definitions (operations.*.k6)
+//   3. defaults.k6
+//   4. Derived from maxResponseTimeMs (only if no http_req_duration rule defined)
+// Environment variable CENTRAL_THRESHOLDS_DISABLE=true will skip injection.
+
+function injectCentralThresholds(options, config) {
+  try {
+    if (__ENV.CENTRAL_THRESHOLDS_DISABLE === 'true') return;
+    const scenario =
+      (config && config.loadTest && config.loadTest.activeScenario) ||
+      (config && config.performanceProfile && config.performanceProfile.scenario);
+    const environment =
+      (config && config.configEnvironment) ||
+      (config && config.performanceProfile && config.performanceProfile.environment);
+    const built = buildThresholds({
+      scenario: scenario,
+      environment: environment,
+      canonical: performanceThresholds,
+      profiles: performanceThresholdProfiles
+    });
+    options.thresholds = options.thresholds || {};
+    Object.entries(built).forEach(([metric, rules]) => {
+      const existing = options.thresholds[metric] || [];
+      const merged = [...existing];
+      rules.forEach((r) => {
+        if (!merged.includes(r)) merged.push(r);
+      });
+      options.thresholds[metric] = merged;
+    });
+  } catch (e) {
+    console.warn('⚠️  Failed to build thresholds:', e.message);
+  }
 }
 
 /**
@@ -557,11 +695,11 @@ export function getReportPaths(testName, scenarioName = null) {
  */
 export function getTestDataPaths() {
   const testDataPaths = pathsConfig.paths.testData;
-  
+
   // Note: K6's open() resolves paths relative to the CURRENT WORKING DIRECTORY (CWD),
   // NOT relative to the script file location. So we always use paths as-is from config.
   // The paths in paths-config.json are already relative to project root.
-  
+
   return {
     ...testDataPaths,
     baseDir: testDataPaths.baseDir,

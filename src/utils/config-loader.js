@@ -2,7 +2,7 @@
  * ===================================================================
  * CONFIGURATION LOADER UTILITY MODULE
  * ===================================================================
- * 
+ *
  * @author Senthilkumar Sengottuvel
  *
  * WHAT THIS MODULE DOES:
@@ -55,6 +55,7 @@
 
 import { open } from 'k6';
 import { SharedArray } from 'k6/data';
+import { getFallbackThresholds } from './threshold-defaults.js'; // Import fallback thresholds helper
 
 // Load environments configuration during INIT PHASE like config-manager.js
 const environmentsData = new SharedArray('environmentsConfigJson', function () {
@@ -63,7 +64,7 @@ const environmentsData = new SharedArray('environmentsConfigJson', function () {
     '../config/environments.json', // expected (./src/config/ relative to this file)
     'src/config/environments.json' // alternative project root resolution
   ];
-  
+
   for (const p of environmentsCandidates) {
     try {
       const content = open(p);
@@ -75,8 +76,10 @@ const environmentsData = new SharedArray('environmentsConfigJson', function () {
       console.log(`❌ Failed to load ${p}: ${e.message}`);
     }
   }
-  
-  console.warn(`⚠️ Warning: Could not load environments.json from any known path (tried: ${environmentsCandidates.join(', ')}). Using fallback configuration.`);
+
+  console.warn(
+    `⚠️ Warning: Could not load environments.json from any known path (tried: ${environmentsCandidates.join(', ')}). Using fallback configuration.`
+  );
   return [{}];
 });
 
@@ -88,7 +91,7 @@ const environmentsData = new SharedArray('environmentsConfigJson', function () {
 export function loadEnvironmentConfig(environment = 'dev') {
   // Use pre-loaded environments data from SharedArray
   const environments = environmentsData[0] || {};
-  
+
   if (!environments.environments) {
     console.error('No environments configuration found, using fallback');
     // Return minimal fallback config
@@ -108,7 +111,7 @@ export function loadEnvironmentConfig(environment = 'dev') {
       }
     };
   }
-  
+
   if (environments.environments[environment]) {
     return environments.environments[environment];
   } else {
@@ -120,21 +123,21 @@ export function loadEnvironmentConfig(environment = 'dev') {
 /**
  * Load configuration based on environment - UPDATED to use centralized config
  * Loads environment config from environments.json and merges with test-specific config
- * 
+ *
  * @param {string} environment - Environment name (dev, test, prod, autotest)
  * @returns {Object} Complete configuration object with API, auth, thresholds, and load settings
  */
 export function loadConfig(environment = 'dev') {
   // Load environment-specific config from centralized file
   const envConfig = loadEnvironmentConfig(environment);
-  
+
   // Load test-specific configuration (thresholds, load settings, scenarios)
   const configFile = `./src/config/${environment}.json`;
 
   try {
     const configContent = open(configFile);
     const testConfig = JSON.parse(configContent);
-    
+
     // Merge environment config with test config, prioritizing centralized env config
     return {
       ...testConfig,
@@ -148,10 +151,7 @@ export function loadConfig(environment = 'dev') {
     return {
       ...envConfig,
       environment: envConfig.name,
-      thresholds: {
-        http_req_duration: ['p(95)<2000'],
-        http_req_failed: ['rate<0.05']
-      },
+      thresholds: getFallbackThresholds(), // Use fallback thresholds helper
       load: {
         vus: 5,
         duration: '1m',

@@ -278,7 +278,7 @@ function buildLatencyTable(metrics) {
 }
 
 // Build a unified table of all metric statistics (dynamic columns)
-function buildAllMetricsTable(metrics) {
+function buildAllMetricsTable(metrics, perfThresholds) {
   const valueKeys = new Set();
   Object.values(metrics).forEach((m) => {
     if (m && m.values) Object.keys(m.values).forEach((k) => valueKeys.add(k));
@@ -321,6 +321,7 @@ function buildAllMetricsTable(metrics) {
     return String(v);
   }
 
+  const problemExplanations = []; // collect yellow/red explanations for non-technical users
   const rows = Object.entries(metrics)
     .map(([name, m]) => {
       const vals = m.values || {};
@@ -332,24 +333,81 @@ function buildAllMetricsTable(metrics) {
         /duration|http_req_(duration|waiting|blocked|connecting|tls_handshaking|sending|receiving)/.test(
           name
         );
+      const uiBandsLocal = perfThresholds?.uiBands || {};
       if (isLatencyMetric && typeof p95 === 'number') {
-        if (p95 <= 800) rowClass = 'cell-good';
-        else if (p95 <= 2000) rowClass = 'cell-warn';
+        const latGood = uiBandsLocal.latencyMs?.good ?? 800;
+        const latWatch = uiBandsLocal.latencyMs?.watch ?? 2000;
+        if (p95 <= latGood) rowClass = 'cell-good';
+        else if (p95 <= latWatch) rowClass = 'cell-warn';
         else rowClass = 'cell-bad';
+        if (rowClass !== 'cell-good') {
+          problemExplanations.push({
+            metric: name,
+            status: rowClass === 'cell-warn' ? 'Watch' : 'Investigate',
+            reason: `p95 ${fmt(p95)} ms is ${rowClass === 'cell-warn' ? 'above good target' : 'above watch band'} (Good ≤ ${latGood} ms, Watch ≤ ${latWatch} ms). Indicates slower end-user experience.`,
+            category: 'Latency',
+            suggestion:
+              rowClass === 'cell-warn'
+                ? 'Profile slow endpoints; plan optimization.'
+                : 'Investigate slowest groups/endpoints; add granular timings.'
+          });
+        }
       }
-      // HTTP failure rate
       if (name === 'http_req_failed' && typeof vals.rate === 'number') {
-        if (vals.rate <= 0.01) rowClass = 'cell-good';
-        else if (vals.rate <= 0.05) rowClass = 'cell-warn';
+        const errGood = uiBandsLocal.errorRate?.good ?? 0.01;
+        const errWatch = uiBandsLocal.errorRate?.watch ?? 0.05;
+        if (vals.rate <= errGood) rowClass = 'cell-good';
+        else if (vals.rate <= errWatch) rowClass = 'cell-warn';
         else rowClass = 'cell-bad';
+        if (rowClass !== 'cell-good') {
+          problemExplanations.push({
+            metric: name,
+            status: rowClass === 'cell-warn' ? 'Watch' : 'Investigate',
+            reason: `Error rate ${(vals.rate * 100).toFixed(2)}% exceeds ${rowClass === 'cell-warn' ? 'good target' : 'watch limit'} (Good ≤ ${(errGood * 100).toFixed(2)}%, Watch ≤ ${(errWatch * 100).toFixed(2)}%).`,
+            category: 'Reliability',
+            suggestion:
+              rowClass === 'cell-warn'
+                ? 'Review recent errors; monitor logs.'
+                : 'Inspect failing endpoints & server logs immediately.'
+          });
+        }
       }
-      // Checks (passes/fails)
       if (name === 'checks' && typeof vals.fails === 'number') {
         const total = (vals.passes || 0) + (vals.fails || 0);
         const failRate = total ? vals.fails / total : 0;
-        if (failRate === 0) rowClass = 'cell-good';
-        else if (failRate <= 0.02) rowClass = 'cell-warn';
+        const chkGood = uiBandsLocal.checkFailureRate?.good ?? 0;
+        const chkWatch = uiBandsLocal.checkFailureRate?.watch ?? 0.02;
+        if (failRate === chkGood) rowClass = 'cell-good';
+        else if (failRate <= chkWatch) rowClass = 'cell-warn';
         else rowClass = 'cell-bad';
+        if (rowClass !== 'cell-good') {
+          problemExplanations.push({
+            metric: name,
+            status: rowClass === 'cell-warn' ? 'Watch' : 'Investigate',
+            reason: `Check failures ${(failRate * 100).toFixed(2)}% exceed ${rowClass === 'cell-warn' ? '0%' : 'watch band ' + (chkWatch * 100).toFixed(2) + '%'} (Good = 0%, Watch ≤ ${(chkWatch * 100).toFixed(2)}%).`,
+            category: 'Reliability',
+            suggestion:
+              rowClass === 'cell-warn'
+                ? 'Inspect failing assertions; tighten validation later.'
+                : 'Fix failing checks or relax unrealistic ones.'
+          });
+        }
+      }
+      if (name === 'iteration_duration' && typeof p95 === 'number') {
+        // Provide a dedicated plain-language explanation aligned with earlier note
+        const status = rowClass === 'cell-warn' ? 'Watch' : rowClass === 'cell-bad' ? 'Investigate' : null;
+        if (status) {
+          problemExplanations.push({
+            metric: name,
+            status,
+            reason: `End-to-end flow p95 ${fmt(p95)} ms – composed of multiple steps; optimize slow groups or reconsider SLA.`,
+            category: 'Flow',
+            suggestion:
+              status === 'Watch'
+                ? 'Add group() timings to locate slow phases.'
+                : 'Drill into longest steps; parallelize or cache.'
+          });
+        }
       }
       const cells = ordered
         .map((k) => {
@@ -358,13 +416,59 @@ function buildAllMetricsTable(metrics) {
           return `<td class="${extraClass}">${formatCell(k, vals[k])}</td>`;
         })
         .join('');
-      return `<tr class="${rowClass}"><td>${name}</td>${cells}</tr>`;
+      // Create safe id anchor for linking from benchmark failure table
+      const anchorId = `metric-${name.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+      return `<tr id="${anchorId}" class="${rowClass}"><td>${name}</td>${cells}</tr>`;
     })
     .join('');
 
-  const legend = `<div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">✓ Good</span> <span class="legend-box cell-warn">⚠ Watch</span> <span class="legend-box cell-bad">✗ Investigate</span><br><strong style="margin-top:8px; display:inline-block;">Color Meanings:</strong><br>• <strong style="color:#1B873F;">Green (Good):</strong> Performance is within acceptable limits<br>• <strong style="color:#FF8B00;">Yellow (Watch):</strong> Performance is degraded but acceptable - monitor closely, may need optimization soon<br>• <strong style="color:#B00020;">Red (Investigate):</strong> Performance is poor - requires immediate attention and optimization<br><strong style="margin-top:8px; display:inline-block;">Thresholds:</strong> Response time p(95) ≤ 800ms (good) / ≤ 2000ms (watch) / > 2000ms (investigate); HTTP errors ≤1% / ≤5% / >5%; Check failures 0 / ≤2% / >2%</div>`;
+  const uiBandsLocalLegend = perfThresholds?.uiBands || {};
+  const latGood = uiBandsLocalLegend.latencyMs?.good ?? 800;
+  const latWatch = uiBandsLocalLegend.latencyMs?.watch ?? 2000;
+  const errGood = uiBandsLocalLegend.errorRate?.good ?? 0.01;
+  const errWatch = uiBandsLocalLegend.errorRate?.watch ?? 0.05;
+  const chkGood = uiBandsLocalLegend.checkFailureRate?.good ?? 0.0;
+  const chkWatch = uiBandsLocalLegend.checkFailureRate?.watch ?? 0.02;
+  const legend = `<div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">✓ Good</span> <span class="legend-box cell-warn">⚠ Watch</span> <span class="legend-box cell-bad">✗ Investigate</span><br><strong style="margin-top:8px; display:inline-block;">Color Meanings:</strong><br>• <strong style="color:#1B873F;">Green (Good):</strong> Performance is within acceptable limits<br>• <strong style="color:#FF8B00;">Yellow (Watch):</strong> Performance is degraded but acceptable - monitor closely, may need optimization soon<br>• <strong style="color:#B00020;">Red (Investigate):</strong> Performance is poor - requires immediate attention and optimization<br><strong style="margin-top:8px; display:inline-block;">Bands:</strong> Response time p(95) ≤ ${latGood}ms (good) / ≤ ${latWatch}ms (watch) / > ${latWatch}ms (investigate); HTTP errors ≤${errGood * 100}% / ≤${errWatch * 100}% / >${errWatch * 100}%; Check failures ${chkGood * 100}% / ≤${chkWatch * 100}% / >${chkWatch * 100}%</div>`;
 
-  return `${legend}<table class="compact"><thead><tr><th>Metric</th>${ordered
+  // Build human-friendly explanations list for yellow/red
+  let issuesHtml = '';
+  if (problemExplanations.length) {
+    // Group by category preserving insertion order
+    const order = ['Latency', 'Reliability', 'Flow'];
+    const byCat = {};
+    problemExplanations.forEach((e) => {
+      const cat = e.category || 'Other';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(e);
+    });
+    const groupedSections = order
+      .filter((c) => byCat[c])
+      .concat(Object.keys(byCat).filter((c) => !order.includes(c)))
+      .map((cat) => {
+        const items = byCat[cat]
+          .map(
+            (e) =>
+              `<li><a href="#metric-${e.metric.replace(/[^a-zA-Z0-9_-]/g, '_')}" style="text-decoration:none;">` +
+              `<strong>${e.metric}</strong></a> – <span class="${e.status === 'Watch' ? 'cell-warn' : 'cell-bad'} label-inline">${e.status}</span>: ${e.reason}` +
+              (e.suggestion ? ` <em style="color:#555;">Suggested: ${e.suggestion}</em>` : '') +
+              `</li>`
+          )
+          .join('');
+        return `<div style="margin-top:4px;"><strong>${cat}</strong><ul style="margin:4px 0 0 18px;">${items}</ul></div>`;
+      })
+      .join('');
+    const adjustHelp = `<details style="margin-top:10px;"><summary style="cursor:pointer;font-weight:600;">🔧 How to adjust targets (if justified)</summary><div style="margin-top:8px; font-size:11.5px; line-height:1.45;">
+      <p><strong>Latency (p95 / p99)</strong><br>Global: edit <code>defaults.k6.http_req_duration.p95</code> / <code>p99</code> in <code>src/config/performance-thresholds.json</code>.<br>Operation/group: edit <code>operations.&lt;Name&gt;.k6.group_duration{group:::...}.p95</code>.<br>Scenario-specific: add multiplier under <code>scenarios.&lt;scenario&gt;.multipliers</code> in <code>performance-threshold-profiles.json</code> (e.g. <code>"http_req_duration.p95": 1.2</code>).<br>Color bands only: tweak <code>uiBands.latencyMs</code> (does not change pass/fail thresholds).</p>
+      <p><strong>Error rate</strong><br>Prefer fixing root causes. If absolutely needed, adjust <code>defaults.k6.http_req_failed.rate</code> or color band <code>uiBands.errorRate</code>.</p>
+      <p><strong>Check failures</strong><br>Fix failing checks. Loosen only if unrealistic. UI band: <code>uiBands.checkFailureRate</code>.</p>
+      <p><strong>Iteration duration</strong><br>Add <code>group()</code> timings, reduce serial steps, cache repeated lookups. If inherently long, use a scenario multiplier short-term or (future) add an explicit iteration SLA field.</p>
+      <p style="margin-top:6px;"><em>Governance:</em> Document any relaxation and plan a path to tighten later. Avoid raising both canonical threshold and UI bands at once unless approved.</p>
+    </div></details>`;
+    issuesHtml = `<div class="notes" style="margin:12px 0; background:#fafafa; border:1px solid #ddd; padding:10px 12px; border-radius:6px;"><strong>Why some cells are Yellow or Red:</strong>${groupedSections}<p style="margin-top:8px; font-size:11px;">Tip: Fix Investigate items first; schedule Watch items for iterative improvement.</p>${adjustHelp}</div>`;
+  }
+
+  return `${legend}${issuesHtml}<table class="compact"><thead><tr><th>Metric</th>${ordered
     .map((k) => `<th>${k}</th>`)
     .join('')}</tr></thead><tbody>${rows}</tbody></table>`;
 }
@@ -373,6 +477,8 @@ export function generateHtmlReport(data, options = {}) {
   const env = (typeof __ENV !== 'undefined' && __ENV) || {};
   const cfg = options.thresholds || {};
   const verboseLogs = options.verboseLogs || null; // NEW: Accept verbose logs
+  // Optional injected performance thresholds (from config-manager via handleSummary options)
+  const perfThresholds = options.performanceThresholds || null;
   // Initial dark mode preference: default true if not explicitly set to false
   const startDark = (function () {
     // Default is LIGHT mode now; require explicit opt-in for dark.
@@ -408,7 +514,11 @@ export function generateHtmlReport(data, options = {}) {
   const dataSent = safe(metrics, 'data_sent.values.count', 0);
   const iterationDur = safe(metrics, 'iteration_duration.values', {});
   // Use vus_max to show the maximum VUs that ran during the test, not the current value at report time
-  const vusVal = safe(metrics, 'vus_max.values.max', safe(metrics, 'vus_max.values.value', safe(metrics, 'vus.values.max', 'n/a')));
+  const vusVal = safe(
+    metrics,
+    'vus_max.values.max',
+    safe(metrics, 'vus_max.values.value', safe(metrics, 'vus.values.max', 'n/a'))
+  );
   const testDurationSeconds = safe(data, 'state.testRunDurationMs', 0) / 1000;
 
   // KPI severity classification
@@ -419,11 +529,12 @@ export function generateHtmlReport(data, options = {}) {
       : successRate >= THRESH.KPI_SUCCESS_WARN
         ? 'kpi-warn'
         : 'kpi-bad';
+  const uiBandsGlobal = perfThresholds?.uiBands || {};
   const durationKpiClass =
     typeof p95Latency === 'number'
-      ? p95Latency <= 800
+      ? p95Latency <= (uiBandsGlobal.latencyMs?.good ?? 800)
         ? 'kpi-good'
-        : p95Latency <= 2000
+        : p95Latency <= (uiBandsGlobal.latencyMs?.watch ?? 2000)
           ? 'kpi-warn'
           : 'kpi-bad'
       : 'kpi-neutral';
@@ -481,6 +592,186 @@ export function generateHtmlReport(data, options = {}) {
   const latencyTable = buildLatencyTable(metrics);
   const thresholds = thresholdsTable(metrics);
   const thresholdsBenchmarks = thresholdsBenchmarkTable(metrics);
+  // Build detailed failure explanations for benchmark table
+  function buildBenchmarkFailureInsights(rows) {
+    if (!rows || !rows.length) return '';
+    const failing = rows.filter((r) => !r.ok);
+    if (!failing.length) {
+      return `<div class="notes" style="margin-top:12px; background:#e8f7ef; border:1px solid #b2e2c7; padding:10px 14px; border-radius:6px;">
+        <strong>All benchmark rules passed.</strong> No action required. Continue to monitor trends over time; consider tightening targets cautiously if headroom (&Delta; > 15%) is consistently high.
+      </div>`;
+    }
+
+    function classify(row) {
+      const rule = row.rule || '';
+      const metric = (row.metricName || '').toLowerCase();
+      const lowerRule = rule.toLowerCase();
+      if (metric.includes('http_req_duration') && /p\(95\)/.test(rule)) return 'p95-latency';
+      if (metric.includes('http_req_duration') && /p\(99/.test(rule)) return 'tail-latency';
+      if (metric.includes('iteration_duration')) return 'iteration-latency';
+      if (metric.includes('http_req_failed') || (lowerRule.includes('rate<') && metric.includes('failed')))
+        return 'error-rate';
+      if (metric.includes('http_reqs') && lowerRule.includes('rate>')) return 'throughput';
+      if (metric.includes('group_duration')) return 'operation-step';
+      if (lowerRule.includes('rate<')) return 'generic-rate';
+      if (/p\(95\)/.test(rule)) return 'percentile';
+      return 'other';
+    }
+
+    function actionAdvice(kind) {
+      switch (kind) {
+        case 'p95-latency':
+          return 'Profile the most common endpoints; capture server-side timing (DB, external calls). Check for sequential waits, reduce payload sizes, add caching, or increase backend capacity.';
+        case 'tail-latency':
+          return 'Investigate outlier requests: enable verbose logs for slow samples, look for garbage collection pauses, cold starts, or lock/contention in DB. Consider circuit breakers and timeouts.';
+        case 'iteration-latency':
+          return 'Break the business flow into smaller measured groups; identify the slowest segment. Remove unnecessary sleeps, parallelize independent calls, or revisit document upload size.';
+        case 'error-rate':
+          return 'Review failing response codes, authentication stability, and recent deployment changes. Check logs for 4xx vs 5xx mix; fix root cause before re‑running.';
+        case 'throughput':
+          return 'Throughput below target: confirm scenario VUs match expectation, ensure pacing (PACING_MODE) not artificially limiting, and verify environment hardware resources.';
+        case 'operation-step':
+          return 'Focus on this specific workflow step. Inspect its underlying API, optimize query or processing logic, and confirm no hidden retries/timeouts inflating duration.';
+        case 'generic-rate':
+          return 'Rate metric breached: inspect numerator vs denominator sources, confirm metric calculation accuracy, reduce failures or raise target only if business justification exists.';
+        case 'percentile':
+          return 'General percentile miss: identify top contributors (longest requests), batch similar small calls, or introduce concurrency where safe.';
+        default:
+          return 'Review logs and related metrics; classify whether this is latency, reliability, or capacity, then apply the matching optimization pattern.';
+      }
+    }
+
+    function rootCauseHint(kind) {
+      switch (kind) {
+        case 'p95-latency':
+          return 'Consistently slower typical responses.';
+        case 'tail-latency':
+          return 'Rare but very slow outliers increasing user wait extremes.';
+        case 'iteration-latency':
+          return 'Entire business flow length exceeds acceptable envelope.';
+        case 'error-rate':
+          return 'Too many failed requests reduce reliability.';
+        case 'throughput':
+          return 'System processed fewer requests per second than target.';
+        case 'operation-step':
+          return 'Single workflow stage slower than its SLA.';
+        case 'generic-rate':
+          return 'Rate-based success threshold not met.';
+        case 'percentile':
+          return 'High percentile above target indicates broad latency elevation.';
+        default:
+          return 'Metric outside target band.';
+      }
+    }
+
+    // Severity scoring & enriched detail view
+    function severityScore(kind, row) {
+      const weights = {
+        'error-rate': 100,
+        'p95-latency': 80,
+        'iteration-latency': 70,
+        'tail-latency': 60,
+        throughput: 50,
+        'operation-step': 40,
+        percentile: 35,
+        'generic-rate': 25,
+        other: 10
+      };
+      let score = weights[kind] || 10;
+      const match = /([-+]?\d+\.?\d*)/.exec(String(row.delta));
+      if (match) {
+        const val = parseFloat(match[1]);
+        if (!isNaN(val) && val < 0) {
+          score += Math.min(Math.abs(val), 100) * 0.6; // scale negative deficit
+        }
+      }
+      return Math.round(score);
+    }
+
+    const enriched = failing
+      .map((f) => {
+        const kind = classify(f);
+        return {
+          ...f,
+          kind,
+          advice: actionAdvice(kind),
+          cause: rootCauseHint(kind),
+          score: severityScore(kind, f),
+          anchor: `metric-${(f.metricName || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const legend = `<div class="notes" style="font-size:11px; margin:6px 0 12px;"><strong>Severity scoring:</strong> Error Rate > p95 Latency > Iteration Flow > Tail Latency > Throughput > Step Latency > Other. Larger performance deficit (Δ negative) boosts severity. Address highest first.</div>`;
+
+    const detailsBlocks = enriched
+      .map((item) => {
+        return `<details open class="fail-detail" style="margin:6px 0; border:1px solid #f2c2c2; background:#fff7f7; border-radius:6px; padding:8px 10px;">
+        <summary style="cursor:pointer; font-weight:600; display:flex; align-items:center; gap:8px;">
+          <span style="background:#B00020; color:#fff; padding:2px 8px; border-radius:14px; font-size:11px; letter-spacing:.5px;">FAIL</span>
+          <span>${item.metricName} :: <code>${item.rule}</code></span>
+          <span style="margin-left:auto; font-size:11px; background:#222; color:#fff; padding:2px 6px; border-radius:10px;">Severity ${item.score}</span>
+        </summary>
+        <div style="font-size:12px; line-height:1.5; margin-top:6px;">
+          <table class="compact" style="font-size:11px; margin:4px 0 8px;">
+            <thead><tr><th>Actual</th><th>Target</th><th>Delta</th><th>Impact / Hint</th></tr></thead>
+            <tbody><tr class="cell-bad"><td>${item.actual}</td><td>${item.target}</td><td>${item.delta}</td><td>${item.cause}</td></tr></tbody>
+          </table>
+          <p style="margin:4px 0 6px;"><strong>Recommended Action:</strong> ${item.advice}</p>
+          <p style="margin:4px 0 0; font-size:11px;">Link to raw metric: <a href="#${item.anchor}">${item.metricName}</a></p>
+          <p style="margin:6px 0 0; font-size:11px; color:#555;">Category: ${item.kind.replace(/-/g, ' ')} | Sorted by severity.</p>
+        </div>
+      </details>`;
+      })
+      .join('');
+
+    return `<div class="failure-explanations" style="margin-top:18px;">
+      <h4 style="margin:0 0 4px;">Failure Explanations & Targeted Actions (Sorted by Severity)</h4>
+      ${legend}
+      ${detailsBlocks}
+      <div class="notes" style="font-size:11px; margin-top:10px;">Re-test after addressing top 1–3 issues; avoid simultaneous broad changes so impact can be isolated.</div>
+    </div>`;
+  }
+  const benchmarkFailureInsights = buildBenchmarkFailureInsights(thresholdsBenchmarks.rows);
+
+  // Build SLA summary rows from performance thresholds config if provided
+  function buildSlaSummary() {
+    if (!perfThresholds) return { html: '', rows: [] };
+    const ops = perfThresholds.operations || {};
+    const globalMax = perfThresholds.defaults?.maxResponseTimeMs;
+    const rows = [];
+    // We'll attempt to map operation names to metric groups if present under data.groupMetrics (future), else fall back to http_req_duration aggregate
+    const groupStats = safe(data, 'operationMetrics', {}); // expected structure: { opName: { p95: <ms>, p99: <ms>, count: <n> } }
+    Object.keys(ops).forEach((op) => {
+      const target = ops[op].maxResponseTimeMs ?? globalMax;
+      const stat = groupStats[op] || {};
+      const p95 = stat.p95 !== undefined ? stat.p95 : dur['p(95)'];
+      const p99 = stat.p99 !== undefined ? stat.p99 : dur['p(99)'];
+      const count = stat.count !== undefined ? stat.count : reqs.count;
+      const pass = typeof p95 === 'number' && typeof target === 'number' ? p95 <= target : true;
+      rows.push({ operation: op, target, p95, p99, count, pass });
+    });
+    // Include a generic row if no specific operations configured
+    if (!rows.length && globalMax) {
+      rows.push({
+        operation: 'All Requests',
+        target: globalMax,
+        p95: dur['p(95)'],
+        p99: dur['p(99)'],
+        count: reqs.count,
+        pass: dur['p(95)'] <= globalMax
+      });
+    }
+    if (!rows.length) return { html: '', rows: [] };
+    const html = `<table class="compact" id="sla-summary"><thead><tr><th>Operation</th><th>Target Max (ms)</th><th>p95 (ms)</th><th>p99 (ms)</th><th>Requests</th><th>Status</th></tr></thead><tbody>${rows
+      .map((r) => {
+        const cls = r.pass ? 'cell-good' : 'cell-bad';
+        return `<tr class="${cls}"><td>${r.operation}</td><td>${r.target ?? 'n/a'}</td><td>${fmt(r.p95)}</td><td>${fmt(r.p99)}</td><td>${fmtInt(r.count)}</td><td>${r.pass ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`;
+      })
+      .join('')}</tbody></table>`;
+    return { html, rows };
+  }
+  const slaSummary = buildSlaSummary();
 
   const allMetricsTable = buildAllMetricsTable(metrics);
 
@@ -967,6 +1258,7 @@ export function generateHtmlReport(data, options = {}) {
     </div>
 
   <h2>Thresholds <button class="toggle-btn" data-target="sec-thresholds">Toggle</button></h2>
+  ${slaSummary.html ? `<h3>SLA / Threshold Summary <button class="toggle-btn" data-target="sec-sla">Toggle</button></h3><div id="sec-sla" class="section-body">${slaSummary.html}<div class="notes"><p><strong>Meaning:</strong> Compares configured maxResponseTimeMs per operation to observed latency percentiles. p95 is primary SLA gate; p99 shown for tail awareness.</p></div></div>` : ''}
   <div id="sec-thresholds" class="section-body">${thresholds}</div>
 
     <div class="notes" aria-label="Thresholds explanation">
@@ -975,7 +1267,7 @@ export function generateHtmlReport(data, options = {}) {
       <p><strong>Why it matters:</strong> A FAIL doesn’t always mean an outage, but it signals a potential risk or unmet service expectation (e.g. slower user experience or too many errors). Revisit failed thresholds by checking logs, slow endpoints, or adjusting unrealistic rules. Over time, refine thresholds so they align with your business Service Level Objectives (SLOs).</p>
     </div>
 
-  ${thresholdsBenchmarks.html ? `<h3>Threshold Benchmarks (Actual vs Target) <button class="toggle-btn" data-target="sec-bench">Toggle</button></h3><div id="sec-bench" class="section-body">${thresholdsBenchmarks.html}<div class="notes"><p><strong>Actual</strong> is what the test measured; <strong>Target</strong> is the rule; <strong>Delta</strong> shows headroom (positive) or deficit (negative) relative to target.</p></div></div>` : ''}
+  ${thresholdsBenchmarks.html ? `<h3>Threshold Benchmarks (Actual vs Target) <button class="toggle-btn" data-target="sec-bench">Toggle</button></h3><div id="sec-bench" class="section-body">${thresholdsBenchmarks.html}<div class="notes"><p><strong>Actual</strong> is what the test measured; <strong>Target</strong> is the rule; <strong>Delta</strong> shows headroom (positive) or deficit (negative) relative to target.</p><p style="margin-top:6px;">Scroll down for automatic explanations of each failing rule and suggested remediation steps.</p></div>${benchmarkFailureInsights}</div>` : ''}
 
   <h3>Baseline</h3>
   <div id="baseline-comparison" class="section-body">${baselineHtml}</div>
@@ -1035,12 +1327,15 @@ export function generateHtmlReport(data, options = {}) {
           </details>
         </div>
       </div>
+      <div class="notes" style="margin:8px 0 20px 0; font-size:12px; line-height:1.5; background:linear-gradient(135deg,#fff7e0,#ffffff); border:1px solid #f5d487; padding:10px 12px; border-radius:6px;">
+        <strong>Reading <code>iteration_duration</code> (why it may be red):</strong><br>
+        <code>iteration_duration</code> is the total time to complete one full scripted business flow (all API calls, waits, logic). A red p95 means 95% of full flows exceed the current target band. If individual request latency looks fine but this is slow, overall time is usually dominated by: (1) many sequential steps, (2) large uploads / downloads, (3) deliberate pacing / sleep, or (4) setup / teardown overhead. Profile or add finer <code>group()</code> timings to locate the bottleneck. If the end‑to‑end flow legitimately requires longer, either (a) adjust the central p95/p99 thresholds in <code>performance-thresholds.json</code>, (b) apply a scenario multiplier in <code>performance-threshold-profiles.json</code>, or (c) introduce a dedicated iteration SLA field for clearer governance.
+      </div>
       
       ${allMetricsTable}
     </div>
 
-    <h2>Endpoint / Group Breakdown <button class="toggle-btn" data-target="sec-groups">Toggle</button></h2>
-    <div id="sec-groups" class="panel section-body">${typeof data.groupBreakdown !== 'undefined' ? data.groupBreakdown : '<div class="notes"><em>Group breakdown unavailable.</em></div>'}</div>
+    <!-- Endpoint / Group Breakdown section removed per governance request -->
 
     ${
       data.errorSamples && data.errorSamples.length
@@ -1168,7 +1463,7 @@ export function generateHtmlReport(data, options = {}) {
       <tr><th>Test Execution Time</th><td>${safe(data, 'setup_data.testExecutionTime', 'n/a')}</td></tr>
       <tr><th>Duration (s)</th><td>${fmt(testDurationSeconds, 2)}</td></tr>
       <tr><th>Summary Stats</th><td>${(safe(data, 'options.summaryTrendStats', []) || []).join(', ')}</td></tr>
-      ${verboseLogs ? `<tr><th>Verbose Logging</th><td><span style="color: #1B873F; font-weight: bold;">✓ Enabled</span> - Debug logs included below</td></tr>` : `<tr><th>Verbose Logging</th><td><span style="color: #666;">✗ Disabled</span> - Use :verbose:report commands for detailed logs</td></tr>`}
+      ${verboseLogs ? `<tr><th>Verbose Logging</th><td><span style="color: #1B873F; font-weight: bold;">✓ Enabled</span> - Debug logs included above</td></tr>` : `<tr><th>Verbose Logging</th><td><span style="color: #666;">✗ Disabled</span> - Use :verbose:report commands for detailed logs</td></tr>`}
     </tbody></table>
 
     <footer>Generated by custom k6 report generator &middot; ${new Date().getFullYear()}</footer>
@@ -1183,6 +1478,7 @@ export function generateHtmlReport(data, options = {}) {
         thresholdsTotal: ${thresholdSummary.total},
         benchmarks: ${JSON.stringify(thresholdsBenchmarks.rows || [])},
         classificationThresholds: ${typeof THRESH !== 'undefined' ? JSON.stringify(THRESH) : '{}'}
+        , slaSummary: ${JSON.stringify(slaSummary.rows || [])}
       };
       window.__reportPayload__ = payload;
       function download(filename, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); }

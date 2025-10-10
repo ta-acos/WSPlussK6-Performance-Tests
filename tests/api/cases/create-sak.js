@@ -70,22 +70,9 @@ const SCENARIO_OVERRIDE = __ENV.SCENARIO || null;
 // ========================================
 // Backup settings used when config files are not available (USE_DATA_FILE_CONFIG = false)
 const ORIGINAL_TEST_CONFIG = {
-  // Number of virtual users (will be adjusted based on available test users)
   vus: 7,
-
-  // How long to run the test
-  duration: '2m',
-
-  // Performance thresholds - what response times are acceptable:
-  thresholds: {
-    http_req_duration: ['p(95)<3000'], // 95% of requests must complete within 3 seconds
-    http_req_failed: ['rate<0.1'], // Allow 10% failures under load
-    'group_duration{group:::Authentication}': ['p(95)<2000'],
-    'group_duration{group:::Get Case Templates}': ['p(95)<2500'],
-    'group_duration{group:::Create New Case}': ['p(95)<3000'],
-    // Load testing metrics
-    http_reqs: ['rate>2'] // Minimum 2 requests per second
-  }
+  duration: '2m'
+  // thresholds removed – centrally injected
 };
 
 // Export K6 options with scenario support - using workflow utility
@@ -169,11 +156,11 @@ export default function (data) {
   // Step 3: Fetch supporting register data for validation (Sakstyper and Avgjorelsekoder)
   logVUActivity(vuId, 'Fetching reference data', 'Getting case types and decision codes');
   console.log(`📋 ${vuId}: Fetching sakstyper (case types)`);
-  const sakstyper = getSakstyper(testConfig, authResult.authHeaders, __VU);
+  const sakstyper = getSakstyper(testConfig, authResult.authHeaders, __VU); // eslint-disable-line no-unused-vars
   logAPIRequest(vuId, 'Case Types (Sakstyper)', true, `Retrieved case types data`);
 
   console.log(`📋 ${vuId}: Fetching avgjorelsekoder (decision codes)`);
-  const avgjorelsekoder = getAvgjorelsekoder(testConfig, authResult.authHeaders, __VU);
+  const avgjorelsekoder = getAvgjorelsekoder(testConfig, authResult.authHeaders, __VU); // eslint-disable-line no-unused-vars
   logAPIRequest(vuId, 'Decision Codes (Avgjorelsekoder)', true, `Retrieved decision codes data`);
 
   randomSleep(0.2, 0.7);

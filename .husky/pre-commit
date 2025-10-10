@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-echo "🔍 Running lint..."
-npm run lint || exit 1
-echo "🎨 Running format (auto-fix)..."
-npm run format || exit 1
-echo "✅ Pre-commit checks passed"

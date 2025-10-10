@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Performance Metrics Guide</title>
+<style>
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin: 2rem; line-height: 1.5; }
+  pre { background:#1e1e1e; color:#ddd; padding:12px; border-radius:6px; overflow:auto; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  h1,h2,h3,h4 { scroll-margin-top: 80px; }
+  table { border-collapse: collapse; width: 100%; margin:1rem 0; }
+  th, td { border:1px solid #ccc; padding:6px 10px; text-align:left; }
+  th { background:#f5f5f5; }
+  a { color:#0366d6; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .meta { font-size: 0.8rem; color:#666; margin-top:3rem; border-top:1px solid #eee; padding-top:0.5rem; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:1rem; border-radius:6px; }
+  .anchor { text-decoration:none; }
+</style>
+</head>
+<body>
+<h1 id="performance-metrics-guide" tabindex="-1">Performance Metrics Guide <a class="header-anchor" href="#performance-metrics-guide" aria-hidden="true">#</a></h1>
+<p>Comprehensive guide to understanding, interpreting, and acting on performance test metrics from the Acos GRAF Load Test framework.</p>
+<h2 id="overview" tabindex="-1">Overview <a class="header-anchor" href="#overview" aria-hidden="true">#</a></h2>
+<p>This framework collects detailed performance metrics across all test scenarios and provides both real-time monitoring and comprehensive reporting. Understanding these metrics is crucial for system performance optimization and capacity planning.</p>
+<h2 id="core-metrics-categories" tabindex="-1">Core Metrics Categories <a class="header-anchor" href="#core-metrics-categories" aria-hidden="true">#</a></h2>
+<h3 id="1-response-time-metrics" tabindex="-1">1. Response Time Metrics <a class="header-anchor" href="#1-response-time-metrics" aria-hidden="true">#</a></h3>
+<h4 id="http-request-duration-http-req-duration-" tabindex="-1">HTTP Request Duration (<code>http_req_duration</code>) <a class="header-anchor" href="#http-request-duration-http-req-duration-" aria-hidden="true">#</a></h4>
+<p><strong>What it measures</strong>: Time from request initiation to response completion</p>
+<p><strong>Key Percentiles</strong>:</p>
+<ul>
+<li><strong>p50 (Median)</strong>: 50% of requests complete faster than this time</li>
+<li><strong>p95</strong>: 95% of requests complete faster than this time</li>
+<li><strong>p99</strong>: 99% of requests complete faster than this time</li>
+<li><strong>max</strong>: Slowest request in the test</li>
+</ul>
+<p><strong>Interpretation</strong>:</p>
+<pre class="hljs"><code>p50: 450ms, p95: 800ms, p99: 1200ms, max: 2100ms
+✅ Good performance - most users have sub-second response
+</code></pre>
+<pre class="hljs"><code>p50: 1200ms, p95: 3000ms, p99: 5500ms, max: 8900ms
+❌ Performance issues - investigate bottlenecks
+</code></pre>
+<p><strong>Thresholds by Test Type</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Test Type</th>
+<th>p50 Target</th>
+<th>p95 Target</th>
+<th>p99 Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case Creation</td>
+<td>&lt;400ms</td>
+<td>&lt;800ms</td>
+<td>&lt;1200ms</td>
+</tr>
+<tr>
+<td>JP Creation</td>
+<td>&lt;500ms</td>
+<td>&lt;1000ms</td>
+<td>&lt;1500ms</td>
+</tr>
+<tr>
+<td>Document Upload</td>
+<td>&lt;1000ms</td>
+<td>&lt;2000ms</td>
+<td>&lt;3000ms</td>
+</tr>
+<tr>
+<td>Complex Workflow</td>
+<td>&lt;1500ms</td>
+<td>&lt;3000ms</td>
+<td>&lt;4500ms</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-success-rate-metrics" tabindex="-1">2. Success Rate Metrics <a class="header-anchor" href="#2-success-rate-metrics" aria-hidden="true">#</a></h3>
+<h4 id="http-request-failed-http-req-failed-" tabindex="-1">HTTP Request Failed (<code>http_req_failed</code>) <a class="header-anchor" href="#http-request-failed-http-req-failed-" aria-hidden="true">#</a></h4>
+<p><strong>What it measures</strong>: Percentage of requests that failed (4xx, 5xx status codes, timeouts)</p>
+<p><strong>Calculation</strong>: <code>failed_requests / total_requests * 100</code></p>
+<p><strong>Interpretation</strong>:</p>
+<ul>
+<li><strong>0-1%</strong>: Excellent - System handling load well</li>
+<li><strong>1-5%</strong>: Warning - Monitor for degradation</li>
+<li><strong>5-10%</strong>: Critical - Performance issues present</li>
+<li><strong>&gt;10%</strong>: Severe - System likely overloaded</li>
+</ul>
+<p><strong>Common Failure Patterns</strong>:</p>
+<pre class="hljs"><code>Gradual increase: 1% → 3% → 7% → 15%
+Indicates: System reaching capacity limits
+
+Sudden spike: 0.5% → 0.5% → 0.5% → 45%  
+Indicates: System component failure or bottleneck hit
+</code></pre>
+<h3 id="3-throughput-metrics" tabindex="-1">3. Throughput Metrics <a class="header-anchor" href="#3-throughput-metrics" aria-hidden="true">#</a></h3>
+<h4 id="http-requests-per-second-http-reqs-" tabindex="-1">HTTP Requests per Second (<code>http_reqs</code>) <a class="header-anchor" href="#http-requests-per-second-http-reqs-" aria-hidden="true">#</a></h4>
+<p><strong>What it measures</strong>: Number of requests processed per second</p>
+<p><strong>Calculation</strong>: <code>total_requests / test_duration_seconds</code></p>
+<p><strong>Target Ranges by Scenario</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Target RPS</th>
+<th>Max Users</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Smoke Test</td>
+<td>1-2 RPS</td>
+<td>1 user</td>
+<td>Functionality validation</td>
+</tr>
+<tr>
+<td>Load Test</td>
+<td>5-10 RPS</td>
+<td>5 users</td>
+<td>Normal capacity</td>
+</tr>
+<tr>
+<td>Stress Test</td>
+<td>10-20 RPS</td>
+<td>15 users</td>
+<td>High load</td>
+</tr>
+<tr>
+<td>Spike Test</td>
+<td>25-50 RPS</td>
+<td>50 users</td>
+<td>Peak traffic</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-connection-metrics" tabindex="-1">4. Connection Metrics <a class="header-anchor" href="#4-connection-metrics" aria-hidden="true">#</a></h3>
+<h4 id="http-request-connecting-http-req-connecting-" tabindex="-1">HTTP Request Connecting (<code>http_req_connecting</code>) <a class="header-anchor" href="#http-request-connecting-http-req-connecting-" aria-hidden="true">#</a></h4>
+<p><strong>What it measures</strong>: Time spent establishing connections</p>
+<p><strong>Normal Values</strong>: &lt;50ms for local network, &lt;200ms for internet
+<strong>Warning Signs</strong>:</p>
+<ul>
+<li>Increasing over test duration (connection pool exhaustion)</li>
+<li>High variance (network instability)</li>
+</ul>
+<h4 id="http-request-waiting-http-req-waiting-" tabindex="-1">HTTP Request Waiting (<code>http_req_waiting</code>) <a class="header-anchor" href="#http-request-waiting-http-req-waiting-" aria-hidden="true">#</a></h4>
+<p><strong>What it measures</strong>: Time waiting for server response (excludes network)</p>
+<p><strong>Significance</strong>: Pure server processing time
+<strong>Target</strong>: &lt;70% of total response time</p>
+<h2 id="advanced-metrics-analysis" tabindex="-1">Advanced Metrics Analysis <a class="header-anchor" href="#advanced-metrics-analysis" aria-hidden="true">#</a></h2>
+<h3 id="performance-profiles" tabindex="-1">Performance Profiles <a class="header-anchor" href="#performance-profiles" aria-hidden="true">#</a></h3>
+<h4 id="healthy-system-profile" tabindex="-1">Healthy System Profile <a class="header-anchor" href="#healthy-system-profile" aria-hidden="true">#</a></h4>
+<pre class="hljs"><code>Metrics Summary:
+✅ http_req_duration.......: avg=420ms min=180ms med=410ms max=890ms p(90)=650ms p(95)=720ms
+✅ http_req_failed.........: 0.45%
+✅ http_reqs...............: 8.2/s
+✅ http_req_connecting.....: avg=12ms
+✅ http_req_waiting........: avg=385ms
+
+Analysis: System performing well within acceptable limits
+</code></pre>
+<h4 id="overloaded-system-profile" tabindex="-1">Overloaded System Profile <a class="header-anchor" href="#overloaded-system-profile" aria-hidden="true">#</a></h4>
+<pre class="hljs"><code>Metrics Summary:
+❌ http_req_duration.......: avg=2100ms min=450ms med=1800ms max=12500ms p(90)=4200ms p(95)=6800ms
+❌ http_req_failed.........: 15.2% 
+❌ http_reqs...............: 3.1/s
+❌ http_req_connecting.....: avg=340ms
+❌ http_req_waiting........: avg=1650ms
+
+Analysis: System overloaded - reduce load or scale resources
+</code></pre>
+<h3 id="correlation-analysis" tabindex="-1">Correlation Analysis <a class="header-anchor" href="#correlation-analysis" aria-hidden="true">#</a></h3>
+<h4 id="response-time-vs-load" tabindex="-1">Response Time vs. Load <a class="header-anchor" href="#response-time-vs-load" aria-hidden="true">#</a></h4>
+<p>Monitor how response times change with concurrent users:</p>
+<pre class="hljs"><code>1 user:  p95=400ms  (baseline)
+5 users: p95=650ms  (acceptable degradation)
+10 users: p95=1200ms (concerning)
+15 users: p95=3400ms (overloaded)
+</code></pre>
+<h4 id="error-rate-progression" tabindex="-1">Error Rate Progression <a class="header-anchor" href="#error-rate-progression" aria-hidden="true">#</a></h4>
+<p>Track error rate as load increases:</p>
+<pre class="hljs"><code>Load Ramp: 1→5→10→15 users
+Error Rate: 0%→0.5%→3%→18%
+
+Interpretation: System breaks down after 10 concurrent users
+</code></pre>
+<h2 id="report-interpretation" tabindex="-1">Report Interpretation <a class="header-anchor" href="#report-interpretation" aria-hidden="true">#</a></h2>
+<h3 id="html-report-analysis" tabindex="-1">HTML Report Analysis <a class="header-anchor" href="#html-report-analysis" aria-hidden="true">#</a></h3>
+<p>The generated HTML reports provide visual representations of all metrics:</p>
+<h4 id="performance-dashboard" tabindex="-1">Performance Dashboard <a class="header-anchor" href="#performance-dashboard" aria-hidden="true">#</a></h4>
+<ul>
+<li><strong>Response Time Charts</strong>: Visual timeline of response times</li>
+<li><strong>Error Rate Graphs</strong>: Error distribution over test duration</li>
+<li><strong>Throughput Visualization</strong>: Requests per second trends</li>
+<li><strong>Threshold Compliance</strong>: Pass/fail status for all metrics</li>
+</ul>
+<h4 id="detailed-activity-log" tabindex="-1">Detailed Activity Log <a class="header-anchor" href="#detailed-activity-log" aria-hidden="true">#</a></h4>
+<ul>
+<li><strong>Test Flow Timeline</strong>: Step-by-step execution details</li>
+<li><strong>Error Categorization</strong>: Specific error types and frequencies</li>
+<li><strong>Resource Utilization</strong>: Connection and processing metrics</li>
+</ul>
+<h3 id="json-summary-analysis" tabindex="-1">JSON Summary Analysis <a class="header-anchor" href="#json-summary-analysis" aria-hidden="true">#</a></h3>
+<p>The JSON summary provides raw data for programmatic analysis:</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;performance_summary&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;http_req_duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;avg&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">456.78</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;p50&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">420.12</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">789.45</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;p99&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1234.56</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;max&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2100.89</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;http_req_failed&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.0234</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;total_requests&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1250</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;test_duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">240</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h2 id="threshold-governance-uibands" tabindex="-1">Threshold Governance &amp; uiBands <a class="header-anchor" href="#threshold-governance-uibands" aria-hidden="true">#</a></h2>
+<p>All performance enforcement (k6 pass/fail criteria) and visual classification bands are centrally managed in <code>src/config/performance-thresholds.json</code> – <strong>not</strong> inside individual test scripts or environment scenario files.</p>
+<h3 id="file-structure-abridged-" tabindex="-1">File Structure (abridged) <a class="header-anchor" href="#file-structure-abridged-" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;http_req_duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;p99&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">6000</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;http_req_failed&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;operations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;Create Case&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;group_duration{group:::Create New Case}&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3000</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;uiBands&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;latencyMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">800</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2000</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;errorRate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.01</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;checkFailureRate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.0</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.02</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.02</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 id="responsibilities" tabindex="-1">Responsibilities <a class="header-anchor" href="#responsibilities" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>defaults.k6</code></td>
+<td>Global baseline SLOs (applied to all operations)</td>
+</tr>
+<tr>
+<td><code>operations.*.k6</code></td>
+<td>Optional tighter / additional group-based thresholds for specific flows</td>
+</tr>
+<tr>
+<td><code>uiBands</code></td>
+<td>Presentation-only color/status mapping (Good / Watch / Investigate) – does not affect exit code</td>
+</tr>
+</tbody>
+</table>
+<h3 id="why-centralization-" tabindex="-1">Why Centralization? <a class="header-anchor" href="#why-centralization-" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Consistency</strong> – Single source of truth eliminates drift among test files.</li>
+<li><strong>Auditability</strong> – Diffs on one JSON file show exactly what changed.</li>
+<li><strong>Separation of Concerns</strong> – Runtime configuration (scenarios) vs governance (thresholds) vs visualization (<code>uiBands</code>).</li>
+</ol>
+<h3 id="enforcement-vs-presentation" tabindex="-1">Enforcement vs Presentation <a class="header-anchor" href="#enforcement-vs-presentation" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Source</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pass/Fail (k6 thresholds)</td>
+<td><code>defaults.k6</code> + merged <code>operations.*.k6</code></td>
+<td>Influences test status / CI gate</td>
+</tr>
+<tr>
+<td>Visual Bands (latency/error/check)</td>
+<td><code>uiBands</code></td>
+<td>Drives HTML report coloring only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ordering-rule-for-uibands" tabindex="-1">Ordering Rule for uiBands <a class="header-anchor" href="#ordering-rule-for-uibands" aria-hidden="true">#</a></h3>
+<p><code>good &lt;= watch &lt;= investigate</code> for each metric band. The validator warns if values are out of order or collapsed unintentionally.</p>
+<h3 id="changing-a-threshold" tabindex="-1">Changing a Threshold <a class="header-anchor" href="#changing-a-threshold" aria-hidden="true">#</a></h3>
+<ol>
+<li>Edit <code>performance-thresholds.json</code> (modify <code>defaults</code>, add/update an <code>operations</code> entry, or tune <code>uiBands</code>).</li>
+<li>Run <code>npm run validate:perf</code> (schema + inline threshold guard).</li>
+<li>Commit (Husky pre-commit hook re-validates).</li>
+<li>Re-run representative tests; review updated colors and pass/fail states in the HTML report.</li>
+</ol>
+<h3 id="validation-commands" tabindex="-1">Validation Commands <a class="header-anchor" href="#validation-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run validate:thresholds</code></td>
+<td>Schema + ordering validation for <code>performance-thresholds.json</code>.</td>
+</tr>
+<tr>
+<td><code>npm run validate:no-inline-thresholds</code></td>
+<td>Ensures no test file reintroduces inline <code>thresholds:</code> blocks.</td>
+</tr>
+<tr>
+<td><code>npm run validate:perf</code></td>
+<td>Aggregates both (run before pushing changes).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="typical-anti-patterns-rejected" tabindex="-1">Typical Anti-Patterns Rejected <a class="header-anchor" href="#typical-anti-patterns-rejected" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Anti-Pattern</th>
+<th>Why Rejected</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adding <code>thresholds</code> in a test script</td>
+<td>Fragments governance, bypasses review</td>
+<td>Move values into central JSON</td>
+</tr>
+<tr>
+<td>Editing scenario files to tweak thresholds</td>
+<td>Couples load shape with SLOs</td>
+<td>Adjust <code>performance-thresholds.json</code> only</td>
+</tr>
+<tr>
+<td>Hard-coding band colors or numbers in report code</td>
+<td>Creates stale or divergent UI</td>
+<td>Use <code>uiBands</code> values at runtime</td>
+</tr>
+</tbody>
+</table>
+<h3 id="interpreting-bands-vs-slos" tabindex="-1">Interpreting Bands vs SLOs <a class="header-anchor" href="#interpreting-bands-vs-slos" aria-hidden="true">#</a></h3>
+<p>It’s possible for a test to PASS all k6 thresholds while some metrics display a Watch or Investigate color (early signal) or vice versa if SLOs are strict but bands are broad. Treat <code>uiBands</code> as an operational narrative layer, not a gate.</p>
+<blockquote>
+<p>Policy: All performance governance modifications MUST pass <code>npm run validate:perf</code>; CI should fail otherwise.</p>
+</blockquote>
+<h2 id="troubleshooting-by-metrics" tabindex="-1">Troubleshooting by Metrics <a class="header-anchor" href="#troubleshooting-by-metrics" aria-hidden="true">#</a></h2>
+<h3 id="high-response-times" tabindex="-1">High Response Times <a class="header-anchor" href="#high-response-times" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: p95 &gt; targets, increasing trend over test duration</p>
+<p><strong>Possible Causes</strong>:</p>
+<ul>
+<li>Database query performance</li>
+<li>Memory pressure</li>
+<li>Network latency</li>
+<li>Resource contention</li>
+</ul>
+<p><strong>Investigation Steps</strong>:</p>
+<ol>
+<li>Check <code>http_req_waiting</code> vs <code>http_req_duration</code> ratio</li>
+<li>Monitor connection establishment times</li>
+<li>Review server-side logs for slow queries</li>
+<li>Analyze garbage collection patterns</li>
+</ol>
+<h3 id="high-error-rates" tabindex="-1">High Error Rates <a class="header-anchor" href="#high-error-rates" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: <code>http_req_failed</code> &gt; 5%</p>
+<p><strong>Common Error Patterns</strong>:</p>
+<ul>
+<li><strong>Authentication failures</strong>: Check token refresh logic</li>
+<li><strong>Timeout errors</strong>: System capacity exceeded</li>
+<li><strong>5xx errors</strong>: Server-side application issues</li>
+<li><strong>Connection refused</strong>: Service unavailable</li>
+</ul>
+<h3 id="low-throughput" tabindex="-1">Low Throughput <a class="header-anchor" href="#low-throughput" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: <code>http_reqs</code> below expected rates</p>
+<p><strong>Possible Causes</strong>:</p>
+<ul>
+<li>Connection limits</li>
+<li>Rate limiting</li>
+<li>Resource bottlenecks</li>
+<li>Client-side constraints</li>
+</ul>
+<h2 id="benchmarking-baselines" tabindex="-1">Benchmarking &amp; Baselines <a class="header-anchor" href="#benchmarking-baselines" aria-hidden="true">#</a></h2>
+<h3 id="industry-standards" tabindex="-1">Industry Standards <a class="header-anchor" href="#industry-standards" aria-hidden="true">#</a></h3>
+<p>Compare your results against industry benchmarks:</p>
+<table>
+<thead>
+<tr>
+<th>Application Type</th>
+<th>p95 Response Time</th>
+<th>Error Rate</th>
+<th>Availability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web Applications</td>
+<td>&lt;1000ms</td>
+<td>&lt;1%</td>
+<td>&gt;99.9%</td>
+</tr>
+<tr>
+<td>API Services</td>
+<td>&lt;500ms</td>
+<td>&lt;0.5%</td>
+<td>&gt;99.95%</td>
+</tr>
+<tr>
+<td>Document Systems</td>
+<td>&lt;2000ms</td>
+<td>&lt;2%</td>
+<td>&gt;99.5%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="establishing-baselines" tabindex="-1">Establishing Baselines <a class="header-anchor" href="#establishing-baselines" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Initial Baseline</strong>: Run smoke tests to establish minimum performance</li>
+<li><strong>Capacity Baseline</strong>: Determine maximum stable load</li>
+<li><strong>Degradation Points</strong>: Identify load levels where performance degrades</li>
+<li><strong>Breaking Points</strong>: Find system failure thresholds</li>
+</ol>
+<h3 id="performance-trends" tabindex="-1">Performance Trends <a class="header-anchor" href="#performance-trends" aria-hidden="true">#</a></h3>
+<p>Track metrics over time to identify trends:</p>
+<pre class="hljs"><code>Week 1: p95=650ms, errors=0.8%
+Week 2: p95=720ms, errors=1.2%  
+Week 3: p95=850ms, errors=2.1%
+Week 4: p95=980ms, errors=3.4%
+
+Trend: Performance degrading - investigate system changes
+</code></pre>
+<h2 id="metric-collection-best-practices" tabindex="-1">Metric Collection Best Practices <a class="header-anchor" href="#metric-collection-best-practices" aria-hidden="true">#</a></h2>
+<h3 id="test-design" tabindex="-1">Test Design <a class="header-anchor" href="#test-design" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Consistent Load Patterns</strong>: Use same ramp-up/down profiles for comparability</li>
+<li><strong>Sufficient Duration</strong>: Run tests long enough for steady-state metrics</li>
+<li><strong>Environment Isolation</strong>: Minimize external factors affecting results</li>
+</ul>
+<h3 id="data-quality" tabindex="-1">Data Quality <a class="header-anchor" href="#data-quality" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Multiple Runs</strong>: Execute tests multiple times to ensure consistency</li>
+<li><strong>Outlier Analysis</strong>: Investigate unusually high or low values</li>
+<li><strong>Context Documentation</strong>: Record system state, versions, configurations</li>
+</ul>
+<h3 id="reporting-standards" tabindex="-1">Reporting Standards <a class="header-anchor" href="#reporting-standards" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Standardized Formats</strong>: Use consistent metric presentation across reports</li>
+<li><strong>Threshold Documentation</strong>: Clearly define pass/fail criteria</li>
+<li><strong>Historical Comparison</strong>: Include previous test results for trend analysis</li>
+</ul>
+<h2 id="advanced-analysis-techniques" tabindex="-1">Advanced Analysis Techniques <a class="header-anchor" href="#advanced-analysis-techniques" aria-hidden="true">#</a></h2>
+<h3 id="percentile-analysis" tabindex="-1">Percentile Analysis <a class="header-anchor" href="#percentile-analysis" aria-hidden="true">#</a></h3>
+<p>Understanding the full distribution of response times:</p>
+<pre class="hljs"><code>p50: 400ms  - Typical user experience
+p90: 800ms  - 90% of users satisfied
+p95: 1200ms - 5% experience slower responses
+p99: 2500ms - 1% have poor experience
+p99.9: 8900ms - Outliers that may indicate issues
+</code></pre>
+<h3 id="load-pattern-analysis" tabindex="-1">Load Pattern Analysis <a class="header-anchor" href="#load-pattern-analysis" aria-hidden="true">#</a></h3>
+<p>Different load patterns reveal different characteristics:</p>
+<p><strong>Constant Load</strong>: Steady-state performance
+<strong>Ramping Load</strong>: System behavior under increasing stress<br>
+<strong>Spike Load</strong>: Response to sudden traffic increases
+<strong>Step Load</strong>: Threshold identification</p>
+<h3 id="error-pattern-analysis" tabindex="-1">Error Pattern Analysis <a class="header-anchor" href="#error-pattern-analysis" aria-hidden="true">#</a></h3>
+<p>Categorize errors to identify root causes:</p>
+<pre class="hljs"><code>HTTP 401 Unauthorized: 23% - Authentication issues
+HTTP 408 Request Timeout: 45% - Performance bottleneck  
+HTTP 500 Internal Server Error: 18% - Application bugs
+HTTP 502 Bad Gateway: 14% - Infrastructure issues
+</code></pre>
+<p>This comprehensive metrics guide enables effective performance analysis and system optimization based on detailed measurement and interpretation of key performance indicators.</p>
+
+<div class="meta">Generated from <code>documents/METRICS-GUIDE.md</code> on 2025-10-10T11:24:15.263Z</div>
+</body>
+</html>

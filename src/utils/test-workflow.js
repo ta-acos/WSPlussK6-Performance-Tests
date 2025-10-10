@@ -179,7 +179,19 @@ export function initializeTestExecution(
 
   // Each VU gets a unique user from config (VU 1 = User 0, VU 2 = User 1, etc.)
   const userIndex = (__VU - 1) % users.length;
-  const user = users[userIndex];
+  const rawUser = users[userIndex];
+  // Normalize user object to ensure consistent property names across tests
+  const user = {
+    // Preserve original variations in case other modules rely on them
+    ...rawUser,
+    UserName: rawUser.UserName || rawUser.userName || rawUser.username,
+    userName: rawUser.userName || rawUser.UserName || rawUser.username,
+    username: rawUser.username || rawUser.userName || rawUser.UserName,
+    ClientID: rawUser.ClientID || rawUser.clientId || rawUser.clientID || rawUser.clientid,
+    clientId: rawUser.clientId || rawUser.ClientID || rawUser.clientID || rawUser.clientid,
+    ClientSecret: rawUser.ClientSecret || rawUser.clientSecret || rawUser.clientsecret,
+    clientSecret: rawUser.clientSecret || rawUser.ClientSecret || rawUser.clientsecret
+  };
 
   // Early validation of user object
   if (!validateUser(user, vuId, userIndex, users.length)) {
@@ -187,7 +199,7 @@ export function initializeTestExecution(
   }
 
   console.log(
-    `🔄 ${vuId}: Starting workflow with user ${user.UserName || 'UNKNOWN'} (${user.ClientID || 'UNKNOWN'})`
+    `🔄 ${vuId}: Starting workflow with user ${user.username || user.userName || user.UserName || 'UNKNOWN'} (${user.clientId || user.ClientID || 'UNKNOWN'})`
   );
 
   // Validate test configuration
@@ -276,7 +288,8 @@ export function prioritizeTemplate(templates, preferredName) {
  * @returns {Object} - Authentication result with headers
  */
 export function executeAuthenticationFlow(testConfig, user, vuId) {
-  console.log(`🔐 ${vuId}: Authenticating user ${user.UserName}`);
+  const uname = user.username || user.userName || user.UserName;
+  console.log(`🔐 ${vuId}: Authenticating user ${uname}`);
 
   const accessToken = authenticate(testConfig, user, vuId);
   if (!validateAuthentication(accessToken, user, vuId)) {
@@ -284,7 +297,7 @@ export function executeAuthenticationFlow(testConfig, user, vuId) {
   }
 
   const authHeaders = createAuthHeaders(accessToken);
-  console.log(`✅ ${vuId}: Authentication successful for ${user.UserName}`);
+  console.log(`✅ ${vuId}: Authentication successful for ${uname}`);
 
   // Add pacing after authentication
   randomSleep(1, 3);

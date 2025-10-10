@@ -112,6 +112,32 @@ const CONFIG_ENVIRONMENT = 'autotest';
 // Example: k6 run -e SCENARIO=stress_test tests/api/cases/create-sak.js
 ```
 
+### 🛡️ Performance Governance (Central Thresholds & Bands)
+
+All performance SLOs (k6 pass/fail) and visual classification bands are defined once in `src/config/performance-thresholds.json`. Scenario/environment adjustments now live in `src/config/performance-threshold-profiles.json` (no `thresholds` blocks inside `autotest.json`, `dev.json`, etc.).
+
+| Section | Purpose |
+|---------|---------|
+| `defaults.k6` | Global p95/p99 & error/check failure thresholds (test pass/fail) |
+| `operations.*.k6` | Operation/group-specific overrides for finer control |
+| `uiBands` | Visual Good / Watch / Investigate coloring in HTML reports (presentation only) |
+
+Validation scripts:
+
+| Command | Description |
+|---------|-------------|
+| `npm run validate:thresholds` | Schema + ordering validation of central thresholds file |
+| `npm run validate:no-inline-thresholds` | Guards against inline `thresholds:` blocks reappearing in test scripts |
+| `npm run validate:perf` | Runs both (Husky pre-commit hook enforces) |
+
+Change workflow:
+1. Edit `performance-thresholds.json`.
+2. Run `npm run validate:perf` until passing.
+3. Commit (hook re-validates) and run representative tests.
+4. Review updated HTML report for new colors & pass/fail states.
+
+> Policy: No inline `thresholds:` blocks inside test scripts—central JSON is the single source of truth.
+
 ## 📋 Available NPM Commands
 
 ### Quick Start Commands
@@ -168,7 +194,8 @@ WSPlussK6-Performance-Tests/
 ├── 📁 src/
 │   ├── 📁 config/           # Test configurations
 │   │   ├── environments.json    # Environment settings
-│   │   ├── autotest.json       # Test scenarios & thresholds
+│   │   ├── autotest.json       # Scenario shapes ONLY (no thresholds)
+│   │   ├── performance-thresholds.json # Central thresholds (enforcement) + uiBands (presentation)
 │   │   ├── dev.json            # Development config
 │   │   └── paths-config.json   # Path configurations
 │   ├── 📁 data/             # Test data
@@ -202,25 +229,31 @@ WSPlussK6-Performance-Tests/
 ## 🔍 Test Details
 
 ### Case Creation Test (`create-sak.js`)
+
 **What it does:**
+
 1. Authenticates test user
 2. Retrieves case templates
 3. Creates new case
 4. Fetches reference data (case types, decision codes)
 
 **Performance expectations:**
+
 - Response time: <800ms (p95)
 - Success rate: >99%
 - Typical duration: 2-4 seconds per iteration
 
 ### Journal Post Tests (`create-jp*.js`)
+
 **What they do:**
+
 1. All case creation steps above
 2. Retrieves JP templates
 3. Creates journal posts (incoming/outgoing)
 4. Optionally uploads documents
 
 **Document upload variants:**
+
 - `create-jp.js` - Simple JP creation (no documents)
 - `create-jp-with-multiple-document.js` - Single JP + 3 documents
 - `create-multiple-jp-with-multiple-document.js` - Multiple JPs + documents each
@@ -230,6 +263,7 @@ WSPlussK6-Performance-Tests/
 ### Common Issues
 
 **Test fails with authentication error:**
+
 ```bash
 # Check if test users are configured correctly
 ls src/data/users-config.json
@@ -239,6 +273,7 @@ ls src/config/environments.json
 ```
 
 **No reports generated:**
+
 ```bash
 # Ensure verbose reporting is enabled
 npm run test:simple -- -e ENABLE_VERBOSE_REPORT=true
@@ -248,6 +283,7 @@ ls src/reports/
 ```
 
 **K6 not found:**
+
 ```bash
 # Install K6 first
 # Windows: choco install k6
@@ -258,16 +294,76 @@ ls src/reports/
 ### Performance Issues
 
 **High response times:**
+
 1. Check network connectivity
 2. Verify environment isn't under load
-3. Review threshold settings in `autotest.json`
+3. Review enforcement thresholds in `src/config/performance-thresholds.json` (never in test files or environment JSON). For scenario or environment-specific relaxation/tightening, edit `performance-threshold-profiles.json`.
 
 **Test failures:**
+
 1. Check verbose logs in HTML reports
 2. Look for specific error messages
 3. Verify test user permissions
 
 ## 🔧 Advanced Usage
+
+## ✅ Configuration Integrity & Validation
+
+This project includes automated validation to keep performance governance centralized and clean.
+
+### Validation Commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run validate:thresholds` | Validates `src/config/performance-thresholds.json` against `performance-thresholds.schema.json` |
+| `npm run validate:no-inline-thresholds` | Ensures no inline `thresholds:` definitions exist inside test scripts (`tests/**`) |
+| `npm run validate:perf` | Runs both of the above (use this before committing) |
+
+### What Gets Enforced
+
+1. Schema shape (required sections: `defaults`, `operations`, `uiBands`).
+2. Numeric ranges (latency > 0, rates between 0–1, etc.).
+3. No accidental re‑introduction of k6 inline threshold blocks in test files.
+
+### uiBands Ordering Guidance
+
+The `uiBands` section in `performance-thresholds.json` drives visual classification in the HTML report. Recommended ordering:
+
+```text
+good <= watch <= investigate
+```
+
+If `investigate` equals `watch`, the “Investigate” tier collapses and you effectively have only two bands. To restore a distinct third tier, raise `investigate` above `watch` (e.g. `good: 800`, `watch: 2000`, `investigate: 3000`). This can help highlight truly degraded states without over-highlighting moderate slowdowns.
+
+### Typical Failure Cases
+
+| Failure | Example Output | Fix |
+|---------|----------------|-----|
+| Missing required property | `defaults.k6.http_req_duration.p95 is required` | Add the field to the JSON |
+| Invalid rate | `errorRate.good must be <= 1` | Clamp to 0–1 range |
+| Inline thresholds detected | Lists offending test file path(s) | Remove `thresholds:` from test; rely on central config |
+
+### Pre-Commit Hook
+
+A Husky `pre-commit` hook (if enabled—see below) will block commits that fail `npm run validate:perf`. Run it manually anytime:
+
+```bash
+npm run validate:perf
+```
+
+If you need to temporarily bypass (not recommended), you can commit with `--no-verify`, but any CI pipeline should still run the validation.
+
+### Evolving Thresholds
+
+To adjust performance expectations as load patterns change:
+
+1. Edit `src/config/performance-thresholds.json`.
+2. (Optional) Add or adjust an `operations` entry for new business actions.
+3. Run `npm run validate:perf`.
+4. Re-run representative tests and review the updated HTML report coloring.
+
+Keep changes additive and review diffs of the central file in pull requests for traceability.
+
 
 ### Custom Test Scenarios
 
@@ -319,6 +415,7 @@ thresholds: {
 ## 📞 Support
 
 For issues or questions:
+ 
 1. Check the [Troubleshooting](#-troubleshooting) section
 2. Review test logs in `src/reports/`
 3. Examine configuration files in `src/config/`

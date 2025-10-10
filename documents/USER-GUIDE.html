@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>User Guide - Getting Started</title>
+<style>
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin: 2rem; line-height: 1.5; }
+  pre { background:#1e1e1e; color:#ddd; padding:12px; border-radius:6px; overflow:auto; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  h1,h2,h3,h4 { scroll-margin-top: 80px; }
+  table { border-collapse: collapse; width: 100%; margin:1rem 0; }
+  th, td { border:1px solid #ccc; padding:6px 10px; text-align:left; }
+  th { background:#f5f5f5; }
+  a { color:#0366d6; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .meta { font-size: 0.8rem; color:#666; margin-top:3rem; border-top:1px solid #eee; padding-top:0.5rem; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:1rem; border-radius:6px; }
+  .anchor { text-decoration:none; }
+</style>
+</head>
+<body>
+<h1 id="user-guide-getting-started" tabindex="-1">User Guide - Getting Started <a class="header-anchor" href="#user-guide-getting-started" aria-hidden="true">#</a></h1>
+<p>Complete guide for end users to quickly start using the Acos GRAF Load Test v3.0 framework.</p>
+<h2 id="what-this-framework-does" tabindex="-1">What This Framework Does <a class="header-anchor" href="#what-this-framework-does" aria-hidden="true">#</a></h2>
+<p>The Acos GRAF Load Test framework helps you:</p>
+<ul>
+<li><strong>Test Performance</strong>: Measure how fast your WebSak Plus application responds</li>
+<li><strong>Validate Capacity</strong>: Determine how many users your system can handle</li>
+<li><strong>Identify Issues</strong>: Find performance bottlenecks before they affect real users</li>
+<li><strong>Generate Reports</strong>: Get detailed analysis with visual dashboards</li>
+</ul>
+<h2 id="who-should-use-this" tabindex="-1">Who Should Use This <a class="header-anchor" href="#who-should-use-this" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Developers</strong>: Testing code changes impact on performance</li>
+<li><strong>QA Engineers</strong>: Validating system performance before releases</li>
+<li><strong>System Administrators</strong>: Monitoring system capacity and health</li>
+<li><strong>Product Managers</strong>: Understanding user experience under load</li>
+</ul>
+<h2 id="quick-start-5-minutes-" tabindex="-1">Quick Start (5 Minutes) <a class="header-anchor" href="#quick-start-5-minutes-" aria-hidden="true">#</a></h2>
+<h3 id="step-1-verify-installation" tabindex="-1">Step 1: Verify Installation <a class="header-anchor" href="#step-1-verify-installation" aria-hidden="true">#</a></h3>
+<p>Open a terminal/command prompt and check if everything is installed:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Check K6 is installed</span>
+k6 version
+
+<span class="hljs-comment"># Check Node.js is installed  </span>
+node --version
+
+<span class="hljs-comment"># Navigate to project directory</span>
+<span class="hljs-built_in">cd</span> WSPlussK6-Performance-Tests
+</code></pre>
+<h3 id="step-2-run-your-first-test" tabindex="-1">Step 2: Run Your First Test <a class="header-anchor" href="#step-2-run-your-first-test" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-comment"># Run a simple test (30 seconds, 1 user)</span>
+npm run simple
+</code></pre>
+<p><strong>What happens:</strong></p>
+<ol>
+<li>Framework authenticates a test user</li>
+<li>Creates a case in WebSak Plus</li>
+<li>Measures response times</li>
+<li>Generates a performance report</li>
+</ol>
+<h3 id="step-3-view-results" tabindex="-1">Step 3: View Results <a class="header-anchor" href="#step-3-view-results" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-comment"># Open the generated report</span>
+npm run report:open
+</code></pre>
+<p>The report opens in your browser showing:</p>
+<ul>
+<li>✅ Response times (should be under 1 second)</li>
+<li>✅ Success rate (should be 100%)</li>
+<li>✅ Performance graphs and analysis</li>
+</ul>
+<p><strong>Congratulations!</strong> You've run your first performance test.</p>
+<h2 id="understanding-your-results" tabindex="-1">Understanding Your Results <a class="header-anchor" href="#understanding-your-results" aria-hidden="true">#</a></h2>
+<h3 id="good-results-look-like-this-" tabindex="-1">Good Results Look Like This: <a class="header-anchor" href="#good-results-look-like-this-" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code>✓ Response Time (p95): 650ms
+✓ Success Rate: 100%  
+✓ Errors: 0%
+✓ All thresholds passed
+</code></pre>
+<h3 id="warning-signs-" tabindex="-1">Warning Signs: <a class="header-anchor" href="#warning-signs-" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code>⚠ Response Time (p95): 1,200ms
+⚠ Success Rate: 98%
+⚠ Some thresholds failed
+</code></pre>
+<h3 id="problem-indicators-" tabindex="-1">Problem Indicators: <a class="header-anchor" href="#problem-indicators-" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code>❌ Response Time (p95): 3,400ms
+❌ Success Rate: 85%
+❌ Error Rate: 15%
+❌ Multiple thresholds failed
+</code></pre>
+<h2 id="common-testing-scenarios" tabindex="-1">Common Testing Scenarios <a class="header-anchor" href="#common-testing-scenarios" aria-hidden="true">#</a></h2>
+<h3 id="daily-development-testing" tabindex="-1">Daily Development Testing <a class="header-anchor" href="#daily-development-testing" aria-hidden="true">#</a></h3>
+<p><strong>Use Case</strong>: Check if your code changes affect performance
+<strong>Command</strong>: <code>npm run simple</code>
+<strong>Duration</strong>: 30 seconds
+<strong>Purpose</strong>: Quick smoke test for functionality</p>
+<pre class="hljs"><code><span class="hljs-comment"># Make code changes</span>
+<span class="hljs-comment"># Test performance impact</span>
+npm run simple
+
+<span class="hljs-comment"># Review results</span>
+npm run report:open
+</code></pre>
+<h3 id="pre-release-validation" tabindex="-1">Pre-Release Validation <a class="header-anchor" href="#pre-release-validation" aria-hidden="true">#</a></h3>
+<p><strong>Use Case</strong>: Validate system before deploying to production
+<strong>Commands</strong>: Multiple test types
+<strong>Duration</strong>: 10-15 minutes total
+<strong>Purpose</strong>: Comprehensive performance validation</p>
+<pre class="hljs"><code><span class="hljs-comment"># Step 1: Basic functionality test</span>
+npm run simple
+
+<span class="hljs-comment"># Step 2: Normal load test  </span>
+npm run load
+
+<span class="hljs-comment"># Step 3: Stress test</span>
+npm run stress
+
+<span class="hljs-comment"># Review all results</span>
+npm run report:list
+</code></pre>
+<h3 id="capacity-planning" tabindex="-1">Capacity Planning <a class="header-anchor" href="#capacity-planning" aria-hidden="true">#</a></h3>
+<p><strong>Use Case</strong>: Determine maximum system capacity
+<strong>Commands</strong>: Progressively higher loads
+<strong>Duration</strong>: 20-30 minutes
+<strong>Purpose</strong>: Find system breaking points</p>
+<pre class="hljs"><code><span class="hljs-comment"># Test increasing loads</span>
+npm run <span class="hljs-built_in">test</span>:load      <span class="hljs-comment"># 5 users</span>
+npm run <span class="hljs-built_in">test</span>:stress    <span class="hljs-comment"># 15 users  </span>
+npm run <span class="hljs-built_in">test</span>:spike     <span class="hljs-comment"># 50 users peak</span>
+
+<span class="hljs-comment"># Analyze where system starts failing</span>
+</code></pre>
+<h3 id="feature-specific-testing" tabindex="-1">Feature-Specific Testing <a class="header-anchor" href="#feature-specific-testing" aria-hidden="true">#</a></h3>
+<p><strong>Use Case</strong>: Test specific application features
+<strong>Commands</strong>: Feature-targeted tests
+<strong>Duration</strong>: Varies by feature complexity
+<strong>Purpose</strong>: Validate specific functionality performance</p>
+<pre class="hljs"><code><span class="hljs-comment"># Case creation only</span>
+npm run simple
+
+<span class="hljs-comment"># Journal posts (no documents)  </span>
+npm run <span class="hljs-built_in">test</span>:simple:jp
+
+<span class="hljs-comment"># Document uploads</span>
+npm run jp-docs
+
+<span class="hljs-comment"># Complex workflows</span>
+npm run complex
+</code></pre>
+<h2 id="test-types-explained" tabindex="-1">Test Types Explained <a class="header-anchor" href="#test-types-explained" aria-hidden="true">#</a></h2>
+<h3 id="1-smoke-tests" tabindex="-1">1. Smoke Tests <a class="header-anchor" href="#1-smoke-tests" aria-hidden="true">#</a></h3>
+<p><strong>Purpose</strong>: Verify basic functionality works
+<strong>Load</strong>: 1 user for 30 seconds
+<strong>When to use</strong>: Daily checks, after code changes</p>
+<pre class="hljs"><code>npm run simple              <span class="hljs-comment"># Case creation</span>
+npm run <span class="hljs-built_in">test</span>:simple:jp      <span class="hljs-comment"># Journal posts</span>
+npm run <span class="hljs-built_in">test</span>:simple:documents <span class="hljs-comment"># With document upload</span>
+</code></pre>
+<h3 id="2-load-tests" tabindex="-1">2. Load Tests <a class="header-anchor" href="#2-load-tests" aria-hidden="true">#</a></h3>
+<p><strong>Purpose</strong>: Test normal operating conditions
+<strong>Load</strong>: 5 users for 4 minutes
+<strong>When to use</strong>: Regular performance validation</p>
+<pre class="hljs"><code>npm run load               <span class="hljs-comment"># Default load test</span>
+npm run <span class="hljs-built_in">test</span>:load:jp       <span class="hljs-comment"># Journal post load test</span>
+npm run <span class="hljs-built_in">test</span>:load:documents <span class="hljs-comment"># Document upload load test</span>
+</code></pre>
+<h3 id="3-stress-tests" tabindex="-1">3. Stress Tests <a class="header-anchor" href="#3-stress-tests" aria-hidden="true">#</a></h3>
+<p><strong>Purpose</strong>: Test system limits
+<strong>Load</strong>: 15 users for 8 minutes<br>
+<strong>When to use</strong>: Capacity planning, breaking point analysis</p>
+<pre class="hljs"><code>npm run stress             <span class="hljs-comment"># High load testing</span>
+npm run <span class="hljs-built_in">test</span>:stress:jp     <span class="hljs-comment"># JP stress testing</span>
+npm run <span class="hljs-built_in">test</span>:stress:complex <span class="hljs-comment"># Complex workflow stress</span>
+</code></pre>
+<h3 id="4-spike-tests" tabindex="-1">4. Spike Tests <a class="header-anchor" href="#4-spike-tests" aria-hidden="true">#</a></h3>
+<p><strong>Purpose</strong>: Test sudden traffic increases
+<strong>Load</strong>: 1→50→1 users in bursts
+<strong>When to use</strong>: Prepare for traffic spikes, validate auto-scaling</p>
+<pre class="hljs"><code>npm run <span class="hljs-built_in">test</span>:spike         <span class="hljs-comment"># Traffic spike simulation</span>
+</code></pre>
+<h2 id="interpreting-reports" tabindex="-1">Interpreting Reports <a class="header-anchor" href="#interpreting-reports" aria-hidden="true">#</a></h2>
+<h3 id="html-dashboard" tabindex="-1">HTML Dashboard <a class="header-anchor" href="#html-dashboard" aria-hidden="true">#</a></h3>
+<p>When you open a report, you'll see:</p>
+<ol>
+<li>
+<p><strong>Summary Section</strong></p>
+<ul>
+<li>Overall test results (Pass/Fail)</li>
+<li>Key metrics at a glance</li>
+<li>Performance score</li>
+</ul>
+</li>
+<li>
+<p><strong>Response Time Charts</strong></p>
+<ul>
+<li>Timeline of response times during test</li>
+<li>Percentile distributions (p50, p95, p99)</li>
+<li>Trend analysis</li>
+</ul>
+</li>
+<li>
+<p><strong>Error Analysis</strong></p>
+<ul>
+<li>Error rate over time</li>
+<li>Error type breakdown</li>
+<li>Failure reasons</li>
+</ul>
+</li>
+<li>
+<p><strong>Activity Log</strong></p>
+<ul>
+<li>Detailed step-by-step execution</li>
+<li>What the test actually did</li>
+<li>Timing for each operation</li>
+</ul>
+</li>
+</ol>
+<h3 id="key-metrics-to-watch" tabindex="-1">Key Metrics to Watch <a class="header-anchor" href="#key-metrics-to-watch" aria-hidden="true">#</a></h3>
+<p>Values below are driven by centrally managed <code>uiBands</code> (visual classification) in <code>src/config/performance-thresholds.json</code>. They provide guidance, while actual pass/fail comes from k6 thresholds defined in the same file under <code>defaults.k6</code> and any <code>operations.*.k6</code> overrides.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Good</th>
+<th>Watch</th>
+<th>Investigate</th>
+<th>Action (Bands Only)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Response Time (p95)</strong></td>
+<td>&lt;800ms</td>
+<td>800-2000ms</td>
+<td>&gt;2000ms</td>
+<td>Investigate slow queries, optimize code</td>
+</tr>
+<tr>
+<td><strong>Success Rate</strong></td>
+<td>&gt;99%</td>
+<td>95-99%</td>
+<td>&lt;95%</td>
+<td>Check error logs, fix application issues</td>
+</tr>
+<tr>
+<td><strong>Error Rate</strong></td>
+<td>&lt;1%</td>
+<td>1-5%</td>
+<td>&gt;5%</td>
+<td>Review application errors, check system resources</td>
+</tr>
+</tbody>
+</table>
+<h3 id="performance-trends" tabindex="-1">Performance Trends <a class="header-anchor" href="#performance-trends" aria-hidden="true">#</a></h3>
+<p>Run the same test regularly to track trends:</p>
+<pre class="hljs"><code>Week 1: p95=650ms, Success=100%  ✅ Baseline
+Week 2: p95=720ms, Success=99%   ✅ Still good  
+Week 3: p95=890ms, Success=97%   ⚠ Degrading
+Week 4: p95=1200ms, Success=94%  ❌ Action needed
+</code></pre>
+<h2 id="environment-testing" tabindex="-1">Environment Testing <a class="header-anchor" href="#environment-testing" aria-hidden="true">#</a></h2>
+<h3 id="test-different-environments" tabindex="-1">Test Different Environments <a class="header-anchor" href="#test-different-environments" aria-hidden="true">#</a></h3>
+<p>The framework supports testing multiple environments:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Test development environment</span>
+npm run <span class="hljs-built_in">test</span>:dev
+
+<span class="hljs-comment"># Test auto-test environment (default)</span>
+npm run <span class="hljs-built_in">test</span>:autotest
+
+<span class="hljs-comment"># Environment-specific scenarios</span>
+npm run <span class="hljs-built_in">test</span>:dev:jp:smoke
+npm run <span class="hljs-built_in">test</span>:autotest:load
+</code></pre>
+<h3 id="environment-comparison" tabindex="-1">Environment Comparison <a class="header-anchor" href="#environment-comparison" aria-hidden="true">#</a></h3>
+<p>Compare performance across environments:</p>
+<ol>
+<li>Run same test on different environments</li>
+<li>Compare response times and error rates</li>
+<li>Identify environment-specific issues</li>
+</ol>
+<pre class="hljs"><code><span class="hljs-comment"># Compare environments</span>
+npm run <span class="hljs-built_in">test</span>:dev     <span class="hljs-comment"># Development</span>
+npm run <span class="hljs-built_in">test</span>:autotest <span class="hljs-comment"># Auto-test</span>
+
+<span class="hljs-comment"># Compare reports to see differences</span>
+npm run report:list
+</code></pre>
+<h2 id="troubleshooting-common-issues" tabindex="-1">Troubleshooting Common Issues <a class="header-anchor" href="#troubleshooting-common-issues" aria-hidden="true">#</a></h2>
+<h3 id="test-fails-immediately" tabindex="-1">Test Fails Immediately <a class="header-anchor" href="#test-fails-immediately" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: Test stops right after starting
+<strong>Possible Causes</strong>: Authentication, network, configuration
+<strong>Solutions</strong>:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Check configuration</span>
+<span class="hljs-built_in">ls</span> src/config/
+<span class="hljs-built_in">ls</span> src/data/
+
+<span class="hljs-comment"># Test with verbose output</span>
+npm run <span class="hljs-built_in">test</span>:simple:verbose
+
+<span class="hljs-comment"># Verify connectivity</span>
+ping autotest01.acoscloud.no
+</code></pre>
+<h3 id="high-response-times" tabindex="-1">High Response Times <a class="header-anchor" href="#high-response-times" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: All requests take &gt;2 seconds
+<strong>Possible Causes</strong>: System overload, network issues, database problems
+<strong>Solutions</strong>:</p>
+<ol>
+<li>Reduce test load (use smoke test instead of stress test)</li>
+<li>Check system resources on target environment</li>
+<li>Review application logs for slow operations</li>
+<li>Test during off-peak hours</li>
+</ol>
+<h3 id="high-error-rates" tabindex="-1">High Error Rates <a class="header-anchor" href="#high-error-rates" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: Many requests failing (404, 500, timeout errors)
+<strong>Possible Causes</strong>: Application bugs, system overload, invalid test data
+<strong>Solutions</strong>:</p>
+<ol>
+<li>Check error details in HTML report</li>
+<li>Verify test user accounts are valid</li>
+<li>Confirm target environment is running</li>
+<li>Review application error logs</li>
+</ol>
+<h3 id="no-reports-generated" tabindex="-1">No Reports Generated <a class="header-anchor" href="#no-reports-generated" aria-hidden="true">#</a></h3>
+<p><strong>Symptoms</strong>: Test completes but no HTML report appears
+<strong>Possible Causes</strong>: Report generation disabled, file permissions
+<strong>Solutions</strong>:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Force verbose reporting  </span>
+npm run <span class="hljs-built_in">test</span>:simple -- -e ENABLE_VERBOSE_REPORT=<span class="hljs-literal">true</span>
+
+<span class="hljs-comment"># Check reports directory</span>
+<span class="hljs-built_in">ls</span> src/reports/
+
+<span class="hljs-comment"># Check file permissions</span>
+<span class="hljs-built_in">chmod</span> 755 src/reports/
+</code></pre>
+<h2 id="best-practices" tabindex="-1">Best Practices <a class="header-anchor" href="#best-practices" aria-hidden="true">#</a></h2>
+<h3 id="testing-schedule" tabindex="-1">Testing Schedule <a class="header-anchor" href="#testing-schedule" aria-hidden="true">#</a></h3>
+<p><strong>Daily</strong>: Run smoke tests to catch regressions</p>
+<pre class="hljs"><code>npm run simple
+</code></pre>
+<p><strong>Weekly</strong>: Run load tests for performance validation</p>
+<pre class="hljs"><code>npm run load
+npm run <span class="hljs-built_in">test</span>:load:jp
+</code></pre>
+<p><strong>Before Releases</strong>: Run comprehensive test suite</p>
+<pre class="hljs"><code>npm run run-all-tests
+</code></pre>
+<p><strong>Monthly</strong>: Run capacity planning tests</p>
+<pre class="hljs"><code>npm run <span class="hljs-built_in">test</span>:stress
+npm run <span class="hljs-built_in">test</span>:spike
+</code></pre>
+<h3 id="result-analysis" tabindex="-1">Result Analysis <a class="header-anchor" href="#result-analysis" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Always review reports</strong> - Don't just check pass/fail status</li>
+<li><strong>Track trends</strong> - Keep historical data for comparison</li>
+<li><strong>Document issues</strong> - Record what caused performance problems</li>
+<li><strong>Share results</strong> - Communicate findings with team</li>
+</ol>
+<h3 id="test-environment-hygiene" tabindex="-1">Test Environment Hygiene <a class="header-anchor" href="#test-environment-hygiene" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Use dedicated test accounts</strong> - Don't test with production users</li>
+<li><strong>Clean test data</strong> - Remove test cases/documents after testing</li>
+<li><strong>Coordinate testing</strong> - Avoid conflicts with other testers</li>
+<li><strong>Monitor system resources</strong> - Check if environment is healthy</li>
+</ol>
+<h2 id="advanced-usage" tabindex="-1">Advanced Usage <a class="header-anchor" href="#advanced-usage" aria-hidden="true">#</a></h2>
+<h3 id="custom-test-scenarios" tabindex="-1">Custom Test Scenarios <a class="header-anchor" href="#custom-test-scenarios" aria-hidden="true">#</a></h3>
+<p>You can create custom test scenarios by modifying configuration:</p>
+<ol>
+<li>Edit <code>src/config/autotest.json</code></li>
+<li>Add new scenarios with different user counts and durations</li>
+<li>Create new npm scripts in <code>package.json</code></li>
+</ol>
+<h3 id="automated-testing" tabindex="-1">Automated Testing <a class="header-anchor" href="#automated-testing" aria-hidden="true">#</a></h3>
+<p>Integrate tests into your CI/CD pipeline:</p>
+<pre class="hljs"><code><span class="hljs-comment"># In your build script</span>
+npm run simple
+<span class="hljs-keyword">if</span> [ $? -eq 0 ]; <span class="hljs-keyword">then</span>
+    <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Performance test passed&quot;</span>
+<span class="hljs-keyword">else</span>
+    <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Performance test failed&quot;</span>
+    <span class="hljs-built_in">exit</span> 1
+<span class="hljs-keyword">fi</span>
+</code></pre>
+<h3 id="performance-monitoring" tabindex="-1">Performance Monitoring <a class="header-anchor" href="#performance-monitoring" aria-hidden="true">#</a></h3>
+<p>Set up regular automated tests:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Create a monitoring script</span>
+<span class="hljs-comment">#!/bin/bash</span>
+npm run simple
+npm run load
+<span class="hljs-comment"># Send results to monitoring system</span>
+</code></pre>
+<h2 id="getting-help" tabindex="-1">Getting Help <a class="header-anchor" href="#getting-help" aria-hidden="true">#</a></h2>
+<hr>
+<h2 id="-performance-governance-validation-summary-" tabindex="-1">🛡️ Performance Governance &amp; Validation (Summary) <a class="header-anchor" href="#-performance-governance-validation-summary-" aria-hidden="true">#</a></h2>
+<p>All performance SLOs (k6 pass/fail thresholds) and visual classification bands live in a single file: <code>src/config/performance-thresholds.json</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>defaults.k6</code></td>
+<td>Global baseline thresholds (e.g. p95/p99, error rate) applied to all operations</td>
+</tr>
+<tr>
+<td><code>operations.*.k6</code></td>
+<td>Optional tighter operation/group-specific thresholds</td>
+</tr>
+<tr>
+<td><code>uiBands</code></td>
+<td>Visual Good / Watch / Investigate coloring (does not affect exit code)</td>
+</tr>
+</tbody>
+</table>
+<p>Validation commands:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run validate:thresholds</code></td>
+<td>Schema + ordering validation for central thresholds file</td>
+</tr>
+<tr>
+<td><code>npm run validate:no-inline-thresholds</code></td>
+<td>Ensures no inline <code>thresholds:</code> blocks reappear in tests</td>
+</tr>
+<tr>
+<td><code>npm run validate:perf</code></td>
+<td>Runs both (Husky pre-commit hook enforces)</td>
+</tr>
+</tbody>
+</table>
+<p>Change workflow:</p>
+<ol>
+<li>Edit <code>performance-thresholds.json</code> (adjust defaults, add operation entry, tweak <code>uiBands</code>).</li>
+<li>Run <code>npm run validate:perf</code> until passing.</li>
+<li>Commit (hook re-validates) and execute representative tests.</li>
+<li>Review updated HTML report for new colors and pass/fail status.</li>
+</ol>
+<blockquote>
+<p>Policy: Inline thresholds in test scripts are prohibited—always modify the central file.</p>
+</blockquote>
+<h3 id="documentation-resources" tabindex="-1">Documentation Resources <a class="header-anchor" href="#documentation-resources" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong><a href="http://README.md">README.md</a></strong> - Project overview and quick start</li>
+<li><strong><a href="http://ARCHITECTURE.md">ARCHITECTURE.md</a></strong> - Technical system details</li>
+<li><strong><a href="http://NPM-COMMANDS-GUIDE.md">NPM-COMMANDS-GUIDE.md</a></strong> - Complete command reference</li>
+<li><strong><a href="http://METRICS-GUIDE.md">METRICS-GUIDE.md</a></strong> - Detailed metrics explanation</li>
+<li><strong><a href="http://INSTALLATION-GUIDE.md">INSTALLATION-GUIDE.md</a></strong> - Setup instructions</li>
+</ol>
+<h3 id="self-service-debugging" tabindex="-1">Self-Service Debugging <a class="header-anchor" href="#self-service-debugging" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Check the basics</strong> - Is K6 installed? Are credentials correct?</li>
+<li><strong>Start simple</strong> - Use <code>npm run simple</code> to isolate issues</li>
+<li><strong>Read error messages</strong> - Error messages often indicate the problem</li>
+<li><strong>Check configuration</strong> - Verify environment settings and user accounts</li>
+</ol>
+<h3 id="report-issues" tabindex="-1">Report Issues <a class="header-anchor" href="#report-issues" aria-hidden="true">#</a></h3>
+<p>When reporting issues, include:</p>
+<ol>
+<li>Command that failed</li>
+<li>Complete error message</li>
+<li>Environment being tested</li>
+<li>System information (OS, K6 version, Node version)</li>
+</ol>
+<h2 id="next-steps" tabindex="-1">Next Steps <a class="header-anchor" href="#next-steps" aria-hidden="true">#</a></h2>
+<p>After mastering the basics:</p>
+<ol>
+<li><strong>Learn advanced commands</strong> - Explore the full NPM commands guide</li>
+<li><strong>Understand metrics deeply</strong> - Read the metrics guide for detailed analysis</li>
+<li><strong>Customize scenarios</strong> - Modify test configurations for your specific needs</li>
+<li><strong>Automate testing</strong> - Integrate into your development workflow</li>
+<li><strong>Share knowledge</strong> - Train team members on performance testing</li>
+</ol>
+<p>This framework provides a comprehensive foundation for performance testing WebSak Plus applications. Start with simple tests and gradually explore more advanced features as you become comfortable with the system.</p>
+
+<div class="meta">Generated from <code>documents/USER-GUIDE.md</code> on 2025-10-10T11:24:15.279Z</div>
+</body>
+</html>

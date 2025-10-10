@@ -388,18 +388,32 @@ function generateGroupBreakdown(metrics) {
 
   const rows = groups
     .map((g) => {
-      const p95Class = g.p95 <= 800 ? 'cell-good' : g.p95 <= 2000 ? 'cell-warn' : 'cell-bad';
+      const norm = (v) => (typeof v === 'number' && v > 0 ? v.toFixed(2) : 'n/a');
+      const p95Class =
+        typeof g.p95 === 'number' && g.p95 > 0
+          ? g.p95 <= 800
+            ? 'cell-good'
+            : g.p95 <= 2000
+              ? 'cell-warn'
+              : 'cell-bad'
+          : '';
       return `<tr>
       <td>${g.name}</td>
-      <td>${g.min.toFixed(2)}</td>
-      <td>${g.avg.toFixed(2)}</td>
-      <td>${g.med.toFixed(2)}</td>
-      <td>${g.p90.toFixed(2)}</td>
-      <td class="${p95Class}">${g.p95.toFixed(2)}</td>
-      <td>${g.max.toFixed(2)}</td>
+      <td>${norm(g.min)}</td>
+      <td>${norm(g.avg)}</td>
+      <td>${norm(g.med)}</td>
+      <td>${norm(g.p90)}</td>
+      <td class="${p95Class}">${norm(g.p95)}</td>
+      <td>${norm(g.max)}</td>
     </tr>`;
     })
     .join('');
+
+  // Detect if all rows are effectively empty (all n/a)
+  const allEmpty = /<td>n\/a<\/td>/g.test(rows) && !/class="cell-(good|warn|bad)"/.test(rows);
+  if (allEmpty) {
+    return `<div class="notes"><p><strong>No populated group metrics detected.</strong></p><p>This usually means either:</p><ul><li>Group blocks executed too quickly / no iterations completed</li><li>K6 summary did not include trend stats (now forced via summaryTrendStats)</li><li>Test exited early on errors before groups finished</li></ul><p>Re-run a longer test or verify groups are executed. If still empty, capture raw summary JSON and inspect metric keys beginning with <code>group_duration{group:::</code>.</p></div>`;
+  }
 
   return `<table class="compact">
     <thead>

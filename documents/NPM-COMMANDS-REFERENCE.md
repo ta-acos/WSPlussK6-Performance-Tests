@@ -34,6 +34,29 @@
 
 ---
 
+### 1.1 Quick Start Command Execution Mapping
+
+This mapping expands each simplified npm command into the exact underlying k6 target, key environment variables, whether the enhanced verbose report is embedded, and the resulting HTML report file name.
+
+| NPM Command | Invokes Script | k6 Target File | `SCENARIO` | `SCENARIO_NAME` | Verbose Report? | Report File | Notes |
+|-------------|----------------|----------------|-----------|-----------------|-----------------|------------|-------|
+| `npm run simple` | `test:simple` | `tests/api/cases/create-sak.js` | `smoke_test` | `smoke_test` | Yes (`ENABLE_VERBOSE_REPORT=true`) | `create-sak-smoke_test-report.html` | Case (SAK) sanity check |
+| `npm run load` | `test:load` | `tests/api/cases/create-sak.js` | `load_test` | `load_test` | Yes | `create-sak-load_test-report.html` | Sustained case load |
+| `npm run stress` | `test:stress` | `tests/api/cases/create-sak.js` | `stress_test` | `stress_test` | Yes | `create-sak-stress_test-report.html` | Ramping stress find limits |
+| `npm run jp-docs` | `test:simple:documents` | `tests/api/journalposts/create-jp-with-multiple-document.js` | `smoke_test` | `smoke_test` | Yes | `create-jp-with-multiple-document-smoke_test-report.html` | JP + multiple documents |
+| `npm run complex` | `test:simple:complex` | `tests/api/journalposts/create-multiple-jp-with-multiple-document.js` | `smoke_test` | `smoke_test` | Yes | `create-multiple-jp-with-multiple-document-smoke_test-report.html` | Multiple incoming & outgoing JPs with docs |
+| `npm run test:load:jp` | `test:load:jp` | `tests/api/journalposts/create-jp.js` | `load_test` | `load_test` | Yes | `create-jp-load_test-report.html` | Single JP load scenario |
+| `npm run test:load:documents` | `test:load:documents` | `tests/api/journalposts/create-jp-with-multiple-document.js` | `load_test` | `load_test` | Yes | `create-jp-with-multiple-document-load_test-report.html` | JP w/ documents load |
+| `npm run test:load:complex` | `test:load:complex` | `tests/api/journalposts/create-multiple-jp-with-multiple-document.js` | `load_test` | `load_test` | Yes | `create-multiple-jp-with-multiple-document-load_test-report.html` | Multi JP/doc load |
+| `npm run jp:load:verbose:report` | `jp:load:verbose:report` | `tests/api/journalposts/create-jp.js` | `load_test` | `load_test` | Yes (console+HTML) | `create-jp-load_test-report.html` | JP load + verbose |
+| `npm run complex:load:verbose:report` | `complex:load:verbose:report` | `tests/api/journalposts/create-multiple-jp-with-multiple-document.js` | `load_test` | `load_test` | Yes (console+HTML) | `create-multiple-jp-with-multiple-document-load_test-report.html` | Complex load + verbose |
+
+*Report naming pattern:* `{base-test-file}-{SCENARIO_NAME}-report.html`. Override with a custom name using `-e SCENARIO_NAME=my_custom_name` to keep results separated.
+
+> Need clarity? Commands without `jp`, `jp-docs`, or `complex` prefixes target the case (`create-sak.js`) test; those with the prefixes run Journal Post flows.
+
+---
+
 ## 📊 Test Scenarios Explained
 
 | Scenario | Virtual Users (VUs) | Duration/Pattern | Purpose | Report File Suffix |
@@ -158,6 +181,41 @@
 | `npm run sak:stress:verbose` | `k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js` | SAK stress test with verbose logging |
 | `npm run sak:spike:verbose` | `k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js` | SAK spike test with verbose logging |
 | `npm run sak:endurance:verbose` | `k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js` | SAK endurance test with verbose logging |
+
+---
+
+## 🧭 Flow Classification & Verbose Report Controls
+
+The enhanced verbose report auto-detects whether to include Journal Post / Document flows or just Case Creation. Use these environment variables to override or guide classification:
+
+| Variable | Values | Effect | When to Use |
+|----------|--------|--------|-------------|
+| `FLOW_TYPE` | `case-only`, `jp`, `journalpost` | Hard override of flow classification (highest precedence). | Force a known flow in CI or mixed pipelines. |
+| `FORCE_CASE_ONLY` | `true` | Forces Case-only flow even if heuristics lean JP. | Long case load/endurance runs misclassified due to high request volume. |
+| `IS_CASE_ONLY` | `true` | Alias for `FLOW_TYPE=case-only`. | Backward compatibility. |
+| `JP_ENDPOINT_HIT` | `true` | Signals JP endpoints were executed (prevents reclassification to case-only). | Set in JP scripts if heuristics might under-detect. |
+| `SCENARIO_NAME` | e.g. `create-sak-load_test` | Names containing `create-sak` / `sak` bias to case-only if no JP indicators. | Improve clarity across multi-flow runs. |
+| `ENABLE_VERBOSE_REPORT` | `true` | Embeds verbose narrative in HTML report. | Whenever you want detailed execution story. |
+
+**JP heuristic indicators:** scenario name contains `journal`, `jp`, `document`; or env vars `DOC_COUNT`, `INCOMING_COUNT`, `OUTGOING_COUNT`, `USE_TEST_DOCS=true`; or very high total HTTP request volume (> 40).
+
+**Case bias:** scenario name contains `create-sak` (and no JP indicators) or explicit overrides.
+
+**Automatic JP flags:** All Journal Post scripts now auto-set `FLOW_TYPE=jp` (when not already defined) and `JP_ENDPOINT_HIT=true` internally. This removes the need to manually export those for small JP tests while still allowing overrides (`FORCE_CASE_ONLY=true` or `FLOW_TYPE=case-only`).
+
+**Recommended explicit case run:**
+
+```powershell
+$env:FORCE_CASE_ONLY='true'; $env:ENABLE_VERBOSE_REPORT='true'; npm run load
+```
+
+**Recommended explicit JP run:**
+
+```powershell
+$env:FLOW_TYPE='jp'; $env:ENABLE_VERBOSE_REPORT='true'; npm run test:load:jp
+```
+
+> Troubleshooting: If JP lines appear in a pure case test, add `FORCE_CASE_ONLY=true`. If case-only appears in a JP test, add `FLOW_TYPE=jp` or ensure the script sets `JP_ENDPOINT_HIT=true`.
 
 ### Journal Post Tests with Verbose Logging
 
@@ -475,7 +533,64 @@ Each HTML report includes:
 
 ---
 
-## 📧 Support & Documentation
+## �️ Performance Governance & Validation
+
+Central performance rules (k6 enforcement and UI classification) are managed centrally – do NOT add `thresholds:` blocks inside test scripts.
+
+### Single Source of Truth
+
+| File | Purpose |
+|------|---------|
+| `src/config/performance-thresholds.json` | Defines global k6 thresholds (`defaults.k6.*` plus optional `operations.*.k6` overrides) and presentation-only `uiBands` used for coloring latency, error rate, and check failure rate in HTML reports. |
+
+### What Lives Where
+
+| Concern | Location | Notes |
+|---------|----------|-------|
+| k6 pass/fail thresholds (p95/p99, error rate) | `performance-thresholds.json > defaults.k6` and optional `operations.*.k6` | Merged at runtime; no inline thresholds permitted. |
+| Operation-specific overrides | `performance-thresholds.json > operations` | Adds/tightens thresholds for semantic groups (e.g. grouped durations). |
+| Visual status colors (Good / Watch / Investigate) | `performance-thresholds.json > uiBands` | Presentation only; doesn’t affect exit code. |
+
+### Validation Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run validate:thresholds` | Schema + ordering validation of `performance-thresholds.json` (Ajv). |
+| `npm run validate:no-inline-thresholds` | Scans `tests/**` for disallowed inline `thresholds:` definitions. |
+| `npm run validate:perf` | Runs both of the above. Use before every commit. |
+
+The Husky `pre-commit` hook (installed via `npm run prepare`) automatically runs `validate:perf` and blocks commits if governance fails.
+
+### uiBands Guidance
+
+`uiBands` classify aggregate metrics; recommended inequality:
+
+```text
+good <= watch <= investigate
+```
+
+If `investigate` equals `watch` you effectively have two tiers; raise `investigate` to restore three distinct signal levels.
+
+### Changing Thresholds – Workflow
+
+1. Edit `src/config/performance-thresholds.json` (update `defaults`, add/adjust an `operations` entry, or tune `uiBands`).
+2. Run `npm run validate:perf` until it passes.
+3. Commit (hook re-validates).
+4. Re-run representative tests; inspect new HTML report (colors & pass/fail markers update automatically).
+
+### Typical Validation Failures
+
+| Failure | Example Message | Fix |
+|---------|-----------------|-----|
+| Band ordering anomaly | `Warning: uiBands.latencyMs.good (900) > watch (800)` | Correct numerical ordering. |
+| Missing required property | `defaults.k6.http_req_duration.p95 is required` | Add the missing field. |
+| Inline thresholds detected | `Inline thresholds found in tests/api/cases/create-sak.js` | Remove the inline block; rely on central file. |
+
+> Policy: All performance changes must pass `validate:perf`; inline threshold regressions will be rejected.
+
+---
+
+## �📧 Support & Documentation
 
 - **Main Documentation**: `documents/README.md`
 - **Architecture Guide**: `documents/ARCHITECTURE.md`

@@ -289,10 +289,10 @@ export function preloadTestDocuments(options = {}) {
     // This ensures paths are resolved relative to this module file
     const pathCandidates = [
       `../../../${documentBasePath}/${fileName}`, // From tests/api/journalposts/ ✓ Most common
-      `../../${documentBasePath}/${fileName}`,    // From tests/api/
-      `../${documentBasePath}/${fileName}`,       // From tests/
-      `./${documentBasePath}/${fileName}`,        // From project root
-      `${documentBasePath}/${fileName}`           // Direct path (no prefix)
+      `../../${documentBasePath}/${fileName}`, // From tests/api/
+      `../${documentBasePath}/${fileName}`, // From tests/
+      `./${documentBasePath}/${fileName}`, // From project root
+      `${documentBasePath}/${fileName}` // Direct path (no prefix)
     ];
 
     let fileData;
@@ -304,7 +304,7 @@ export function preloadTestDocuments(options = {}) {
       try {
         // Use import.meta.resolve() to get absolute path and eliminate warnings
         const resolvedPath = import.meta.resolve ? import.meta.resolve(filePath) : filePath;
-        
+
         if (mode === 'base64') {
           // Load as binary and convert to base64
           fileData = open(resolvedPath, 'b');
@@ -354,7 +354,8 @@ export function preloadTestDocuments(options = {}) {
         console.warn(`   ⚠️  Failed to load ${fileName}: Could not find file in any expected location`);
       }
     }
-  });  if (verbose) {
+  });
+  if (verbose) {
     console.log(`📦 Successfully preloaded ${preloadedDocuments.length}/${fileList.length} test documents`);
   }
 

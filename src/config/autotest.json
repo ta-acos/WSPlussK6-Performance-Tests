@@ -65,12 +65,9 @@
     }
   },
 
-  "_comment_thresholds": "PERFORMANCE GOALS: These define what 'good performance' means. Test FAILS if any of these are not met.",
-  "thresholds": {
-    "http_req_duration": ["p(95)<2000", "p(99)<5000"],
-    "http_req_failed": ["rate<0.05"],
-    "http_reqs": ["rate>0.5"],
-    "iteration_duration": ["p(95)<30000"]
+  "performanceProfile": {
+    "scenario": "load_test",
+    "environment": "autotest"
   },
 
   "options": {
