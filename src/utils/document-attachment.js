@@ -285,30 +285,51 @@ export function preloadTestDocuments(options = {}) {
   }
 
   fileList.forEach((fileName) => {
-    const filePath = `${documentBasePath}/${fileName}`;
+    // Using import.meta.resolve() to future-proof file loading
+    // This ensures paths are resolved relative to this module file
+    const pathCandidates = [
+      `../../../${documentBasePath}/${fileName}`, // From tests/api/journalposts/ ✓ Most common
+      `../../${documentBasePath}/${fileName}`,    // From tests/api/
+      `../${documentBasePath}/${fileName}`,       // From tests/
+      `./${documentBasePath}/${fileName}`,        // From project root
+      `${documentBasePath}/${fileName}`           // Direct path (no prefix)
+    ];
 
-    try {
-      let fileData;
-      let processedData;
+    let fileData;
+    let processedData;
+    let successfulPath = null;
 
-      if (mode === 'base64') {
-        // Load as binary and convert to base64
+    // Try each path candidate until one works
+    for (const filePath of pathCandidates) {
+      try {
+        // Use import.meta.resolve() to get absolute path and eliminate warnings
         const resolvedPath = import.meta.resolve ? import.meta.resolve(filePath) : filePath;
-        fileData = open(resolvedPath, 'b');
-        const base64Data = encoding.b64encode(fileData, { std: 'RFC4648' });
-        processedData = {
-          base64Content: base64Data,
-          binaryData: fileData
-        };
-      } else {
-        // Load as binary
-        const resolvedPath = import.meta.resolve ? import.meta.resolve(filePath) : filePath;
-        fileData = open(resolvedPath, 'b');
-        processedData = {
-          binaryData: fileData
-        };
+        
+        if (mode === 'base64') {
+          // Load as binary and convert to base64
+          fileData = open(resolvedPath, 'b');
+          const base64Data = encoding.b64encode(fileData, { std: 'RFC4648' });
+          processedData = {
+            base64Content: base64Data,
+            binaryData: fileData
+          };
+        } else {
+          // Load as binary
+          fileData = open(resolvedPath, 'b');
+          processedData = {
+            binaryData: fileData
+          };
+        }
+        successfulPath = filePath;
+        break; // Success! No need to try other paths
+      } catch (e) {
+        // Try next path candidate
+        continue;
       }
+    }
 
+    // If we successfully loaded the file, add it to the results
+    if (successfulPath && fileData) {
       const mimeType = guessMimeType(fileName);
       const documentTitle = fileName.replace(/\.[^/.]+$/, ''); // Remove extension
 
@@ -317,7 +338,7 @@ export function preloadTestDocuments(options = {}) {
         mimeType: mimeType,
         tittel: documentTitle,
         size: fileData.length || 0,
-        originalPath: filePath,
+        originalPath: successfulPath,
         mode: mode,
         ...processedData
       };
@@ -327,14 +348,13 @@ export function preloadTestDocuments(options = {}) {
       if (verbose) {
         console.log(`   ✅ Loaded: ${fileName} (${mimeType}, ${document.size} bytes)`);
       }
-    } catch (e) {
+    } else {
+      // Failed to load with any path candidate
       if (verbose) {
-        console.warn(`   ⚠️  Failed to load ${filePath}: ${e.message}`);
+        console.warn(`   ⚠️  Failed to load ${fileName}: Could not find file in any expected location`);
       }
     }
-  });
-
-  if (verbose) {
+  });  if (verbose) {
     console.log(`📦 Successfully preloaded ${preloadedDocuments.length}/${fileList.length} test documents`);
   }
 

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NPM Commands Reference – WebSak Plus K6 Performance Tests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.4; }
+  h1,h2,h3 { margin-top: 2.2em; line-height: 1.15; }
+  h1 { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; font-size: 13px; }
+  th, td { border: 1px solid #888; padding: 6px 8px; vertical-align: top; }
+  th { background: #0f62fe; color: #fff; text-align: left; position: sticky; top: 0; }
+  caption { text-align: left; font-weight: 600; margin: 4px 0 8px; font-size: 14px; }
+  code { font-family: Consolas, Menlo, monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 4px; display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+  .nowrap { white-space: nowrap; }
+  .small { font-size: 11px; opacity: 0.85; }
+  .category { background: #16375e; color: #fff; font-weight: 600; }
+  .tag { display: inline-block; background: #e0e0e0; color: #222; padding: 1px 6px; border-radius: 12px; font-size: 11px; margin: 0 4px 4px 0; }
+  .scenario-smoke { background:#4caf50; color:#fff; }
+  .scenario-load { background:#2196f3; color:#fff; }
+  .scenario-stress { background:#ff9800; color:#fff; }
+  .scenario-spike { background:#9c27b0; color:#fff; }
+  .scenario-endurance { background:#455a64; color:#fff; }
+  .scroll-hint { font-size: 11px; opacity: 0.7; margin-top: -20px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  .note { background:#fff8e1; border-left:4px solid #ffa000; padding:8px 12px; margin:16px 0; }
+  @media print { body { font-size: 11px; } table { page-break-inside: avoid; } code { white-space: pre-wrap; } }
+</style>
+</head>
+<body>
+<h1>NPM Commands Reference</h1>
+<p><strong>Project:</strong> ACOS WebSak Plus – K6 Performance Testing Framework<br>
+<strong>Version:</strong> 3.0.0 &nbsp; | &nbsp; <strong>Generated:</strong> 2025-10-10<br>
+<strong>Environments:</strong> <code>dev</code>, <code>autotest</code> &nbsp; | &nbsp; <strong>K6 Version Target:</strong> 0.57.0</p>
+<div class="note">
+<p><strong>Export Tips:</strong> Open this HTML in a browser, then:</p>
+<ol>
+  <li><strong>To Word:</strong> Save As → Web Page, then open in Word and save as .docx.</li>
+  <li><strong>To PDF:</strong> Print (Ctrl+P) → Destination: Save as PDF.</li>
+</ol>
+</div>
+
+<h2 id="legend">Legend & Conventions</h2>
+<p><span class="tag scenario-smoke">smoke</span><span class="tag scenario-load">load</span><span class="tag scenario-stress">stress</span><span class="tag scenario-spike">spike</span><span class="tag scenario-endurance">endurance</span>
+&nbsp; <span class="tag">nopace</span> (no think time) &nbsp; <span class="tag">verbose</span> (console debug) &nbsp; <span class="tag">report</span> (HTML enhanced report)</p>
+
+<h2 id="quick-start">1. Quick Start (End‑User Friendly)</h2>
+<table>
+  <caption>Core Entry Commands</caption>
+  <thead><tr><th>NPM Command</th><th>Runs (Underlying)</th><th>Scenario</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>npm run simple</code></td><td><code>test:simple</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>Basic case creation – sanity check.</td></tr>
+    <tr><td><code>npm run load</code></td><td><code>test:load</code></td><td><span class="tag scenario-load">load</span></td><td>Normal sustained traffic.</td></tr>
+    <tr><td><code>npm run stress</code></td><td><code>test:stress</code></td><td><span class="tag scenario-stress">stress</span></td><td>Push system beyond nominal capacity.</td></tr>
+    <tr><td><code>npm run jp-docs</code></td><td><code>test:simple:documents</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>JP with multi-document attach (light).</td></tr>
+    <tr><td><code>npm run complex</code></td><td><code>test:simple:complex</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>Multi JP (incoming + outgoing) with docs.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="scenario-summary">2. Scenario Profiles</h2>
+<table>
+  <thead><tr><th>Scenario</th><th>Executor Pattern</th><th>Users / Pattern</th><th>Typical Duration*</th><th>Goal</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag scenario-smoke">smoke</span></td><td>shared-iterations</td><td>1 iteration, 1 VU</td><td>&lt; 1 min</td><td>Fast validation after changes.</td></tr>
+    <tr><td><span class="tag scenario-load">load</span></td><td>constant-vus</td><td>7 VUs constant</td><td>~2–5 min</td><td>Baseline performance.</td></tr>
+    <tr><td><span class="tag scenario-stress">stress</span></td><td>ramping-vus</td><td>1→7→14 ramp</td><td>10–15 min</td><td>Capacity / breakpoints.</td></tr>
+    <tr><td><span class="tag scenario-spike">spike</span></td><td>ramping-vus (steep)</td><td>1→14→2</td><td>4–5 min</td><td>Shock absorption.</td></tr>
+    <tr><td><span class="tag scenario-endurance">endurance</span></td><td>constant-vus</td><td>5 VUs steady</td><td>Long (config)</td><td>Stability / leaks.</td></tr>
+  </tbody>
+</table>
+<p class="small">*Actual durations are controlled by <code>autotest.json</code> / other env configs.</p>
+
+<h2 id="matrix">3. Command Matrix (Collapsed by Category)</h2>
+<p>Each expandable section lists: NPM script, the exact underlying command, scenario tags, and a short description. Copy/paste supported.</p>
+
+<!-- Helper function style layout using details for readability -->
+
+<details open>
+<summary><strong>3.1 SAK (Case) Tests – Core & No‑Pace</strong></summary>
+<table>
+  <thead><tr><th>NPM Script</th><th>Actual Command</th><th>Tags</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr class="category"><td colspan="4">Basic Scenarios</td></tr>
+    <tr><td><code>test:create-sak:smoke</code></td><td><code>k6 run -e SCENARIO=smoke_test tests/api/cases/create-sak.js</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>Minimal validation.</td></tr>
+    <tr><td><code>test:create-sak:load</code></td><td><code>k6 run -e SCENARIO=load_test tests/api/cases/create-sak.js</code></td><td><span class="tag scenario-load">load</span></td><td>Baseline throughput.</td></tr>
+    <tr><td><code>test:create-sak:stress</code></td><td><code>k6 run -e SCENARIO=stress_test tests/api/cases/create-sak.js</code></td><td><span class="tag scenario-stress">stress</span></td><td>Escalating volume.</td></tr>
+    <tr><td><code>test:create-sak:spike</code></td><td><code>k6 run -e SCENARIO=spike_test tests/api/cases/create-sak.js</code></td><td><span class="tag scenario-spike">spike</span></td><td>Sudden surge.</td></tr>
+    <tr><td><code>test:create-sak:endurance</code></td><td><code>k6 run -e SCENARIO=endurance_test tests/api/cases/create-sak.js</code></td><td><span class="tag scenario-endurance">endurance</span></td><td>Long stability assessment.</td></tr>
+    <tr class="category"><td colspan="4">No‑Pacing (Max Throughput)</td></tr>
+    <tr><td><code>test:create-sak:smoke:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=smoke_test ...</code></td><td><span class="tag scenario-smoke">smoke</span><span class="tag">nopace</span></td><td>Fastest smoke execution.</td></tr>
+    <tr><td><code>test:create-sak:load:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=load_test ...</code></td><td><span class="tag scenario-load">load</span><span class="tag">nopace</span></td><td>Sustained peak load.</td></tr>
+    <tr><td><code>test:create-sak:stress:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=stress_test ...</code></td><td><span class="tag scenario-stress">stress</span><span class="tag">nopace</span></td><td>Break threshold search.</td></tr>
+    <tr><td><code>test:create-sak:spike:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=spike_test ...</code></td><td><span class="tag scenario-spike">spike</span><span class="tag">nopace</span></td><td>Worst-case spike.</td></tr>
+    <tr><td><code>test:create-sak:endurance:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=endurance_test ...</code></td><td><span class="tag scenario-endurance">endurance</span><span class="tag">nopace</span></td><td>Long soak at max pace.</td></tr>
+  </tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>3.2 Journal Post (JP) Tests – Core & No‑Pace</strong></summary>
+<table>
+  <thead><tr><th>NPM Script</th><th>Actual Command</th><th>Tags</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr class="category"><td colspan="4">Basic Scenarios</td></tr>
+    <tr><td><code>test:create-jp:smoke</code></td><td><code>k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>Validate JP flow.</td></tr>
+    <tr><td><code>test:create-jp:load</code></td><td><code>k6 run -e SCENARIO=load_test tests/api/journalposts/create-jp.js</code></td><td><span class="tag scenario-load">load</span></td><td>Throughput baseline.</td></tr>
+    <tr><td><code>test:create-jp:stress</code></td><td><code>k6 run -e SCENARIO=stress_test tests/api/journalposts/create-jp.js</code></td><td><span class="tag scenario-stress">stress</span></td><td>High pressure.</td></tr>
+    <tr><td><code>test:create-jp:spike</code></td><td><code>k6 run -e SCENARIO=spike_test tests/api/journalposts/create-jp.js</code></td><td><span class="tag scenario-spike">spike</span></td><td>Sudden burst.</td></tr>
+    <tr><td><code>test:create-jp:endurance</code></td><td><code>k6 run -e SCENARIO=endurance_test tests/api/journalposts/create-jp.js</code></td><td><span class="tag scenario-endurance">endurance</span></td><td>Longevity / leak watch.</td></tr>
+    <tr class="category"><td colspan="4">No‑Pacing</td></tr>
+    <tr><td><code>test:create-jp:smoke:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=smoke_test ...</code></td><td><span class="tag scenario-smoke">smoke</span><span class="tag">nopace</span></td><td>Fast JP sanity.</td></tr>
+    <tr><td><code>test:create-jp:load:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=load_test ...</code></td><td><span class="tag scenario-load">load</span><span class="tag">nopace</span></td><td>Peak JP load.</td></tr>
+    <tr><td><code>test:create-jp:stress:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=stress_test ...</code></td><td><span class="tag scenario-stress">stress</span><span class="tag">nopace</span></td><td>JP limit test.</td></tr>
+    <tr><td><code>test:create-jp:spike:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=spike_test ...</code></td><td><span class="tag scenario-spike">spike</span><span class="tag">nopace</span></td><td>JP burst worst case.</td></tr>
+    <tr><td><code>test:create-jp:endurance:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=endurance_test ...</code></td><td><span class="tag scenario-endurance">endurance</span><span class="tag">nopace</span></td><td>Sustained heavy JP.</td></tr>
+  </tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>3.3 JP + Multiple Documents – Core & No‑Pace</strong></summary>
+<table>
+  <thead><tr><th>NPM Script</th><th>Actual Command</th><th>Tags</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr class="category"><td colspan="4">Basic</td></tr>
+    <tr><td><code>test:create-jp-with-multiple-document:smoke</code></td><td><code>k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>Validate attach flow.</td></tr>
+    <tr><td><code>test:create-jp-with-multiple-document:load</code></td><td><code>k6 run -e SCENARIO=load_test ...</code></td><td><span class="tag scenario-load">load</span></td><td>Attachment throughput.</td></tr>
+    <tr><td><code>test:create-jp-with-multiple-document:stress</code></td><td><code>k6 run -e SCENARIO=stress_test ...</code></td><td><span class="tag scenario-stress">stress</span></td><td>High concurrency attach.</td></tr>
+    <tr><td><code>test:create-jp-with-multiple-document:spike</code></td><td><code>k6 run -e SCENARIO=spike_test ...</code></td><td><span class="tag scenario-spike">spike</span></td><td>Burst upload capacity.</td></tr>
+    <tr><td><code>test:create-jp-with-multiple-document:endurance</code></td><td><code>k6 run -e SCENARIO=endurance_test ...</code></td><td><span class="tag scenario-endurance">endurance</span></td><td>Long-term I/O stability.</td></tr>
+    <tr class="category"><td colspan="4">No‑Pacing</td></tr>
+    <tr><td><code>...:smoke:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=smoke_test ...</code></td><td><span class="tag scenario-smoke">smoke</span><span class="tag">nopace</span></td><td>Fastest attach sanity.</td></tr>
+    <tr><td><code>...:load:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=load_test ...</code></td><td><span class="tag scenario-load">load</span><span class="tag">nopace</span></td><td>Peak attach load.</td></tr>
+    <tr><td><code>...:stress:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=stress_test ...</code></td><td><span class="tag scenario-stress">stress</span><span class="tag">nopace</span></td><td>Attach resilience.</td></tr>
+    <tr><td><code>...:spike:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=spike_test ...</code></td><td><span class="tag scenario-spike">spike</span><span class="tag">nopace</span></td><td>Burst attach stress.</td></tr>
+    <tr><td><code>...:endurance:nopace</code></td><td><code>PowerShell PACING_MODE='none'; k6 run -e SCENARIO=endurance_test ...</code></td><td><span class="tag scenario-endurance">endurance</span><span class="tag">nopace</span></td><td>Sustained attach soak.</td></tr>
+  </tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>3.4 Complex Multi-JP (Incoming + Outgoing) – Core</strong></summary>
+<table>
+  <thead><tr><th>NPM Script</th><th>Actual Command</th><th>Tags</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>test:create-multiplejp-with-multiple-document:smoke</code></td><td><code>k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td><td><span class="tag scenario-smoke">smoke</span></td><td>Complex sanity (real docs).</td></tr>
+    <tr><td><code>...:smoke:synthetic</code></td><td><code>k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e DOC_COUNT=3 -e USE_TEST_DOCS=false ...</code></td><td><span class="tag scenario-smoke">smoke</span><span class="tag">synthetic</span></td><td>Fast artificial docs.</td></tr>
+    <tr><td><code>...:load</code></td><td><code>k6 run -e SCENARIO=load_test -e USE_TEST_DOCS=true ...</code></td><td><span class="tag scenario-load">load</span></td><td>Normal complex traffic.</td></tr>
+    <tr><td><code>...:stress</code></td><td><code>k6 run -e SCENARIO=stress_test -e USE_TEST_DOCS=true ...</code></td><td><span class="tag scenario-stress">stress</span></td><td>High volume complex.</td></tr>
+    <tr><td><code>...:spike</code></td><td><code>k6 run -e SCENARIO=spike_test -e USE_TEST_DOCS=true ...</code></td><td><span class="tag scenario-spike">spike</span></td><td>Burst creation.</td></tr>
+    <tr><td><code>...:endurance</code></td><td><code>k6 run -e SCENARIO=endurance_test -e USE_TEST_DOCS=true ...</code></td><td><span class="tag scenario-endurance">endurance</span></td><td>Long stability (docs).</td></tr>
+  </tbody>
+</table>
+</details>
+
+<details>
+<summary><strong>3.5 Verbose + HTML Report Commands (Representative)</strong></summary>
+<table>
+  <thead><tr><th>NPM Script</th><th>Actual Command</th><th>Tags</th><th>Output Report Pattern</th></tr></thead>
+  <tbody>
+    <tr><td><code>simple:verbose:report</code></td><td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td><td><span class="tag scenario-smoke">smoke</span><span class="tag">verbose</span><span class="tag">report</span></td><td><code>create-sak-smoke_test-report.html</code></td></tr>
+    <tr><td><code>jp:stress:verbose:report</code></td><td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td><td><span class="tag scenario-stress">stress</span><span class="tag">verbose</span><span class="tag">report</span></td><td><code>create-jp-stress_test-report.html</code></td></tr>
+    <tr><td><code>jp-docs:load:verbose:report</code></td><td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td><td><span class="tag scenario-load">load</span><span class="tag">verbose</span><span class="tag">report</span></td><td><code>create-jp-with-multiple-document-load_test-report.html</code></td></tr>
+    <tr><td><code>complex:endurance:verbose:report</code></td><td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td><td><span class="tag scenario-endurance">endurance</span><span class="tag">verbose</span><span class="tag">report</span></td><td><code>create-multiple-jp-with-multiple-document-endurance_test-report.html</code></td></tr>
+  </tbody>
+</table>
+<p class="small">Full verbose/report matrix exists in <code>NPM-COMMANDS-REFERENCE.md</code>; this section shows pattern examples.</p>
+</details>
+
+<details>
+<summary><strong>3.6 Batch / Aggregated Runners</strong></summary>
+<table>
+  <thead><tr><th>NPM Script</th><th>Executes</th><th>Description</th><th>Total Tests</th></tr></thead>
+  <tbody>
+    <tr><td><code>run-all-sak-autotest</code></td><td>All SAK verbose report scenarios</td><td>Sequential smoke→endurance (autotest env)</td><td>5</td></tr>
+    <tr><td><code>run-all-jp-autotest</code></td><td>All JP verbose report scenarios</td><td>Sequential smoke→endurance</td><td>5</td></tr>
+    <tr><td><code>run-all-jp-docs-autotest</code></td><td>All JP+docs verbose report scenarios</td><td>Sequential smoke→endurance</td><td>5</td></tr>
+    <tr><td><code>run-all-complex-autotest</code></td><td>All complex verbose report scenarios</td><td>Sequential smoke→endurance</td><td>5</td></tr>
+    <tr><td><code>run-all-autotest</code></td><td>Invokes the four above</td><td>Complete 20-scenario execution</td><td>20</td></tr>
+    <tr><td><code>run-all-smoke</code></td><td>Smoke across 4 test types</td><td>One pass each type</td><td>4</td></tr>
+    <tr><td><code>run-all-load</code></td><td>Load across 4 test types</td><td>Baseline set</td><td>4</td></tr>
+    <tr><td><code>run-all-stress</code></td><td>Stress across 4 types</td><td>Escalated set</td><td>4</td></tr>
+    <tr><td><code>run-comprehensive</code></td><td>run-all-tests wrapper</td><td>Smoke + Load + Stress blocks</td><td>12</td></tr>
+  </tbody>
+</table>
+</details>
+
+<h2 id="reports">4. Report & Utilities</h2>
+<table>
+  <thead><tr><th>NPM Script</th><th>Action</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>reports:view</code></td><td>Open folder</td><td>Opens <code>src/reports</code> in system file explorer.</td></tr>
+    <tr><td><code>reports:clean</code></td><td>Purge reports</td><td>Deletes <code>*.html</code> and <code>*.json</code> summaries.</td></tr>
+    <tr><td><code>report:list</code></td><td>List reports</td><td>Lists available report files (sorted newest).</td></tr>
+    <tr><td><code>report:open</code></td><td>Open SAK report</td><td>Opens last SAK HTML if present.</td></tr>
+    <tr><td><code>report:open:jp</code></td><td>Open JP report</td><td>Opens last JP HTML if present.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="dev">5. Developer Aids</h2>
+<table>
+  <thead><tr><th>NPM Script</th><th>Actual Command</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>lint</code></td><td><code>eslint "tests/**/*.js" "src/**/*.js" --quiet</code></td><td>Static analysis (quiet output).</td></tr>
+    <tr><td><code>format</code></td><td><code>prettier --write "tests/**/*.js" "src/**/*.js"</code></td><td>Auto-format code.</td></tr>
+    <tr><td><code>prepare</code></td><td><code>husky install</code></td><td>Install Git hooks.</td></tr>
+    <tr><td><code>help</code></td><td><code>echo 'Available commands: ...'</code></td><td>Quick listing summary.</td></tr>
+    <tr><td><code>test:info</code></td><td><code>echo 'Test Types: ...'</code></td><td>Explains shorthand categories.</td></tr>
+    <tr><td><code>quick-smoke</code></td><td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=quick_smoke ...</code></td><td>Fast SAK smoke with distinct name.</td></tr>
+    <tr><td><code>quick-load</code></td><td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=quick_load ...</code></td><td>Fast JP load sample.</td></tr>
+    <tr><td><code>quick-stress</code></td><td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=quick_stress ...</code></td><td>Fast JP docs stress sample.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="notes">6. Usage Notes</h2>
+<ul>
+  <li>HTML report files saved under <code>src/reports/</code> follow pattern: <code>{test}-{scenario}-report.html</code>.</li>
+  <li>Set <code>CONFIG_ENV</code> to target environment (e.g. <code>--env CONFIG_ENV=autotest</code>).</li>
+  <li>No‑pacing variants disable user think time via <code>PACING_MODE='none'</code>.</li>
+  <li>Verbose report variants embed collapsible debug logs inside the HTML.</li>
+  <li>Always clean old reports before long suites: <code>npm run reports:clean</code>.</li>
+</ul>
+
+<hr>
+<p class="small">Generated automatically from <code>package.json</code>. For full exhaustive per‑scenario listings (including every verbose/report variant), consult the Markdown guide <code>NPM-COMMANDS-REFERENCE.md</code>.</p>
+</body>
+</html>

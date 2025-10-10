@@ -558,27 +558,16 @@ export function getReportPaths(testName, scenarioName = null) {
 export function getTestDataPaths() {
   const testDataPaths = pathsConfig.paths.testData;
   
-  // Dynamic path resolution based on execution context
-  // When running from project root: use direct paths (no prefix)
-  // When running from tests/api/journalposts/: use ../../../ prefix
-  let pathPrefix = '';
-  
-  try {
-    // Test if we can access a known file directly (indicates we're in project root)
-    const testPath = import.meta.resolve ? import.meta.resolve('src/config/autotest.json') : 'src/config/autotest.json';
-    open(testPath, 'b');
-    pathPrefix = ''; // Success - running from project root
-  } catch (e) {
-    // Direct access failed, we need the prefix for subdirectory execution
-    pathPrefix = '../../../';
-  }
+  // Note: K6's open() resolves paths relative to the CURRENT WORKING DIRECTORY (CWD),
+  // NOT relative to the script file location. So we always use paths as-is from config.
+  // The paths in paths-config.json are already relative to project root.
   
   return {
     ...testDataPaths,
-    baseDir: `${pathPrefix}${testDataPaths.baseDir}`,
-    testDocuments: `${pathPrefix}${testDataPaths.testDocuments}`,
-    usersConfig: `${pathPrefix}${testDataPaths.usersConfig || 'src/data/users-config.json'}`,
-    apiConfig: `${pathPrefix}${testDataPaths.apiConfig || 'src/data/websak-api-config.json'}`
+    baseDir: testDataPaths.baseDir,
+    testDocuments: testDataPaths.testDocuments,
+    usersConfig: testDataPaths.usersConfig || 'src/data/users-config.json',
+    apiConfig: testDataPaths.apiConfig || 'src/data/websak-api-config.json'
   };
 }
 

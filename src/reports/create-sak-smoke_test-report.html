@@ -111,7 +111,7 @@
   .cell-bad { background:#fdecea; }
   .cell-good td, .cell-warn td, .cell-bad td { transition:background .3s; }
     /* Dynamic latency tick positioning */
-    .lat-bar .tick-0{left:0%;}.lat-bar .tick-1{left:8.448045070266309%;}.lat-bar .tick-2{left:70.18190736011846%;}.lat-bar .tick-3{left:82.88725892676293%;}.lat-bar .tick-4{left:100%;}
+    .lat-bar .tick-0{left:0%;}.lat-bar .tick-1{left:1.5598480283913532%;}.lat-bar .tick-2{left:61.12025449311744%;}.lat-bar .tick-3{left:80.5601272465587%;}.lat-bar .tick-4{left:100%;}
   /* Latency classification colors */
   .lat-bar .lat-good i { background:#1B873F; }
   .lat-bar .lat-warn i { background:#FF8B00; }
@@ -173,30 +173,30 @@
   body.dark .status-badge { filter:brightness(1.1); }
   @media print { #btn-dark-mode,#btn-print,.legend-tile,.export-bar { display:none !important;} body { background:#fff; } }
   </style></head><body>
-  <header><h1>Performance Report</h1><small>Generated 2025-10-09T12:54:07.113Z</small></header>
+  <header><h1>Performance Report</h1><small>Generated 2025-10-10T07:25:59.742Z</small></header>
   <main>
-    <div class="alert alert-warn" aria-label="Executive Summary">
-      <h2>Executive Summary <span class="status-badge">Attention</span></h2>
-  <p class="para-summary">1/5 thresholds failed: http_req_duration :: p(95)<2000</p>
+    <div class="alert alert-good" aria-label="Executive Summary">
+      <h2>Executive Summary <span class="status-badge">Healthy</span></h2>
+  <p class="para-summary">All thresholds passed.</p>
       <ul class="quick-points">
-        <li>2226.57 ms p95 (latency focus)</li>
+        <li>464.01 ms p95 (latency focus)</li>
         <li>100.00% success (0.00% fail)</li>
-        <li>Avg iteration 0.00 ms, VUs 7</li>
+        <li>Avg iteration 5088.45 ms, VUs 1</li>
       </ul>
   <p class="muted para-hint">Generated automatically – highlight sections above for at-a-glance health. Use detailed tables below for deeper analysis.</p>
     </div>
     <div class="legend-tile" aria-label="Legend"><h4>Legend</h4><div class="legend-item"><span class="legend-dot good pattern"></span>Good</div><div class="legend-item"><span class="legend-dot warn pattern"></span>Attention</div><div class="legend-item"><span class="legend-dot bad pattern"></span>Action Needed</div></div>
 
-  <div class="slo-wrapper"><h3 class="slo-heading">SLO Progress (p95)</h3><div class="slo-bar" aria-label="p95 latency progress bar"><div class="fill warn" data-width="100.0" style="width:100.0%"></div></div><div class="slo-meta">2226.57 ms of target 2000 ms &mdash; -226.57 ms headroom</div></div>
+  <div class="slo-wrapper"><h3 class="slo-heading">SLO Progress (p95)</h3><div class="slo-bar" aria-label="p95 latency progress bar"><div class="fill " data-width="23.2" style="width:23.2%"></div></div><div class="slo-meta">464.01 ms of target 2000 ms &mdash; 1535.99 ms headroom</div></div>
 
     <h3>Plain Language Narrative</h3>
-    <div class="notes" id="narrative"><p>Test achieved a 100.00% success rate with p95 latency 2226.57 ms. 1 of 5 thresholds failed; key risks identified below.</p></div>
+    <div class="notes" id="narrative"><p>Test achieved a 100.00% success rate with p95 latency 464.01 ms. All monitored objectives were met with no notable performance risks.</p></div>
 
     <h3>Top Risks</h3>
-    <div class="risks"><div class="risk high pattern-bad">⚠️ High p95 latency 2226.57 ms (target 2000 ms)</div><div class="risk med pattern-warn">❕ 1 failing threshold(s)</div></div>
+    <div class="notes"><em>No major risks detected.</em></div>
 
     <h3>Recommended Actions</h3>
-    <div class="notes"><ul><li>Investigate slow endpoints contributing to p95 latency; profile DB calls or external dependencies.</li></ul></div>
+    <div class="notes"><ul><li>No immediate action required. Continue monitoring and consider setting stricter SLOs as confidence grows.</li></ul></div>
 
     <div class="export-bar" aria-label="Export and share tools">
       <button id="btn-copy-summary" type="button">📋 Copy Summary</button>
@@ -207,34 +207,17 @@
     </div>
     <h2>Key Performance Indicators</h2>
     <div class="grid">
-      <div class="kpi kpi-warn"><h4>Overall Test Status</h4><p>Attention</p><div class="muted">1/5 thresholds failed: http_req_duration :: p(95)<2000</div><div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>1 out of 5 performance thresholds failed (20% failure rate, less than 30%). <strong>Ideal:</strong> 0% failures<br>Some performance goals were not met. Review the failed thresholds below and consider optimizations. <strong>Action:</strong> Check "Thresholds (Pass/Fail)" section for specific failures.</div></div>
-      <div class="kpi kpi-neutral"><h4>Total Requests</h4><p>41</p><div class="muted">Rate: 7.08 /s</div></div>
+      <div class="kpi kpi-good"><h4>Overall Test Status</h4><p>Healthy</p><div class="muted">All thresholds passed.</div></div>
+      <div class="kpi kpi-neutral"><h4>Total Requests</h4><p>5</p><div class="muted">Rate: 0.98 /s</div></div>
       <div class="kpi kpi-good"><h4>Request Success Rate</h4><p>100.00%</p><div class="muted">HTTP errors 0.00%</div></div>
-  <div class="kpi kpi-bad"><h4>Avg Duration (ms)</h4><p>748.06</p><div class="muted">p95 2226.57</div><svg width="120" height="34" viewBox="0 0 120 34" class="spark"><path d="M0,32 L40,11.770875781767959 L80,7.607550735439062 L120,2" fill="none" stroke="#1B873F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>p95 latency is 2226.57ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are unacceptably slow. <strong>Action required:</strong> Profile slow endpoints, check database performance, review external API calls, verify server resources (CPU/memory), and consider load balancing.</div></div>
-      <div class="kpi kpi-bad"><h4>Max Duration (ms)</h4><p>2680.76</p><div class="muted">Min 26.63</div><div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Max duration is 2680.76ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>At least one request took unacceptably long. <strong>Action required:</strong> Review the slowest endpoints (check logs for timeouts), investigate database locks, check for memory issues, and consider query optimization or adding timeouts.</div></div>
-      <div class="kpi kpi-neutral"><h4>Data In</h4><p>578.54 KB</p><div class="muted">Raw: 592428 B</div></div>
-      <div class="kpi kpi-neutral"><h4>Data Out</h4><p>42.63 KB</p><div class="muted">Raw: 43654 B</div></div>
-      <div class="kpi kpi-neutral"><h4>Iterations</h4><p>0</p><div class="muted">Avg Iter (ms) 0.00</div></div>
-      <div class="kpi kpi-neutral"><h4>VUs</h4><p>7</p><div class="muted">Test Length 5.79 s</div></div>
+  <div class="kpi kpi-good"><h4>Avg Duration (ms)</h4><p>136.40</p><div class="muted">p95 464.01</div><svg width="120" height="34" viewBox="0 0 120 34" class="spark"><path d="M0,32 L40,13.848746084249026 L80,7.924373042124518 L120,2" fill="none" stroke="#1B873F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="kpi kpi-good"><h4>Max Duration (ms)</h4><p>571.16</p><div class="muted">Min 19.98</div></div>
+      <div class="kpi kpi-neutral"><h4>Data In</h4><p>38.76 KB</p><div class="muted">Raw: 39689 B</div></div>
+      <div class="kpi kpi-neutral"><h4>Data Out</h4><p>2.90 KB</p><div class="muted">Raw: 2965 B</div></div>
+      <div class="kpi kpi-neutral"><h4>Iterations</h4><p>1</p><div class="muted">Avg Iter (ms) 5088.45</div></div>
+      <div class="kpi kpi-neutral"><h4>VUs</h4><p>1</p><div class="muted">Test Length 5.10 s</div></div>
     </div>
 
-    
-    <h2>📋 Understanding the Results (For Stakeholders)</h2>
-    <div class="alert alert-bad">
-<strong>⚠️ Performance Targets Not Met</strong>
-<p>Some performance thresholds were exceeded. Here's what this means in simple terms:</p>
-<div class="threshold-explanations">
-
-        <div class="threshold-item">
-          <div class="threshold-metric"><strong>Response Time (95th Percentile)</strong>: Target was 2000ms, but 95% of requests took 2227ms or less.</div>
-          <div class="threshold-impact">This means <strong>5% of requests</strong> took longer than 2227ms. Users may experience slower page loads or delays.</div>
-          <div class="threshold-action"><em>Action:</em> Investigate slow API endpoints, database queries, or external service calls that are causing delays.</div>
-        </div>
-      
-</div>
-<p class="threshold-summary"><strong>📊 Overall Impact:</strong> 
-One performance target was not met. This requires attention but may not be critical.
-</p></div>
     
 
     <h2>Overall Success Rate (Checks & Thresholds)</h2>
@@ -247,17 +230,17 @@ One performance target was not met. This requires attention but may not be criti
             stroke-linecap="round" transform="rotate(-90 55 55)" />
     <text x="55" y="50" text-anchor="middle" font-size="18" font-weight="600" fill="#333">100%</text>
     <text x="55" y="68" text-anchor="middle" font-size="11" fill="#666">Success</text>
-  </svg><div class="muted mt-4">Checks: 110 pass / 0 fail</div><div class="notes" style="margin-top:10px; font-size:0.9em;">This shows the percentage of checks that passed. Checks include response time thresholds, HTTP status validation, and other test criteria.</div></div>
+  </svg><div class="muted mt-4">Checks: 9 pass / 0 fail</div><div class="notes" style="margin-top:10px; font-size:0.9em;">This shows the percentage of checks that passed. Checks include response time thresholds, HTTP status validation, and other test criteria.</div></div>
       <div class="panel panel-wide">
         <h3>Latency Distribution (Markers)</h3>
         <div class="muted">Markers show relative position of key percentiles.</div>
-        <div class="lat-bar"><div class="scale"><span class="tick tick-0 lat-good" title="min: 26.63 ms"><i></i><em>min</em></span><span class="tick tick-1 lat-good" title="med: 250.86 ms"><i></i><em>med</em></span><span class="tick tick-2 lat-warn" title="p90: 1889.35 ms"><i></i><em>p90</em></span><span class="tick tick-3 lat-bad" title="p95: 2226.57 ms"><i></i><em>p95</em></span><span class="tick tick-4 lat-bad" title="max: 2680.76 ms"><i></i><em>max</em></span></div></div>
-        <div class="mt-10"><table class="latency"><tr><th>Metric</th><th>Min</th><th>Avg</th><th>Med</th><th>p(90)</th><th>p(95)</th><th>Max</th></tr><tr><td>Overall Duration</td><td>26.63</td><td>748.06</td><td>250.86</td><td>1889.35</td><td>2226.57</td><td>2680.76</td></tr><tr><td>waiting</td><td>25.72</td><td>747.61</td><td>250.86</td><td>1889.35</td><td>2226.57</td><td>2680.76</td></tr><tr><td>blocked</td><td>0.00</td><td>11.16</td><td>0.00</td><td>65.33</td><td>65.50</td><td>66.59</td></tr><tr><td>connecting</td><td>0.00</td><td>2.33</td><td>0.00</td><td>12.03</td><td>12.95</td><td>16.99</td></tr><tr><td>tls handshaking</td><td>0.00</td><td>8.68</td><td>0.00</td><td>50.82</td><td>52.27</td><td>52.95</td></tr><tr><td>sending</td><td>0.00</td><td>0.09</td><td>0.00</td><td>0.52</td><td>0.53</td><td>1.12</td></tr><tr><td>receiving</td><td>0.00</td><td>0.36</td><td>0.00</td><td>0.52</td><td>0.91</td><td>8.45</td></tr></table></div>
+        <div class="lat-bar"><div class="scale"><span class="tick tick-0 lat-good" title="min: 19.98 ms"><i></i><em>min</em></span><span class="tick tick-1 lat-good" title="med: 28.57 ms"><i></i><em>med</em></span><span class="tick tick-2 lat-good" title="p90: 356.86 ms"><i></i><em>p90</em></span><span class="tick tick-3 lat-good" title="p95: 464.01 ms"><i></i><em>p95</em></span><span class="tick tick-4 lat-good" title="max: 571.16 ms"><i></i><em>max</em></span></div></div>
+        <div class="mt-10"><table class="latency"><tr><th>Metric</th><th>Min</th><th>Avg</th><th>Med</th><th>p(90)</th><th>p(95)</th><th>Max</th></tr><tr><td>Overall Duration</td><td>19.98</td><td>136.40</td><td>28.57</td><td>356.86</td><td>464.01</td><td>571.16</td></tr><tr><td>waiting</td><td>19.46</td><td>136.07</td><td>28.00</td><td>356.86</td><td>464.01</td><td>571.16</td></tr><tr><td>blocked</td><td>0.00</td><td>22.13</td><td>0.00</td><td>66.38</td><td>88.51</td><td>110.63</td></tr><tr><td>connecting</td><td>0.00</td><td>2.90</td><td>0.00</td><td>8.70</td><td>11.59</td><td>14.49</td></tr><tr><td>tls handshaking</td><td>0.00</td><td>11.10</td><td>0.00</td><td>33.30</td><td>44.40</td><td>55.50</td></tr><tr><td>sending</td><td>0.00</td><td>0.33</td><td>0.52</td><td>0.57</td><td>0.57</td><td>0.58</td></tr><tr><td>receiving</td><td>0.00</td><td>0.00</td><td>0.00</td><td>0.00</td><td>0.00</td><td>0.00</td></tr></table></div>
       </div>
     </div>
 
   <h2>Thresholds <button class="toggle-btn" data-target="sec-thresholds">Toggle</button></h2>
-  <div id="sec-thresholds" class="section-body"><table class="compact"><thead><tr><th>Metric</th><th>Threshold</th><th>Status</th></tr></thead><tbody><tr class="cell-good"><td>http_req_failed</td><td><code>rate<0.05</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-bad"><td>http_req_duration</td><td><code>p(95)<2000</code></td><td class="cell-bad"><span class="fail">FAIL</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(99)<5000</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>iteration_duration</td><td><code>p(95)<30000</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_reqs</td><td><code>rate>0.5</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr></tbody></table></div>
+  <div id="sec-thresholds" class="section-body"><table class="compact"><thead><tr><th>Metric</th><th>Threshold</th><th>Status</th></tr></thead><tbody><tr class="cell-good"><td>iteration_duration</td><td><code>p(95)<30000</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_failed</td><td><code>rate<0.05</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_reqs</td><td><code>rate>0.5</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(99)<5000</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(95)<2000</code></td><td class="cell-good"><span class="ok">PASS</span></td></tr></tbody></table></div>
 
     <div class="notes" aria-label="Thresholds explanation">
       <p><strong>What are thresholds?</strong> They are pre-defined pass/fail rules that describe the minimum acceptable performance or reliability. Example: <code>http_req_duration p(95)<3000</code> means “95% of all request durations must be below 3000&nbsp;ms”.</p>
@@ -265,7 +248,7 @@ One performance target was not met. This requires attention but may not be criti
       <p><strong>Why it matters:</strong> A FAIL doesn’t always mean an outage, but it signals a potential risk or unmet service expectation (e.g. slower user experience or too many errors). Revisit failed thresholds by checking logs, slow endpoints, or adjusting unrealistic rules. Over time, refine thresholds so they align with your business Service Level Objectives (SLOs).</p>
     </div>
 
-  <h3>Threshold Benchmarks (Actual vs Target) <button class="toggle-btn" data-target="sec-bench">Toggle</button></h3><div id="sec-bench" class="section-body"><table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody><tr class="cell-bad"><td>http_req_duration</td><td><code>p(95)<2000</code></td><td>2226.57</td><td>2000</td><td class="cell-bad">-226.57 (-11.3%)</td><td class="cell-bad"><span class="fail">FAIL</span></td></tr><tr class=""><td>http_req_duration</td><td><code>p(99)<5000</code></td><td>n/a</td><td>5000</td><td class="">n/a</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_failed</td><td><code>rate<0.05</code></td><td>0</td><td>0.05</td><td class="cell-good">+0.05 (+100.0%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_reqs</td><td><code>rate>0.5</code></td><td>7.081416478811944</td><td>0.5</td><td class="cell-good">+6.58 (+1316.3%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>iteration_duration</td><td><code>p(95)<30000</code></td><td>0.00</td><td>30000</td><td class="cell-good">+30000.00 (+100.0%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr></tbody></table><div class="notes"><p><strong>Actual</strong> is what the test measured; <strong>Target</strong> is the rule; <strong>Delta</strong> shows headroom (positive) or deficit (negative) relative to target.</p></div></div>
+  <h3>Threshold Benchmarks (Actual vs Target) <button class="toggle-btn" data-target="sec-bench">Toggle</button></h3><div id="sec-bench" class="section-body"><table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody><tr class="cell-good"><td>iteration_duration</td><td><code>p(95)<30000</code></td><td>5088.45</td><td>30000</td><td class="cell-good">+24911.55 (+83.0%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_failed</td><td><code>rate<0.05</code></td><td>0</td><td>0.05</td><td class="cell-good">+0.05 (+100.0%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(95)<2000</code></td><td>464.01</td><td>2000</td><td class="cell-good">+1535.99 (+76.8%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class=""><td>http_req_duration</td><td><code>p(99)<5000</code></td><td>n/a</td><td>5000</td><td class="">n/a</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_reqs</td><td><code>rate>0.5</code></td><td>0.9813491454588285</td><td>0.5</td><td class="cell-good">+0.48 (+96.3%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr></tbody></table><div class="notes"><p><strong>Actual</strong> is what the test measured; <strong>Target</strong> is the rule; <strong>Delta</strong> shows headroom (positive) or deficit (negative) relative to target.</p></div></div>
 
   <h3>Baseline</h3>
   <div id="baseline-comparison" class="section-body"><div class="notes"><em>No baseline provided. Supply a previous summary JSON as data.baseline to enable comparison.</em></div></div>
@@ -326,17 +309,17 @@ One performance target was not met. This requires attention but may not be criti
         </div>
       </div>
       
-      <div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">✓ Good</span> <span class="legend-box cell-warn">⚠ Watch</span> <span class="legend-box cell-bad">✗ Investigate</span><br><strong style="margin-top:8px; display:inline-block;">Color Meanings:</strong><br>• <strong style="color:#1B873F;">Green (Good):</strong> Performance is within acceptable limits<br>• <strong style="color:#FF8B00;">Yellow (Watch):</strong> Performance is degraded but acceptable - monitor closely, may need optimization soon<br>• <strong style="color:#B00020;">Red (Investigate):</strong> Performance is poor - requires immediate attention and optimization<br><strong style="margin-top:8px; display:inline-block;">Thresholds:</strong> Response time p(95) ≤ 800ms (good) / ≤ 2000ms (watch) / > 2000ms (investigate); HTTP errors ≤1% / ≤5% / >5%; Check failures 0 / ≤2% / >2%</div><table class="compact"><thead><tr><th>Metric</th><th>count</th><th>passes</th><th>fails</th><th>rate</th><th>value</th><th>min</th><th>max</th><th>avg</th><th>med</th><th>p(90)</th><th>p(95)</th></tr></thead><tbody><tr class=""><td>data_received</td><td class="">592428</td><td class="">—</td><td class="">—</td><td class="">102322.6683</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class=""><td>vus</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">7.00</td><td class="">7.00</td><td class="">7.00</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-good"><td>http_req_receiving</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">8.45</td><td class="">0.36</td><td class="">0.00</td><td class="">0.52</td><td class="cell-good">0.91</td></tr><tr class=""><td>http_reqs</td><td class="">41</td><td class="">—</td><td class="">—</td><td class="">7.0814</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-good"><td>iteration_duration</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">0.00</td><td class="">0.00</td><td class="">0.00</td><td class="">0.00</td><td class="cell-good">0.00</td></tr><tr class="cell-good"><td>http_req_sending</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">1.12</td><td class="">0.09</td><td class="">0.00</td><td class="">0.52</td><td class="cell-good">0.53</td></tr><tr class="cell-good"><td>http_req_tls_handshaking</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">52.95</td><td class="">8.68</td><td class="">0.00</td><td class="">50.82</td><td class="cell-good">52.27</td></tr><tr class="cell-bad"><td>http_req_duration{expected_response:true}</td><td class="">—</td><td class="">—</td><td class="cell-bad">—</td><td class="cell-bad">—</td><td class="">—</td><td class="">26.63</td><td class="">2680.76</td><td class="">748.06</td><td class="">250.86</td><td class="">1889.35</td><td class="cell-bad">2226.57</td></tr><tr class="cell-bad"><td>http_req_waiting</td><td class="">—</td><td class="">—</td><td class="cell-bad">—</td><td class="cell-bad">—</td><td class="">—</td><td class="">25.72</td><td class="">2680.76</td><td class="">747.61</td><td class="">250.86</td><td class="">1889.35</td><td class="cell-bad">2226.57</td></tr><tr class="cell-good"><td>checks</td><td class="">—</td><td class="">110</td><td class="cell-good">0</td><td class="cell-good">1.0000</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td></tr><tr class=""><td>data_sent</td><td class="">43654</td><td class="">—</td><td class="">—</td><td class="">7539.8087</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-good"><td>http_req_connecting</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">16.99</td><td class="">2.33</td><td class="">0.00</td><td class="">12.03</td><td class="cell-good">12.95</td></tr><tr class="cell-bad"><td>http_req_duration</td><td class="">—</td><td class="">—</td><td class="cell-bad">—</td><td class="cell-bad">—</td><td class="">—</td><td class="">26.63</td><td class="">2680.76</td><td class="">748.06</td><td class="">250.86</td><td class="">1889.35</td><td class="cell-bad">2226.57</td></tr><tr class="cell-good"><td>http_req_failed</td><td class="">—</td><td class="">0</td><td class="cell-good">41</td><td class="cell-good">0.0000</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td></tr><tr class="cell-good"><td>http_req_blocked</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">66.59</td><td class="">11.16</td><td class="">0.00</td><td class="">65.33</td><td class="cell-good">65.50</td></tr><tr class=""><td>vus_max</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">7.00</td><td class="">7.00</td><td class="">7.00</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-bad"><td>group_duration</td><td class="">—</td><td class="">—</td><td class="cell-bad">—</td><td class="cell-bad">—</td><td class="">—</td><td class="">27.14</td><td class="">2682.34</td><td class="">760.77</td><td class="">270.83</td><td class="">1891.36</td><td class="cell-bad">2228.11</td></tr></tbody></table>
+      <div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">✓ Good</span> <span class="legend-box cell-warn">⚠ Watch</span> <span class="legend-box cell-bad">✗ Investigate</span><br><strong style="margin-top:8px; display:inline-block;">Color Meanings:</strong><br>• <strong style="color:#1B873F;">Green (Good):</strong> Performance is within acceptable limits<br>• <strong style="color:#FF8B00;">Yellow (Watch):</strong> Performance is degraded but acceptable - monitor closely, may need optimization soon<br>• <strong style="color:#B00020;">Red (Investigate):</strong> Performance is poor - requires immediate attention and optimization<br><strong style="margin-top:8px; display:inline-block;">Thresholds:</strong> Response time p(95) ≤ 800ms (good) / ≤ 2000ms (watch) / > 2000ms (investigate); HTTP errors ≤1% / ≤5% / >5%; Check failures 0 / ≤2% / >2%</div><table class="compact"><thead><tr><th>Metric</th><th>count</th><th>passes</th><th>fails</th><th>rate</th><th>value</th><th>min</th><th>max</th><th>avg</th><th>med</th><th>p(90)</th><th>p(95)</th></tr></thead><tbody><tr class=""><td>vus_max</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">1.00</td><td class="">1.00</td><td class="">1.00</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class=""><td>data_received</td><td class="">39689</td><td class="">—</td><td class="">—</td><td class="">7789.7532</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-good"><td>group_duration</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">31.41</td><td class="">573.82</td><td class="">250.77</td><td class="">147.09</td><td class="">488.47</td><td class="cell-good">531.15</td></tr><tr class=""><td>http_reqs</td><td class="">5</td><td class="">—</td><td class="">—</td><td class="">0.9813</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-good"><td>http_req_tls_handshaking</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">55.50</td><td class="">11.10</td><td class="">0.00</td><td class="">33.30</td><td class="cell-good">44.40</td></tr><tr class="cell-good"><td>http_req_sending</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">0.58</td><td class="">0.33</td><td class="">0.52</td><td class="">0.57</td><td class="cell-good">0.57</td></tr><tr class="cell-good"><td>http_req_duration</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">19.98</td><td class="">571.16</td><td class="">136.40</td><td class="">28.57</td><td class="">356.86</td><td class="cell-good">464.01</td></tr><tr class="cell-good"><td>checks</td><td class="">—</td><td class="">9</td><td class="cell-good">0</td><td class="cell-good">1.0000</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td></tr><tr class=""><td>vus</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">1.00</td><td class="">1.00</td><td class="">1.00</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class=""><td>data_sent</td><td class="">2965</td><td class="">—</td><td class="">—</td><td class="">581.9400</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr class="cell-good"><td>http_req_duration{expected_response:true}</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">19.98</td><td class="">571.16</td><td class="">136.40</td><td class="">28.57</td><td class="">356.86</td><td class="cell-good">464.01</td></tr><tr class="cell-good"><td>http_req_receiving</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">0.00</td><td class="">0.00</td><td class="">0.00</td><td class="">0.00</td><td class="cell-good">0.00</td></tr><tr class="cell-good"><td>http_req_connecting</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">14.49</td><td class="">2.90</td><td class="">0.00</td><td class="">8.70</td><td class="cell-good">11.59</td></tr><tr class="cell-bad"><td>iteration_duration</td><td class="">—</td><td class="">—</td><td class="cell-bad">—</td><td class="cell-bad">—</td><td class="">—</td><td class="">5088.45</td><td class="">5088.45</td><td class="">5088.45</td><td class="">5088.45</td><td class="">5088.45</td><td class="cell-bad">5088.45</td></tr><tr class="cell-good"><td>http_req_blocked</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">110.63</td><td class="">22.13</td><td class="">0.00</td><td class="">66.38</td><td class="cell-good">88.51</td></tr><tr class="cell-good"><td>http_req_failed</td><td class="">—</td><td class="">0</td><td class="cell-good">5</td><td class="cell-good">0.0000</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td></tr><tr class="cell-good"><td>http_req_waiting</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">19.46</td><td class="">571.16</td><td class="">136.07</td><td class="">28.00</td><td class="">356.86</td><td class="cell-good">464.01</td></tr><tr class=""><td>iterations</td><td class="">1</td><td class="">—</td><td class="">—</td><td class="">0.1963</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr></tbody></table>
     </div>
 
     <h2>Endpoint / Group Breakdown <button class="toggle-btn" data-target="sec-groups">Toggle</button></h2>
     <div id="sec-groups" class="panel section-body"><div class="notes">
       <p><strong>Overall Group Metrics:</strong></p>
       <ul>
-        <li>Average: 760.77 ms</li>
-        <li>Median: 270.83 ms</li>
-        <li>p(95): 2228.11 ms</li>
-        <li>Max: 2682.34 ms</li>
+        <li>Average: 250.77 ms</li>
+        <li>Median: 147.09 ms</li>
+        <li>p(95): 531.15 ms</li>
+        <li>Max: 573.82 ms</li>
       </ul>
     </div></div>
 
@@ -355,16 +338,16 @@ One performance target was not met. This requires attention but may not be criti
       <div style="background: #1e1e1e; color: #f0f0f0; padding: 20px; border-radius: 8px; overflow: auto; max-height: 600px; font-family: 'Courier New', Consolas, monospace; font-size: 12px; line-height: 1.4;">
         <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;">
           <h4 style="margin: 0; color: #4fc3f7;">🔍 K6 Verbose Debug Output</h4>
-          <small style="color: #888;">Generated: 2025-10-09T12:54:07.113Z</small>
+          <small style="color: #888;">Generated: 2025-10-10T07:25:59.742Z</small>
         </div>
         <pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word; color: #f0f0f0;">=== ENHANCED K6 VERBOSE EXECUTION REPORT ===
-Generated at: 2025-10-09T12:54:07.111Z
+Generated at: 2025-10-10T07:25:59.738Z
 
 🎯 TEST EXECUTION OVERVIEW
-- Virtual Users: 7
-- Iterations: N/A
-- Total HTTP Requests: 41
-- Average Response Time: 748ms
+- Virtual Users: 1
+- Iterations: 1
+- Total HTTP Requests: 5
+- Average Response Time: 136ms
 - Success Rate: 100%
 
 🎯 VU ACTIVITY SUMMARY
@@ -377,19 +360,18 @@ Generated at: 2025-10-09T12:54:07.111Z
 - Batch Upload: Used batch upload method for efficient document processing
 - Test Completion: All operations completed successfully
 
-⚠️ ISSUES DETECTED
-- Threshold Failures: Performance thresholds exceeded (p95: 2227ms)
-- See terminal output above for detailed error messages and debugging information
+✅ NO CRITICAL ERRORS DETECTED
+- All HTTP requests completed within acceptable timeouts
 
 📊 PERFORMANCE BREAKDOWN
-- Min Response Time: 27ms
-- Average Response Time: 748ms
-- 95th Percentile: 2227ms
-- Max Response Time: 2681ms
+- Min Response Time: 20ms
+- Average Response Time: 136ms
+- 95th Percentile: 464ms
+- Max Response Time: 571ms
 
-❌ ERROR ANALYSIS
-- Threshold Failures: p95 response time 2227ms exceeded 2000ms threshold
-- Performance degradation detected - investigate slow endpoints
+✅ NO ERRORS DETECTED
+- All HTTP requests completed successfully
+- All performance thresholds met
 
 🔐 AUTHENTICATION FLOW
 - User Selection: Selected TA_ARK from available test users
@@ -408,9 +390,7 @@ Generated at: 2025-10-09T12:54:07.111Z
 - Upload Endpoint: POST /api/websak/api/jp/uploadfiletodokument/
 - Document Types: Mixed PDF, DOCX, XLSX files from testDocuments folder
 - Document Verification: GET /api/websak/api/jp/{id}/dokumenter to verify attachments
-- Upload Issues: Some document attachments experienced timeouts or failures
-- Performance Impact: Large documents (10MB) causing response times &gt; 5 seconds
-- Status: 200 responses received but exceeded timeout thresholds
+- Upload Success: All document attachments completed successfully
 
 💡 TO SEE DETAILED K6 DEBUG OUTPUT:
 Run your test with --verbose flag to see HTTP request/response details,
@@ -438,9 +418,9 @@ threshold crossings, and detailed DEBU messages in the terminal.
       <tr><th>Config File</th><td>autotest</td></tr>
       <tr><th>API Host</th><td>autotest01.acoscloud.no</td></tr>
       <tr><th>Total Users Available</th><td>7</td></tr>
-      <tr><th>Scenario Override</th><td>load_test</td></tr>
-      <tr><th>Test Execution Time</th><td>2025-10-09T12:54:07.112Z</td></tr>
-      <tr><th>Duration (s)</th><td>5.79</td></tr>
+      <tr><th>Scenario Override</th><td>smoke_test</td></tr>
+      <tr><th>Test Execution Time</th><td>2025-10-10T07:25:59.739Z</td></tr>
+      <tr><th>Duration (s)</th><td>5.10</td></tr>
       <tr><th>Summary Stats</th><td>avg, min, med, max, p(90), p(95)</td></tr>
       <tr><th>Verbose Logging</th><td><span style="color: #1B873F; font-weight: bold;">✓ Enabled</span> - Debug logs included below</td></tr>
     </tbody></table>
@@ -451,11 +431,11 @@ threshold crossings, and detailed DEBU messages in the terminal.
       const payload = {
         generated: new Date().toISOString(),
         successRate: 100.00,
-        p95: 2226.5698,
+        p95: 464.00803999999994,
         p95Target: 2000,
-        thresholdsFailed: 1,
+        thresholdsFailed: 0,
         thresholdsTotal: 5,
-        benchmarks: [{"metricName":"http_req_duration","rule":"p(95)<2000","stat":"p(95)","target":2000,"actual":"2226.57","delta":"-226.57 (-11.3%)","ok":false,"cls":"cell-bad"},{"metricName":"http_req_duration","rule":"p(99)<5000","stat":"p(99)","target":5000,"actual":"n/a","delta":"n/a","ok":true,"cls":""},{"metricName":"http_req_failed","rule":"rate<0.05","stat":"rate","target":0.05,"actual":0,"delta":"+0.05 (+100.0%)","ok":true,"cls":"cell-good"},{"metricName":"http_reqs","rule":"rate>0.5","stat":"rate","target":0.5,"actual":7.081416478811944,"delta":"+6.58 (+1316.3%)","ok":true,"cls":"cell-good"},{"metricName":"iteration_duration","rule":"p(95)<30000","stat":"p(95)","target":30000,"actual":"0.00","delta":"+30000.00 (+100.0%)","ok":true,"cls":"cell-good"}],
+        benchmarks: [{"metricName":"iteration_duration","rule":"p(95)<30000","stat":"p(95)","target":30000,"actual":"5088.45","delta":"+24911.55 (+83.0%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_failed","rule":"rate<0.05","stat":"rate","target":0.05,"actual":0,"delta":"+0.05 (+100.0%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_duration","rule":"p(95)<2000","stat":"p(95)","target":2000,"actual":"464.01","delta":"+1535.99 (+76.8%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_duration","rule":"p(99)<5000","stat":"p(99)","target":5000,"actual":"n/a","delta":"n/a","ok":true,"cls":""},{"metricName":"http_reqs","rule":"rate>0.5","stat":"rate","target":0.5,"actual":0.9813491454588285,"delta":"+0.48 (+96.3%)","ok":true,"cls":"cell-good"}],
         classificationThresholds: {"KPI_SUCCESS_GOOD":99,"KPI_SUCCESS_WARN":95,"LAT_P95_GOOD_MS":800,"LAT_P95_WARN_MS":2000,"ERR_RATE_WARN":0.01,"ERR_RATE_BAD":0.05,"CHECK_FAIL_WARN":0.02,"CHECK_FAIL_BAD":0.05}
       };
       window.__reportPayload__ = payload;

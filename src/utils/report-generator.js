@@ -407,7 +407,8 @@ export function generateHtmlReport(data, options = {}) {
   const dataRecv = safe(metrics, 'data_received.values.count', 0);
   const dataSent = safe(metrics, 'data_sent.values.count', 0);
   const iterationDur = safe(metrics, 'iteration_duration.values', {});
-  const vusVal = safe(metrics, 'vus.values.value', safe(metrics, 'vus_max.values.value', 'n/a'));
+  // Use vus_max to show the maximum VUs that ran during the test, not the current value at report time
+  const vusVal = safe(metrics, 'vus_max.values.max', safe(metrics, 'vus_max.values.value', safe(metrics, 'vus.values.max', 'n/a')));
   const testDurationSeconds = safe(data, 'state.testRunDurationMs', 0) / 1000;
 
   // KPI severity classification
