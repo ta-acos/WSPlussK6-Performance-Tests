@@ -1,8 +1,0 @@
-{
-  "defaults": { "maxResponseTimeMs": 9000, "apdexT": 650 },
-  "operations": {
-    "Upload Document": { "maxResponseTimeMs": 12000 },
-    "Create Journal Post": { "maxResponseTimeMs": 7500 },
-    "Create Case": { "maxResponseTimeMs": 5500 }
-  }
-}

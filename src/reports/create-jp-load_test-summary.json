@@ -1,378 +1,378 @@
 {
-  "root_group": {
-    "name": "",
-    "path": "",
-    "id": "d41d8cd98f00b204e9800998ecf8427e",
-    "groups": [],
-    "checks": []
-  },
-  "options": {
-    "summaryTrendStats": [
-      "min",
-      "avg",
-      "med",
-      "p(90)",
-      "p(95)",
-      "max"
-    ],
-    "summaryTimeUnit": "",
-    "noColor": false
-  },
-  "state": {
-    "isStdErrTTY": true,
-    "testRunDurationMs": 129964.8097,
-    "isStdOutTTY": true
-  },
-  "totalCustomErrors": 0,
-  "metrics": {
-    "vus": {
-      "contains": "default",
-      "values": {
-        "value": 1,
-        "min": 1,
-        "max": 7
-      },
-      "type": "gauge"
-    },
-    "http_req_duration{expected_response:true}": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 22.8794,
-        "avg": 1502.1940630170309,
-        "med": 426.9672,
-        "p(90)": 4534.0738,
-        "p(95)": 5130.815,
-        "max": 7853.289
-      }
-    },
-    "group_duration{group:::Authentication}": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0,
-        "min": 0,
-        "avg": 0,
-        "med": 0
-      },
-      "thresholds": {
-        "p(95)<2000": {
-          "ok": true
-        }
-      }
-    },
-    "group_duration{group:::Get JP Templates}": {
-      "contains": "time",
-      "values": {
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0,
-        "min": 0,
-        "avg": 0
-      },
-      "thresholds": {
-        "p(95)<3000": {
-          "ok": true
-        }
-      },
-      "type": "trend"
-    },
-    "http_req_failed": {
-      "type": "rate",
-      "contains": "default",
-      "values": {
-        "fails": 411,
-        "rate": 0,
-        "passes": 0
-      },
-      "thresholds": {
-        "rate<0.05": {
-          "ok": true
-        }
-      }
-    },
-    "http_req_tls_handshaking": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 0,
-        "avg": 0.80849099756691,
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 53.5566
-      }
-    },
-    "group_duration{group:::Verify JP Documents}": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "avg": 0,
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0,
-        "min": 0
-      },
-      "thresholds": {
-        "p(95)<2000": {
-          "ok": true
-        }
-      }
-    },
-    "data_sent": {
-      "type": "counter",
-      "contains": "data",
-      "values": {
-        "count": 238868,
-        "rate": 1837.9436753024386
-      }
-    },
-    "http_req_sending": {
-      "contains": "time",
-      "values": {
-        "min": 0,
-        "avg": 0.1547158150851581,
-        "med": 0,
-        "p(90)": 0.5657,
-        "p(95)": 0.69285,
-        "max": 1.2734
-      },
-      "type": "trend"
-    },
-    "checks": {
-      "type": "rate",
-      "contains": "default",
-      "values": {
-        "passes": 1147,
-        "fails": 86,
-        "rate": 0.9302514193025142
-      }
-    },
-    "group_duration{group:::Get Case Templates}": {
-      "contains": "time",
-      "values": {
-        "max": 0,
-        "min": 0,
-        "avg": 0,
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0
-      },
-      "thresholds": {
-        "p(95)<2500": {
-          "ok": true
-        }
-      },
-      "type": "trend"
-    },
-    "vus_max": {
-      "type": "gauge",
-      "contains": "default",
-      "values": {
-        "value": 7,
-        "min": 7,
-        "max": 7
-      }
-    },
-    "iterations": {
-      "values": {
-        "rate": 0.638634413358434,
-        "count": 83
-      },
-      "type": "counter",
-      "contains": "default"
-    },
-    "group_duration{group:::Attach Documents to JP}": {
-      "thresholds": {
-        "p(95)<5000": {
-          "ok": true
-        }
-      },
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0,
-        "min": 0,
-        "avg": 0,
-        "med": 0
-      }
-    },
-    "http_reqs": {
-      "type": "counter",
-      "contains": "default",
-      "values": {
-        "count": 411,
-        "rate": 3.1623945047026067
-      }
-    },
-    "group_duration": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 23.2139,
-        "avg": 1505.4285761557176,
-        "med": 429.054,
-        "p(90)": 4539.9973,
-        "p(95)": 5140.8127,
-        "max": 7855.4886
-      }
-    },
-    "http_req_receiving": {
-      "values": {
-        "min": 0,
-        "avg": 0.7842070559610703,
-        "med": 0,
-        "p(90)": 1.5531,
-        "p(95)": 5.4498,
-        "max": 11.6787
-      },
-      "type": "trend",
-      "contains": "time"
-    },
-    "http_req_duration": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "med": 426.9672,
-        "p(90)": 4534.0738,
-        "p(95)": 5130.815,
-        "max": 7853.289,
-        "min": 22.8794,
-        "avg": 1502.1940630170309
-      },
-      "thresholds": {
-        "p(95)<4500": {
-          "ok": false
-        },
-        "p(99)<8000": {
-          "ok": true
-        }
-      }
-    },
-    "group_duration{group:::Create Journal Post}": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 0,
-        "avg": 0,
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0
-      },
-      "thresholds": {
-        "p(95)<3500": {
-          "ok": true
-        }
-      }
-    },
-    "data_received": {
-      "type": "counter",
-      "contains": "data",
-      "values": {
-        "count": 5563734,
-        "rate": 42809.54215870329
-      }
-    },
-    "http_req_blocked": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 0,
-        "avg": 1.1374693430656935,
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 67.7474
-      }
-    },
-    "group_duration{group:::Create New Case}": {
-      "contains": "time",
-      "values": {
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0,
-        "min": 0,
-        "avg": 0
-      },
-      "thresholds": {
-        "p(95)<3000": {
-          "ok": true
-        }
-      },
-      "type": "trend"
-    },
-    "iteration_duration": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 7104.4039,
-        "avg": 10449.71071566265,
-        "med": 10287.5893,
-        "p(90)": 11616.876999999999,
-        "p(95)": 14723.285299999996,
-        "max": 15218.2153
-      }
-    },
-    "http_req_connecting": {
-      "contains": "time",
-      "values": {
-        "max": 23.1028,
-        "min": 0,
-        "avg": 0.2977333333333333,
-        "med": 0,
-        "p(90)": 0,
-        "p(95)": 0
-      },
-      "type": "trend"
-    },
-    "http_req_waiting": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "min": 20.6494,
-        "avg": 1501.2551401459846,
-        "med": 426.2695,
-        "p(90)": 4533.0012,
-        "p(95)": 5129.830749999999,
-        "max": 7850.3915
-      }
-    },
-    "group_duration{group:::Attach Document to JP}": {
-      "type": "trend",
-      "contains": "time",
-      "values": {
-        "p(90)": 0,
-        "p(95)": 0,
-        "max": 0,
-        "min": 0,
-        "avg": 0,
-        "med": 0
-      },
-      "thresholds": {
-        "p(95)<3500": {
-          "ok": true
-        }
-      }
-    }
-  },
   "setup_data": {
-    "configFile": "autotest",
     "apiHost": "autotest01.acoscloud.no",
     "totalUsers": 7,
     "scenarioOverride": "load_test",
-    "testExecutionTime": "2025-10-10T13:08:47.417Z",
+    "testExecutionTime": "2025-10-10T13:32:54.513Z",
     "configEnvironment": "Auto Test",
-    "useDataFileConfig": "Yes"
+    "useDataFileConfig": "Yes",
+    "configFile": "autotest"
   },
   "errorSamples": [],
+  "totalCustomErrors": 0,
+  "options": {
+      "summaryTrendStats": [
+        "min",
+        "avg",
+        "med",
+        "p(90)",
+        "p(95)",
+        "max"
+      ],
+      "summaryTimeUnit": "",
+      "noColor": false
+    },
+  "state": {
+      "isStdOutTTY": true,
+      "isStdErrTTY": true,
+      "testRunDurationMs": 127632.3597
+    },
+  "metrics": {
+      "group_duration{group:::Attach Documents to JP}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 0,
+          "avg": 0,
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 0
+        },
+        "thresholds": {
+          "p(95)<5000": {
+            "ok": true
+          }
+        }
+      },
+      "http_req_failed": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 515
+        },
+        "thresholds": {
+          "rate<0.05": {
+            "ok": true
+          }
+        }
+      },
+      "http_reqs": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 515,
+          "rate": 4.035026863175672
+        }
+      },
+      "http_req_tls_handshaking": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 0,
+          "avg": 0.7223273786407767,
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 56.6849
+        }
+      },
+      "group_duration{group:::Get Case Templates}": {
+        "contains": "time",
+        "values": {
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 0,
+          "min": 0,
+          "avg": 0,
+          "med": 0
+        },
+        "thresholds": {
+          "p(95)<2500": {
+            "ok": true
+          }
+        },
+        "type": "trend"
+      },
+      "vus": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "value": 1,
+          "min": 1,
+          "max": 7
+        }
+      },
+      "checks": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "fails": 83,
+          "rate": 0.9462783171521035,
+          "passes": 1462
+        }
+      },
+      "group_duration{group:::Create New Case}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "max": 0,
+          "min": 0,
+          "avg": 0,
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0
+        },
+        "thresholds": {
+          "p(95)<3000": {
+            "ok": true
+          }
+        }
+      },
+      "group_duration{group:::Verify JP Documents}": {
+        "contains": "time",
+        "values": {
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 0,
+          "min": 0,
+          "avg": 0
+        },
+        "thresholds": {
+          "p(95)<2000": {
+            "ok": true
+          }
+        },
+        "type": "trend"
+      },
+      "iterations": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 103,
+          "rate": 0.8070053726351344
+        }
+      },
+      "http_req_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 4054.0344,
+          "max": 5737.8073,
+          "min": 19.5647,
+          "avg": 1100.3627984466025,
+          "med": 309.022,
+          "p(90)": 3502.528680000001
+        },
+        "thresholds": {
+          "p(95)<4500": {
+            "ok": true
+          },
+          "p(99)<8000": {
+            "ok": true
+          }
+        }
+      },
+      "group_duration{group:::Authentication}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 0,
+          "max": 0,
+          "min": 0,
+          "avg": 0,
+          "med": 0,
+          "p(90)": 0
+        },
+        "thresholds": {
+          "p(95)<2000": {
+            "ok": true
+          }
+        }
+      },
+      "group_duration{group:::Create Journal Post}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 0,
+          "max": 0,
+          "min": 0,
+          "avg": 0,
+          "med": 0,
+          "p(90)": 0
+        },
+        "thresholds": {
+          "p(95)<3500": {
+            "ok": true
+          }
+        }
+      },
+      "http_req_blocked": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 77.1885,
+          "min": 0,
+          "avg": 1.0436099029126211,
+          "med": 0
+        }
+      },
+      "group_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 4056.48892,
+          "max": 5740.4473,
+          "min": 23.4515,
+          "avg": 1103.1966073786411,
+          "med": 312.0797,
+          "p(90)": 3505.9770600000006
+        }
+      },
+      "vus_max": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "value": 7,
+          "min": 7,
+          "max": 7
+        }
+      },
+      "group_duration{group:::Attach Document to JP}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 0,
+          "min": 0,
+          "avg": 0,
+          "med": 0
+        },
+        "thresholds": {
+          "p(95)<3500": {
+            "ok": true
+          }
+        }
+      },
+      "data_sent": {
+        "type": "counter",
+        "contains": "data",
+        "values": {
+          "count": 299899,
+          "rate": 2349.709749979652
+        }
+      },
+      "http_req_receiving": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 0,
+          "avg": 0.7877856310679618,
+          "med": 0,
+          "p(90)": 1.6727800000000015,
+          "p(95)": 5.153029999999997,
+          "max": 12.3393
+        }
+      },
+      "iteration_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 5988.0621,
+          "avg": 8468.813725242719,
+          "med": 8517.015,
+          "p(90)": 9709.66482,
+          "p(95)": 10051.056999999999,
+          "max": 10956.6327
+        }
+      },
+      "http_req_sending": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 0.71359,
+          "max": 1.0159,
+          "min": 0,
+          "avg": 0.1904339805825243,
+          "med": 0,
+          "p(90)": 0.5917800000000002
+        }
+      },
+      "data_received": {
+        "type": "counter",
+        "contains": "data",
+        "values": {
+          "count": 7052227,
+          "rate": 55254.22405866559
+        }
+      },
+      "group_duration{group:::Get JP Templates}": {
+        "thresholds": {
+          "p(95)<3000": {
+            "ok": true
+          }
+        },
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 0,
+          "avg": 0,
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 0
+        }
+      },
+      "http_req_connecting": {
+        "contains": "time",
+        "values": {
+          "avg": 0.24505864077669903,
+          "med": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "max": 21.4598,
+          "min": 0
+        },
+        "type": "trend"
+      },
+      "http_req_duration{expected_response:true}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "med": 309.022,
+          "p(90)": 3502.528680000001,
+          "p(95)": 4054.0344,
+          "max": 5737.8073,
+          "min": 19.5647,
+          "avg": 1100.3627984466025
+        }
+      },
+      "http_req_waiting": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 4046.4463599999995,
+          "max": 5737.276,
+          "min": 15.4154,
+          "avg": 1099.384578834951,
+          "med": 308.1542,
+          "p(90)": 3501.160440000001
+        }
+      }
+    },
   "topFailingEndpoints": [],
-  "groupBreakdown": "<div class=\"notes\"><p><strong>No populated group metrics detected.</strong></p><p>This usually means either:</p><ul><li>Group blocks executed too quickly / no iterations completed</li><li>K6 summary did not include trend stats (now forced via summaryTrendStats)</li><li>Test exited early on errors before groups finished</li></ul><p>Re-run a longer test or verify groups are executed. If still empty, capture raw summary JSON and inspect metric keys beginning with <code>group_duration{group:::</code>.</p></div>"
+  "groupBreakdown": "<div class=\"notes\"><p><strong>No populated group metrics detected.</strong></p><p>This usually means either:</p><ul><li>Group blocks executed too quickly / no iterations completed</li><li>K6 summary did not include trend stats (now forced via summaryTrendStats)</li><li>Test exited early on errors before groups finished</li></ul><p>Re-run a longer test or verify groups are executed. If still empty, capture raw summary JSON and inspect metric keys beginning with <code>group_duration{group:::</code>.</p></div>",
+  "root_group": {
+        "groups": [],
+        "checks": [],
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e"
+      }
 }
