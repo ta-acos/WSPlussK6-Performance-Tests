@@ -32,6 +32,7 @@
  *  k6 run tests/api/cases/create-sak.js --vus 3 --duration 15s
  */
 
+import { group } from 'k6';
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   generateK6Options,
@@ -156,11 +157,17 @@ export default function (data) {
   // Step 3: Fetch supporting register data for validation (Sakstyper and Avgjorelsekoder)
   logVUActivity(vuId, 'Fetching reference data', 'Getting case types and decision codes');
   console.log(`📋 ${vuId}: Fetching sakstyper (case types)`);
-  const sakstyper = getSakstyper(testConfig, authResult.authHeaders, __VU); // eslint-disable-line no-unused-vars
+  // eslint-disable-next-line no-unused-vars
+  const sakstyper = group('Get Case Types', () => {
+    return getSakstyper(testConfig, authResult.authHeaders, __VU);
+  });
   logAPIRequest(vuId, 'Case Types (Sakstyper)', true, `Retrieved case types data`);
 
   console.log(`📋 ${vuId}: Fetching avgjorelsekoder (decision codes)`);
-  const avgjorelsekoder = getAvgjorelsekoder(testConfig, authResult.authHeaders, __VU); // eslint-disable-line no-unused-vars
+  // eslint-disable-next-line no-unused-vars
+  const avgjorelsekoder = group('Get Decision Codes', () => {
+    return getAvgjorelsekoder(testConfig, authResult.authHeaders, __VU);
+  });
   logAPIRequest(vuId, 'Decision Codes (Avgjorelsekoder)', true, `Retrieved decision codes data`);
 
   randomSleep(0.2, 0.7);

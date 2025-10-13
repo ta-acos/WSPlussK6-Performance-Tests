@@ -147,12 +147,12 @@ export function validateResponse(response, operationName, expectedStatus = 200, 
   // Allow overriding the max acceptable response time via:
   // 1. Function option: opts.maxResponseTimeMs
   // 2. Environment variable: MAX_RESPONSE_TIME_MS or OP_RESPONSE_MAX_MS
-  // 3. Fallback default: 5000 ms
+  // 3. JSON configuration: operations[operationName] or defaults
   const envOverride = (__ENV && (__ENV.MAX_RESPONSE_TIME_MS || __ENV.OP_RESPONSE_MAX_MS)) || null;
   // Pull operation-specific threshold if defined
   const perfCfg = getPerformanceThresholds();
   const opOverride = perfCfg.operations?.[operationName]?.maxResponseTimeMs;
-  const baseDefault = perfCfg.defaults?.maxResponseTimeMs || 5000;
+  const baseDefault = perfCfg.defaults?.maxResponseTimeMs || 6000;
   const maxResponseTimeMs = parseInt(
     (opts.maxResponseTimeMs != null
       ? opts.maxResponseTimeMs

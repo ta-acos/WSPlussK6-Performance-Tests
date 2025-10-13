@@ -42,6 +42,7 @@
  * - Performance metrics compared to acceptable thresholds
  */
 
+import { group } from 'k6';
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
@@ -222,7 +223,9 @@ export default function () {
   // Simulate a user logging into the system
   logVUActivity(vuId, 'Authenticating user', user.username);
   console.log(`🔐 ${vuId}: Attempting login for user ${user.username}`);
-  const accessToken = authenticate(testConfig, user, vuId);
+  const accessToken = group('Authentication', () => {
+    return authenticate(testConfig, user, vuId);
+  });
   if (!validateAuthentication(accessToken, user, vuId)) {
     logAuth(vuId, user.username, false, 'Authentication validation failed');
     return; // Stop if login failed
@@ -239,7 +242,9 @@ export default function () {
   // Get the list of case types that the user can create
   logVUActivity(vuId, 'Retrieving case templates', 'Getting available case templates');
   console.log(`📋 ${vuId}: Getting available case templates`);
-  const caseTemplates = getCaseTemplates(testConfig, authHeaders, vuId);
+  const caseTemplates = group('Get Case Templates', () => {
+    return getCaseTemplates(testConfig, authHeaders, vuId);
+  });
   if (!validateTemplates(caseTemplates, user, vuId, 'case templates')) {
     logAPIRequest(vuId, 'Case Templates', false, 'No valid case templates found');
     return; // Stop if no case templates available
@@ -263,14 +268,16 @@ export default function () {
   logVUActivity(vuId, 'Creating new case', `Using template: ${selectedCaseTemplate.tittel}`);
   console.log(`📁 ${vuId}: Creating new case`);
   const caseTestData = generateCaseTestData('PerfTestCaseMultiDoc', vuId);
-  const caseData = createCase(
-    testConfig,
-    authHeaders,
-    caseTemplates,
-    caseTestData,
-    vuId,
-    selectedCaseTemplate
-  );
+  const caseData = group('Create New Case', () => {
+    return createCase(
+      testConfig,
+      authHeaders,
+      caseTemplates,
+      caseTestData,
+      vuId,
+      selectedCaseTemplate
+    );
+  });
   if (!validateCaseCreation(caseData, vuId)) {
     logAPIRequest(vuId, 'Case Creation', false, 'Case creation validation failed');
     return; // Stop if case creation failed
@@ -284,7 +291,9 @@ export default function () {
   // Get the types of journal posts (document entries) that can be created in this case
   logVUActivity(vuId, 'Getting JP templates', `For case ID: ${caseData.id}`);
   console.log(`📄 ${vuId}: Getting journal post templates for case ${caseData.id}`);
-  const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
+  const jpTemplates = group('Get JP Templates', () => {
+    return getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
+  });
   if (!validateTemplates(jpTemplates, user, vuId, 'JP templates')) {
     logAPIRequest(vuId, 'JP Templates', false, 'No valid JP templates found');
     return; // Stop if no journal post templates available
@@ -316,7 +325,9 @@ export default function () {
   );
   console.log(`✉️ ${vuId}: Creating journal post in case ${caseData.id}`);
   const jpTestData = generateJpTestData('PerfTestJP-MultiDoc', vuId);
-  const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, vuId);
+  const jpData = group('Create Journal Post', () => {
+    return createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, vuId);
+  });
 
   // Verify the journal post was created successfully
   if (!jpData || !jpData.id) {
@@ -343,18 +354,20 @@ export default function () {
   console.log(`📎 ${vuId}: Upload mode: ${USE_BATCH_UPLOAD ? 'batch' : 'individual'}`);
 
   // This function handles the complete workflow: attach documents + verify they're there
-  const attachResult = attachDocumentsWithVerification(testConfig, authHeaders, jpData.id, {
-    documentCount: DOC_COUNT, // How many documents to attach
-    useBatchUpload: USE_BATCH_UPLOAD, // Upload all at once vs one-by-one
-    preloadedDocuments: preloadedFileAttachments, // Use specific files if provided
-    useRealDocuments: preloadedFileAttachments.length > 0, // Whether to use real files or generate test files
-    baseName: jpTestData.documentName.replace('.txt', ''), // Base name for generated test documents
-    jpType: 'Incoming', // Type of journal post (Incoming/Outgoing)
-    vuId: vuId, // Virtual user ID for logging
-    testMeta: { testId: jpTestData.testId, vuId }, // Additional metadata for tracking
-    enableAttachment: ENABLE_ATTACH, // Whether to actually attach documents
-    enableVerification: true, // Whether to verify documents were attached
-    verificationDelay: 0.5 // Wait time before checking (0.5 seconds)
+  const attachResult = group('Attach Documents to JP', () => {
+    return attachDocumentsWithVerification(testConfig, authHeaders, jpData.id, {
+      documentCount: DOC_COUNT, // How many documents to attach
+      useBatchUpload: USE_BATCH_UPLOAD, // Upload all at once vs one-by-one
+      preloadedDocuments: preloadedFileAttachments, // Use specific files if provided
+      useRealDocuments: preloadedFileAttachments.length > 0, // Whether to use real files or generate test files
+      baseName: jpTestData.documentName.replace('.txt', ''), // Base name for generated test documents
+      jpType: 'Incoming', // Type of journal post (Incoming/Outgoing)
+      vuId: vuId, // Virtual user ID for logging
+      testMeta: { testId: jpTestData.testId, vuId }, // Additional metadata for tracking
+      enableAttachment: ENABLE_ATTACH, // Whether to actually attach documents
+      enableVerification: true, // Whether to verify documents were attached
+      verificationDelay: 0.5 // Wait time before checking (0.5 seconds)
+    });
   });
 
   // Log document attachment results

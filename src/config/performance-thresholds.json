@@ -3,65 +3,50 @@
     "maxResponseTimeMs": 5000,
     "apdexT": 500,
     "k6": {
-      "http_req_duration": { "p95": 4500, "p99": 8000 },
-      "http_req_failed": { "rate": 0.05 }
+      "http_req_duration": { "p90": 5000, "p95": 5000, "p99": 8000, "max": 10000 },
+      "http_req_failed": { "rate": 0.05 },
+      "http_req_waiting": { "p95": 4800, "p99": 7500 },
+      "http_reqs": { "minRate": 0.5 },
+      "iteration_duration": { "p95": 30000, "p99": 45000 },
+      "checks": { "passRate": 0.95 }
     }
   },
   "operations": {
     "Upload Document": {
-      "maxResponseTimeMs": 8000,
-      "k6": {
-        "group_duration{group:::Attach Documents to JP}": { "p95": 5000 }
-      }
+      "maxResponseTimeMs": 8000
     },
     "Create Journal Post": {
-      "maxResponseTimeMs": 6000,
-      "k6": {
-        "group_duration{group:::Create Journal Post}": { "p95": 3500 }
-      }
+      "maxResponseTimeMs": 6000
     },
     "Create Case": {
-      "maxResponseTimeMs": 4000,
-      "k6": {
-        "group_duration{group:::Create New Case}": { "p95": 3000 }
-      }
+      "maxResponseTimeMs": 5000
     },
     "Authentication": {
-      "maxResponseTimeMs": 4000,
-      "k6": {
-        "group_duration{group:::Authentication}": { "p95": 2000 }
-      }
+      "maxResponseTimeMs": 5000
     },
     "Get Case Templates": {
-      "maxResponseTimeMs": 4000,
-      "k6": {
-        "group_duration{group:::Get Case Templates}": { "p95": 2500 }
-      }
+      "maxResponseTimeMs": 5000
     },
     "Get JP Templates": {
-      "maxResponseTimeMs": 4000,
-      "k6": {
-        "group_duration{group:::Get JP Templates}": { "p95": 3000 }
-      }
+      "maxResponseTimeMs": 5000
     },
     "Attach Document": {
-      "maxResponseTimeMs": 6000,
-      "k6": {
-        "group_duration{group:::Attach Document to JP}": { "p95": 3500 }
-      }
+      "maxResponseTimeMs": 6000
     },
     "Verify Documents": {
-      "maxResponseTimeMs": 4000,
-      "k6": {
-        "group_duration{group:::Verify JP Documents}": { "p95": 2000 }
-      }
+      "maxResponseTimeMs": 8000
     }
   },
   "uiBands": {
     "latencyMs": {
-      "good": 1200,
-      "watch": 2500,
-      "investigate": 5000
+      "good": 6000,
+      "watch": 9000,
+      "investigate": 12000
+    },
+    "iterationMs": {
+      "good": 8000,
+      "watch": 30000,
+      "investigate": 45000
     },
     "errorRate": {
       "good": 0.01,

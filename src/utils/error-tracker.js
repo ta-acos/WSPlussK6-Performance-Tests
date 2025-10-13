@@ -60,6 +60,18 @@
  */
 
 import { Counter, Trend } from 'k6/metrics';
+import { open } from 'k6';
+
+// Load performance thresholds configuration
+let performanceThresholds = {};
+try {
+  const thresholdsFile = open('src/config/performance-thresholds.json');
+  if (thresholdsFile && thresholdsFile !== 'null' && thresholdsFile.trim() !== '') {
+    performanceThresholds = JSON.parse(thresholdsFile);
+  }
+} catch (e) {
+  console.warn(`[ERROR-TRACKER] Failed to load performance thresholds: ${e.message}`);
+}
 
 // ========================================
 // CUSTOM METRICS FOR ERROR TRACKING
@@ -214,21 +226,28 @@ export function extractErrorSamples(data) {
     }
 
     // Create comprehensive error report for stakeholders
+    // Dynamic timeout threshold from configuration (with env var override)
+    const configuredTimeout = performanceThresholds?.operations?.['Attach Document']?.maxResponseTimeMs || 
+                              performanceThresholds?.operations?.['Upload Document']?.maxResponseTimeMs || 
+                              performanceThresholds?.defaults?.maxResponseTimeMs || 
+                              6000;
+    const attachTimeoutMs = parseInt(__ENV.ATTACH_DOCS_BATCH_LIMIT_MS || String(configuredTimeout), 10);
+
     samples.push({
       '📊 Error Summary': {
         'Total Errors': count,
         'Error Rate': (rate * 100).toFixed(2) + '%',
         Endpoint: 'POST /api/websak/api/jp/uploadfiletodokument/',
-        'HTTP Status': '200 (Success, but timeout threshold exceeded)',
+        'HTTP Status': '200 (Success, but exceeded attachment time budget)',
         'Error Type': 'document_attach_timeout'
       },
       '❌ Issue Description': {
-        Problem: `${count} document attachment request(s) exceeded the 5-second response time threshold`,
+        Problem: `${count} document attachment request(s) exceeded the ${attachTimeoutMs}ms response time budget`,
         Impact:
-          'These requests returned HTTP 200 (success) but took longer than expected, indicating potential performance issues',
-        Threshold: 'Response time > 5000ms is considered a timeout error'
+          'Requests returned HTTP 200 (success) but took longer than the configured budget, indicating potential performance issues (slow I/O, large payload, server processing).',
+        Threshold: `Response time > ${attachTimeoutMs}ms is classified as attachment timeout`
       },
-      '🔍 What Happened': `Got HTTP 200 from /api/websak/api/jp/uploadfiletodokument/ but ${count} request(s) failed due to timeout error (response time > 5000ms threshold). The API successfully processed the documents but response time exceeded acceptable limits.`,
+      '🔍 What Happened': `Got HTTP 200 from /api/websak/api/jp/uploadfiletodokument/ but ${count} request(s) flagged as timeout (duration > ${attachTimeoutMs}ms). Processing succeeded but SLA budget was exceeded.`,
 
       '📋 Individual Error Details':
         `Each of the ${count} errors includes:\n` +
@@ -249,8 +268,7 @@ export function extractErrorSamples(data) {
       },
 
       '💡 Example Error Message':
-        'Got 200 from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: ' +
-        'Document attachment timeout: 6335.12ms > 5000ms threshold. JP ID: 1101115771',
+        `Got 200 from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: Document attachment timeout: 5827.21ms > ${attachTimeoutMs}ms threshold. JP ID is: 1101128248 and Case ID is: 987654321. sak/987654321/jp/1101128248`,
 
       '🎯 For Stakeholders': {
         'Quick Summary': `${count} out of ${Math.round(count / rate)} total requests exceeded timeout threshold (${(rate * 100).toFixed(2)}% failure rate)`,

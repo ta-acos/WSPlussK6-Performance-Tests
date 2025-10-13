@@ -57,6 +57,7 @@
  *  k6 run tests/api/journalposts/create-multiple-jp-with-multiple-document.js -e INCOMING_COUNT=3 -e OUTGOING_COUNT=3 -e DOC_COUNT=5
  */
 
+import { group } from 'k6';
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   loadTestConfig,
@@ -189,7 +190,7 @@ export function setup() {
 /**
  * Attach documents to a JP using the new utility (wrapper for compatibility)
  */
-function attachDocumentsToJp(config, authHeaders, jpId, jpType, vuId) {
+function attachDocumentsToJp(config, authHeaders, jpId, jpType, vuId, caseId) {
   const testMeta = { testId: Date.now().toString(), vuId };
   const docCount = USE_TEST_DOCS ? preloadedTestDocuments.length : DOC_COUNT;
 
@@ -201,7 +202,8 @@ function attachDocumentsToJp(config, authHeaders, jpId, jpType, vuId) {
     baseName: 'PerfTest',
     jpType: jpType,
     vuId: vuId,
-    testMeta: testMeta
+    testMeta: testMeta,
+    caseId: caseId
   });
 }
 
@@ -233,7 +235,9 @@ export default function () {
 
   // Step 1: Authentication
   logVUActivity(vuId, 'Authenticating user', user.username);
-  const authToken = authenticate(testConfig, user, vuId);
+  const authToken = group('Authentication', () => {
+    return authenticate(testConfig, user, vuId);
+  });
   if (!validateAuthentication(authToken, user, vuId)) {
     logAuth(vuId, user.username, false, 'Authentication validation failed');
     return;
@@ -243,7 +247,9 @@ export default function () {
 
   // Step 2: Get Case Templates
   logVUActivity(vuId, 'Retrieving available case templates');
-  const caseTemplates = getCaseTemplates(testConfig, authHeaders, vuId);
+  const caseTemplates = group('Get Case Templates', () => {
+    return getCaseTemplates(testConfig, authHeaders, vuId);
+  });
   if (!validateTemplates(caseTemplates, user, vuId, 'case templates')) {
     logVUActivity(vuId, 'Failed to retrieve case templates');
     return;
@@ -255,7 +261,9 @@ export default function () {
   // Step 3: Create New Case
   const caseTestData = generateCaseTestData(`PerfTest-${testId}`, vuId);
   logVUActivity(vuId, 'Creating new case', `"${caseTestData.tittel}"`);
-  const caseData = createCase(testConfig, authHeaders, caseTemplates, caseTestData, vuId);
+  const caseData = group('Create New Case', () => {
+    return createCase(testConfig, authHeaders, caseTemplates, caseTestData, vuId);
+  });
 
   if (!validateCaseCreation(caseData, vuId)) {
     logVUActivity(vuId, 'Case creation failed');
@@ -267,7 +275,9 @@ export default function () {
 
   // Step 4: Get JP Templates
   logVUActivity(vuId, `Retrieving JP templates for case ${caseData.id}`);
-  const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
+  const jpTemplates = group('Get JP Templates', () => {
+    return getJpTemplates(testConfig, authHeaders, caseData.id, vuId);
+  });
   if (!validateTemplates(jpTemplates, user, vuId, 'JP templates')) {
     logVUActivity(vuId, 'Failed to retrieve JP templates');
     return;
@@ -296,15 +306,17 @@ export default function () {
     );
 
     const jpPayload = generateIncomingJpPayload(caseData.id, selectedTemplate, jpTestData, testConfig);
-    const jpData = createJournalPostWithPayload(
-      testConfig,
-      authHeaders,
-      caseData.id,
-      jpPayload,
-      'Incoming',
-      jpTestData,
-      vuId
-    );
+    const jpData = group('Create Journal Post', () => {
+      return createJournalPostWithPayload(
+        testConfig,
+        authHeaders,
+        caseData.id,
+        jpPayload,
+        'Incoming',
+        jpTestData,
+        vuId
+      );
+    });
 
     if (jpData && jpData.id) {
       incomingJPs.push(jpData);
@@ -328,15 +340,17 @@ export default function () {
     );
 
     const jpPayload = generateOutgoingJpPayload(caseData.id, selectedTemplate, jpTestData, testConfig);
-    const jpData = createJournalPostWithPayload(
-      testConfig,
-      authHeaders,
-      caseData.id,
-      jpPayload,
-      'Outgoing',
-      jpTestData,
-      vuId
-    );
+    const jpData = group('Create Journal Post', () => {
+      return createJournalPostWithPayload(
+        testConfig,
+        authHeaders,
+        caseData.id,
+        jpPayload,
+        'Outgoing',
+        jpTestData,
+        vuId
+      );
+    });
 
     if (jpData && jpData.id) {
       outgoingJPs.push(jpData);
@@ -360,7 +374,9 @@ export default function () {
     console.log(`\n📥 ${vuId}: Processing Incoming JP ${index + 1}/${incomingJPs.length} (ID: ${jpData.id})`);
     logVUActivity(vuId, `Processing Incoming JP ${index + 1}/${incomingJPs.length}`, `ID: ${jpData.id}`);
     const startTime = Date.now();
-    attachDocumentsToJp(testConfig, authHeaders, jpData.id, 'Incoming', vuId);
+    group('Attach Documents to JP', () => {
+      attachDocumentsToJp(testConfig, authHeaders, jpData.id, 'Incoming', vuId, caseData.id);
+    });
     const duration = Date.now() - startTime;
     logDocumentAttachment(vuId, jpData.id, docCountPerJp, true, duration);
     randomSleep(testConfig);
@@ -377,7 +393,9 @@ export default function () {
     console.log(`\n📤 ${vuId}: Processing Outgoing JP ${index + 1}/${outgoingJPs.length} (ID: ${jpData.id})`);
     logVUActivity(vuId, `Processing Outgoing JP ${index + 1}/${outgoingJPs.length}`, `ID: ${jpData.id}`);
     const startTime = Date.now();
-    attachDocumentsToJp(testConfig, authHeaders, jpData.id, 'Outgoing', vuId);
+    group('Attach Documents to JP', () => {
+      attachDocumentsToJp(testConfig, authHeaders, jpData.id, 'Outgoing', vuId, caseData.id);
+    });
     const duration = Date.now() - startTime;
     logDocumentAttachment(vuId, jpData.id, docCountPerJp, true, duration);
     randomSleep(testConfig);

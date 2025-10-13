@@ -77,7 +77,7 @@
   "errorMessages": {
     "timeout": {
       "jpAttachEndpoint": "/api/websak/api/jp/uploadfiletodokument/",
-      "message": "Document attachment timeout: {duration}ms > 5000ms threshold. JP ID: {jpId}"
+  "message": "Document attachment timeout: {duration}ms > {thresholdMs}ms threshold. JP ID is: {jpId} and Case ID is: {caseId}. sak/{caseId}/jp/{jpId}"
     }
   }
 }

@@ -510,7 +510,8 @@ export function attachDocumentsToJournalPost(config, authHeaders, jpId, options 
     baseName = 'PerfTest',
     jpType = '',
     vuId = 'VU-Unknown',
-    testMeta = { testId: Date.now().toString(), vuId }
+    testMeta = { testId: Date.now().toString(), vuId },
+    caseId = null
   } = options;
 
   let finalDocumentCount = documentCount;
@@ -541,7 +542,15 @@ export function attachDocumentsToJournalPost(config, authHeaders, jpId, options 
         `📦 ${vuId}: Preparing batch upload of ${finalDocumentCount} documents for ${jpType} JP ${jpId}`
       );
 
-      attachmentSuccess = attachDocumentsBatch(config, authHeaders, jpId, documentsToAttach, vuId, 0);
+      attachmentSuccess = attachDocumentsBatch(
+        config,
+        authHeaders,
+        jpId,
+        documentsToAttach,
+        vuId,
+        0,
+        caseId
+      );
 
       if (attachmentSuccess) {
         console.log(
@@ -559,7 +568,7 @@ export function attachDocumentsToJournalPost(config, authHeaders, jpId, options 
       let attachedCount = 0;
       for (let i = 0; i < finalDocumentCount; i++) {
         const docData = documentsToAttach[i];
-        const success = attachDocument(config, authHeaders, jpId, docData, vuId, i, i === 0);
+  const success = attachDocument(config, authHeaders, jpId, docData, vuId, i, i === 0, caseId);
 
         if (success) {
           attachedCount++;

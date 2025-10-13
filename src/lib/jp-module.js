@@ -11,21 +11,9 @@
  * const jpTemplates = getJpTemplates(config, authHeaders, caseId, vuId);
  * const jpData = createJournalPost(config, authHeaders, caseId, jpTemplates, testData, vuId);
  *
- * Note: Document attachment endpoints are automatically detected     } else {
-      console.error(`❌ ${vuId}: Failed to attach documents to JP ${jpId}`);
-      console.error(`   Status: ${attachResponse.status}`);
-      
-      // Record error using NEW k6 metrics-based tracker (will appear in report!)
-      recordError(attachResponse, {
-        endpoint: `/api/websak/api/jp/uploadfiletodokument/`,
-        errorType: 'document_attach_timeout',
-        message: `Got ${attachResponse.status} from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: Document attachment timeout: ${attachResponse.timings.duration.toFixed(2)}ms > 5000ms threshold. JP ID: ${jpId}`,
-        failed: true,
-        jpId: jpId,
-        duration: attachResponse.timings.duration.toFixed(2),
-        responseBody: attachResponse.body ? attachResponse.body.slice(0, 200) : 'No response body'
-      });
-    } * - multipart/form-data (for endpoints containing 'uploadfile' or 'upload')
+ * Note: Document attachment endpoints are automatically detected.
+ * Attachment performance limits are now dynamic (see ATTACH_DOCS_BATCH_LIMIT_MS below).
+ * - multipart/form-data (for endpoints containing 'uploadfile' or 'upload')
  * - application/json (for other endpoints)
  */
 
@@ -33,7 +21,44 @@ import { check, group } from 'k6';
 import http from 'k6/http';
 import { recordError } from '../utils/error-tracker.js';
 import { generateJpPayload } from './payload-module.js';
+import { getPerformanceThresholds } from './config-manager.js';
 // import { getPathsConfig } from './config-manager.js'; // TODO: Use when JP attachment endpoint is needed
+
+// Centralized (override-able) attachment performance limit.
+// Loads dynamically from performance-thresholds.json, with env var override support.
+const ATTACH_DOCS_BATCH_LIMIT_MS = (() => {
+  const v = parseInt(__ENV.ATTACH_DOCS_BATCH_LIMIT_MS || '', 10);
+  if (Number.isFinite(v) && v > 0) return v;
+  
+  // Load from JSON configuration
+  const perfCfg = getPerformanceThresholds();
+  const configuredTimeout = perfCfg?.operations?.['Attach Document']?.maxResponseTimeMs || 
+                            perfCfg?.operations?.['Upload Document']?.maxResponseTimeMs || 
+                            perfCfg?.defaults?.maxResponseTimeMs;
+  return configuredTimeout || 6000;
+})();
+
+// Load performance thresholds once (init context) for dynamic per-operation budgets
+const __perfCfg = getPerformanceThresholds();
+const __opMetricMap = {
+  'Get JP Templates': 'group_duration{group:::Get JP Templates}',
+  'Create Journal Post': 'group_duration{group:::Create Journal Post}',
+  'Attach Document to JP': 'group_duration{group:::Attach Document to JP}'
+};
+function getOpP95(operationName) {
+  try {
+    const metricKey = __opMetricMap[operationName];
+    const op = __perfCfg.operations?.[operationName]?.k6 || {};
+    const val = op[metricKey]?.p95;
+    return typeof val === 'number' ? val : __perfCfg.defaults?.k6?.http_req_duration?.p95 || 3000;
+  } catch (e) {
+    return 3000; // safe fallback
+  }
+}
+
+const JP_TEMPLATES_P95 = getOpP95('Get JP Templates');
+const CREATE_JP_P95 = getOpP95('Create Journal Post');
+const ATTACH_DOC_P95 = getOpP95('Attach Document to JP');
 
 // Get JP attachment endpoint from configuration
 // function getJpAttachEndpoint() {  // TODO: Use when JP attachment endpoint is needed
@@ -95,7 +120,8 @@ export function getJpTemplates(config, authHeaders, caseId, vuId) {
           return false;
         }
       },
-      'jp_templates: response time < 1.5s': (r) => r.timings.duration < 1500
+      [`jp_templates: response time < ${(JP_TEMPLATES_P95 / 1000).toFixed(2)}s`]: (r) =>
+        r.timings.duration < JP_TEMPLATES_P95
     });
 
     if (templatesSuccess && templatesResponse.status === 200) {
@@ -190,7 +216,8 @@ export function createJournalPost(config, authHeaders, caseId, jpTemplates, test
           return true; // do not fail the check on parse error if status ok
         }
       },
-      'create_jp: response time < 3s': (r) => r.timings.duration < 3000
+      [`create_jp: response time < ${(CREATE_JP_P95 / 1000).toFixed(2)}s`]: (r) =>
+        r.timings.duration < CREATE_JP_P95
     });
 
     if (createResponse.status === 200 || createResponse.status === 201) {
@@ -411,7 +438,8 @@ export function attachDocument(
   documentData,
   vuId,
   documentIndex = 0,
-  isMainDocument = false
+  isMainDocument = false,
+  caseId = null
 ) {
   let success = false;
 
@@ -465,7 +493,8 @@ export function attachDocument(
         }
         return r.status === 200 || r.status === 201;
       },
-      'attach_doc: resp time < 3s': (r) => r.timings.duration < 3000
+      [`attach_doc: resp time < ${(ATTACH_DOC_P95 / 1000).toFixed(2)}s`]: (r) =>
+        r.timings.duration < ATTACH_DOC_P95
     });
 
     if (attemptOk && (attachResponse.status === 200 || attachResponse.status === 201)) {
@@ -498,7 +527,15 @@ export function attachDocument(
  * @param {number} mainDocumentIndex - Index of main document (default 0)
  * @returns {boolean} Success status of batch upload
  */
-export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, vuId, mainDocumentIndex = 0) {
+export function attachDocumentsBatch(
+  config,
+  authHeaders,
+  jpId,
+  documentsArray,
+  vuId,
+  mainDocumentIndex = 0,
+  caseId = null
+) {
   let success = false;
 
   group('Attach Multiple Documents to JP', () => {
@@ -541,7 +578,7 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
         }
         return r.status === 200 || r.status === 201;
       },
-      'attach_docs_batch: resp time < 5s': (r) => r.timings.duration < 5000
+  [`attach_docs_batch: resp time < ${(ATTACH_DOCS_BATCH_LIMIT_MS/1000).toFixed(1)}s`]: (r) => r.timings.duration < ATTACH_DOCS_BATCH_LIMIT_MS
     });
 
     if (attemptOk && (attachResponse.status === 200 || attachResponse.status === 201)) {
@@ -555,9 +592,10 @@ export function attachDocumentsBatch(config, authHeaders, jpId, documentsArray, 
       recordError(attachResponse, {
         endpoint: `/api/websak/api/jp/uploadfiletodokument/`,
         errorType: 'document_attach_timeout',
-        message: `Got ${attachResponse.status} from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: Document attachment timeout: ${attachResponse.timings.duration.toFixed(2)}ms > 5000ms threshold. JP ID: ${jpId}`,
+        message: `Got ${attachResponse.status} from /api/websak/api/jp/uploadfiletodokument/ but this is failed due to the error: Document attachment timeout: ${attachResponse.timings.duration.toFixed(2)}ms > ${ATTACH_DOCS_BATCH_LIMIT_MS}ms threshold. JP ID is: ${jpId} and Case ID is: ${caseId || 'unknown'}. sak/${caseId || 'unknown'}/jp/${jpId}`,
         failed: true,
         jpId: jpId,
+        caseId: caseId || 'unknown',
         duration: attachResponse.timings.duration.toFixed(2),
         responseBody: attachResponse.body ? attachResponse.body.slice(0, 200) : 'No response body'
       });

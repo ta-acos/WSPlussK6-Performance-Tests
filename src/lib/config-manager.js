@@ -210,7 +210,8 @@ if (!pathsConfig) {
 }
 
 // Load performance thresholds configuration (optional, now supports override via PERFORMANCE_THRESHOLDS_FILE)
-let performanceThresholds = { defaults: { maxResponseTimeMs: 5000, apdexT: 500 }, operations: {} };
+// Single canonical source: performance-thresholds.json. If not found we fall back to an embedded minimal default.
+let performanceThresholds = {};
 const overrideFile = __ENV.PERFORMANCE_THRESHOLDS_FILE;
 // Build candidate list honoring explicit override first (absolute kept as‑is, relative resolved like others)
 const perfThresholdCandidates = [];
@@ -244,8 +245,32 @@ for (const p of perfThresholdCandidates) {
   }
 }
 if (!perfLoadedFrom) {
+  performanceThresholds = { 
+    defaults: { 
+      maxResponseTimeMs: 5000, 
+      apdexT: 500, 
+      k6: { 
+        http_req_duration: { p90: 5000, p95: 5000, p99: 8000, max: 10000 }, 
+        http_req_failed: { rate: 0.05 },
+        http_req_waiting: { p95: 4800, p99: 7500 },
+        http_reqs: { minRate: 0.5 },
+        iteration_duration: { p95: 30000, p99: 45000 },
+        checks: { passRate: 0.95 }
+      } 
+    }, 
+    operations: {
+      'Attach Document': { maxResponseTimeMs: 6000 },
+      'Upload Document': { maxResponseTimeMs: 8000 }
+    }, 
+    uiBands: { 
+      latencyMs: { good: 1200, watch: 9000, investigate: 12000 }, 
+      iterationMs: { good: 8000, watch: 30000, investigate: 45000 },
+      errorRate: { good: 0.01, watch: 0.05, investigate: 0.05 }, 
+      checkFailureRate: { good: 0.0, watch: 0.02, investigate: 0.02 } 
+    } 
+  };
   console.warn(
-    '⚠️ Warning: Using built-in performance threshold defaults (could not load any file). Candidates tried: ' +
+    '⚠️ performance-thresholds.json not found. Using embedded emergency defaults. Candidates tried: ' +
       perfThresholdCandidates.join(', ')
   );
 }

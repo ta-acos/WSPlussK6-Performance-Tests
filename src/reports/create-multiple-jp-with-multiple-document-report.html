@@ -1,0 +1,390 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />
+  <title>k6 Performance Report</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { --ok:#1B873F; --warn:#FF8B00; --fail:#B00020; --bg:#f6f8fa; --card:#fff; --border:#d0d7de; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif; margin:0; background:var(--bg); color:#24292f; }
+    header { padding:20px 28px; background:#111827; color:#f9fafb; }
+    header h1 { margin:0 0 4px 0; font-size:20px; }
+    header small { opacity:.8; }
+    main { padding:24px 28px 60px; }
+    h2 { margin:34px 0 12px; font-size:18px; }
+    h3 { margin:26px 0 10px; font-size:16px; }
+    .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+    .kpi { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 16px; box-shadow:0 1px 2px rgba(0,0,0,.04); position:relative; }
+    .kpi h4 { margin:0 0 6px; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:#57606a; }
+    .kpi p { margin:0; font-size:22px; font-weight:600; }
+    .muted { color:#57606a; font-size:12px; }
+  /* KPI severity backgrounds */
+  .kpi-good { background:linear-gradient(135deg,#e6f7ed,#ffffff); border-color:#1B873F55; }
+  .kpi-warn { background:linear-gradient(135deg,#fff3d4,#ffffff); border-color:#FF8B0055; }
+  .kpi-bad { background:linear-gradient(135deg,#fde2e0,#ffffff); border-color:#B0002055; }
+  .kpi-neutral { background:linear-gradient(135deg,#f2f4f8,#ffffff); }
+  .kpi-good p { color:#0f6a2d; }
+  .kpi-warn p { color:#b05800; }
+  .kpi-bad p { color:#7a0016; }
+  .kpi span.sub { display:block; font-size:11px; margin-top:4px; color:#555; }
+  /* Patterns for accessibility */
+  .pattern-warn { background-image:repeating-linear-gradient(-45deg, rgba(255,139,0,.18), rgba(255,139,0,.18) 6px, rgba(255,139,0,0) 6px, rgba(255,139,0,0) 12px); }
+  .pattern-bad { background-image:repeating-linear-gradient(45deg, rgba(176,0,32,.18), rgba(176,0,32,.18) 6px, rgba(176,0,32,0) 6px, rgba(176,0,32,0) 12px); }
+  /* SLO progress bar */
+  .slo-wrapper { margin:18px 0 8px; }
+  .slo-bar { position:relative; height:20px; background:#eceef1; border-radius:10px; overflow:hidden; }
+  .slo-bar .fill { position:absolute; top:0; left:0; bottom:0; background:#1B873F; transition:width .6s; }
+  .slo-bar .fill.warn { background:#FF8B00; }
+  .slo-bar .fill.bad { background:#B00020; }
+  .slo-meta { font-size:12px; margin-top:4px; color:#555; }
+  /* Risks panel */
+  .risks { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin:14px 0 6px; }
+  .risk { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:12px; position:relative; }
+  .risk.high { border-color:#B00020; box-shadow:0 0 0 2px rgba(176,0,32,.12); }
+  .risk.med { border-color:#FF8B00; }
+  .risk:before { content:""; position:absolute; width:6px; top:0; left:0; bottom:0; border-radius:8px 0 0 8px; background:#ccc; }
+  .risk.high:before { background:#B00020; }
+  .risk.med:before { background:#FF8B00; }
+  /* Legend tile */
+  .legend-tile { position:fixed; top:10px; right:10px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,.12); z-index:999; max-width:160px; }
+  .legend-tile h4 { margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+  .legend-item { display:flex; align-items:center; gap:6px; margin:2px 0; }
+  .legend-dot { width:14px; height:14px; border-radius:50%; background:#ccc; border:1px solid #999; position:relative; }
+  .legend-dot.good { background:#1B873F; }
+  .legend-dot.warn { background:#FF8B00; }
+  .legend-dot.bad { background:#B00020; }
+  .legend-dot.good.pattern:after { content:"✓"; position:absolute; font-size:10px; color:#fff; top:1px; left:4px; }
+  .legend-dot.warn.pattern:after { content:"!"; position:absolute; font-size:11px; color:#fff; top:0; left:5px; }
+  .legend-dot.bad.pattern:after { content:"✕"; position:absolute; font-size:10px; color:#fff; top:1px; left:4px; }
+  /* Collapsible sections */
+  .toggle-btn { background:none; border:1px solid var(--border); border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; margin-left:8px; }
+  .section-body.collapsed { display:none; }
+  /* Export toolbar */
+  .export-bar { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
+  .export-bar button { background:#111827; color:#fff; border:0; border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px; }
+  .export-bar button:hover { background:#1f2937; }
+  /* Executive summary alerts */
+  .alert { padding:14px 16px; border-radius:8px; border:1px solid var(--border); background:#fff; margin:20px 0 26px; position:relative; }
+  .alert:before { content:""; position:absolute; top:0; left:0; bottom:0; width:5px; border-radius:8px 0 0 8px; }
+  .alert-good { background:linear-gradient(135deg,#e6f7ed,#ffffff); border-color:#1B873F55; }
+  .alert-good:before { background:#1B873F; }
+  .alert-warn { background:linear-gradient(135deg,#fff3d4,#ffffff); border-color:#FF8B0055; }
+  .alert-warn:before { background:#FF8B00; }
+  .alert-bad { background:linear-gradient(135deg,#fde2e0,#ffffff); border-color:#B0002055; }
+  .alert-bad:before { background:#B00020; }
+  .alert h2 { margin-top:0; margin-bottom:8px; font-size:20px; }
+  .status-badge { display:inline-block; font-size:11px; padding:4px 8px; border-radius:14px; font-weight:600; background:#e5e7eb; margin-left:8px; }
+  .alert-good .status-badge { background:#1B873F; color:#fff; }
+  .alert-warn .status-badge { background:#FF8B00; color:#fff; }
+  .alert-bad .status-badge { background:#B00020; color:#fff; }
+  .quick-points { margin:0; padding-left:18px; font-size:13px; line-height:1.5; }
+  .quick-points li { margin:2px 0 4px; }
+  /* Utility spacing classes (replacing former inline styles) */
+  .para-summary { margin:6px 0 10px; font-size:14px; }
+  .para-hint { margin-top:10px; }
+  .slo-heading { margin:0 0 6px; }
+  .slo-fill-width[data-w] { width:attr(data-w percentage); }
+    table { border-collapse:collapse; width:100%; background:var(--card); border:1px solid var(--border); }
+    table th, table td { padding:6px 8px; border:1px solid var(--border); text-align:left; font-size:13px; }
+    table th { background:#f3f4f6; font-weight:600; }
+    code { background:#eee; padding:2px 4px; border-radius:4px; font-size:12px; }
+    .ok { color:var(--ok); font-weight:600; }
+    .fail { color:var(--fail); font-weight:600; }
+    .warn { color:var(--warn); font-weight:600; }
+    .layout-split { display:flex; flex-wrap:wrap; gap:28px; }
+  .panel { flex:1 1 320px; min-width:300px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px 18px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .panel-wide { flex:2 1 420px; }
+  .mt-4 { margin-top:4px; }
+  .mt-6 { margin-top:6px; }
+  .mt-10 { margin-top:10px; }
+    .lat-bar { position:relative; height:38px; margin-top:6px; background:#fff; border:1px solid var(--border); border-radius:6px; }
+    .lat-bar .scale { position:relative; height:100%; }
+    .lat-bar .tick { position:absolute; top:0; height:100%; font-size:10px; text-align:center; }
+    .lat-bar .tick i { display:block; width:2px; height:60%; margin:2px auto 2px; }
+    .lat-bar .tick em { font-style:normal; display:block; transform:translate(-50%,0); position:absolute; left:50%; bottom:2px; background:rgba(255,255,255,.7); padding:0 2px; border-radius:2px; }
+    footer { margin:60px 0 20px; text-align:center; font-size:12px; color:#666; }
+    .flex-row { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; }
+    .donut { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center; }
+    .compact { width:auto; min-width:260px; }
+    .notes { font-size:12px; line-height:1.5; color:#555; }
+    .badge { display:inline-block; padding:2px 6px; font-size:11px; border-radius:4px; background:#e5e7eb; margin-left:6px; }
+  /* Benchmark highlighting */
+  .cell-good { background:#e6f7ed; }
+  .cell-warn { background:#fff7e0; }
+  .cell-bad { background:#fdecea; }
+  .cell-good td, .cell-warn td, .cell-bad td { transition:background .3s; }
+    /* Dynamic latency tick positioning */
+    .lat-bar .tick-0{left:0%;}.lat-bar .tick-1{left:13.961738124054937%;}.lat-bar .tick-2{left:97.41710109224474%;}.lat-bar .tick-3{left:98.69249201027044%;}.lat-bar .tick-4{left:100%;}
+  /* Latency classification colors */
+  .lat-bar .lat-good i { background:#1B873F; }
+  .lat-bar .lat-warn i { background:#FF8B00; }
+  .lat-bar .lat-bad i { background:#B00020; }
+  .lat-bar .lat-good em { color:#1B873F; }
+  .lat-bar .lat-warn em { color:#FF8B00; }
+  .lat-bar .lat-bad em { color:#B00020; }
+  .spark { margin-top:4px; display:block; }
+  body.dark { --bg:#0f1115; --card:#1b1f24; --border:#30363d; color:#e6edf3; }
+  body.dark header { background:#0a0d11; }
+  body.dark table th { background:#20262d; }
+  body.dark code { background:#30363d; }
+  /* Dark mode contrast overrides */
+  body.dark .muted { color:#9da5b4; }
+  body.dark .notes { color:#c3cbd4; }
+  body.dark .kpi { background:var(--card); }
+  body.dark .kpi-good { background:linear-gradient(135deg,#12381e,#1b1f24); border-color:#1B873F99; }
+  body.dark .kpi-warn { background:linear-gradient(135deg,#3d2a00,#1b1f24); border-color:#FF8B0099; }
+  body.dark .kpi-bad { background:linear-gradient(135deg,#3a0a12,#1b1f24); border-color:#B0002099; }
+  body.dark .kpi-good p { color:#4ad27a; }
+  body.dark .kpi-warn p { color:#ffa54d; }
+  body.dark .kpi-bad p { color:#ff6b81; }
+  body.dark .alert-good { background:linear-gradient(135deg,#143f24,#1b1f24); }
+  body.dark .alert-warn { background:linear-gradient(135deg,#4a3305,#1b1f24); }
+  body.dark .alert-bad { background:linear-gradient(135deg,#4a111d,#1b1f24); }
+  /* Dark mode styles for explanation boxes */
+  body.dark .kpi-warn .color-reason { background:#4a3305 !important; border-left-color:#ffa54d !important; color:#e6edf3 !important; }
+  body.dark .kpi-bad .color-reason { background:#4a111d !important; border-left-color:#ff6b81 !important; color:#e6edf3 !important; }
+  body.dark .color-reason strong { color:#ffa54d !important; }
+  body.dark .kpi-bad .color-reason strong { color:#ff6b81 !important; }
+  body.dark .cell-good { background:#12381e !important; }
+  body.dark .cell-warn { background:#4a3305 !important; }
+  body.dark .cell-bad { background:#4a111d !important; }
+  body.dark .legend-tile { background:#1b1f24; border-color:#30363d; }
+  body.dark .lat-bar { background:#262b31; }
+  body.dark .lat-bar .tick em { background:rgba(0,0,0,.55); color:#e6edf3; }
+  body.dark table td, body.dark table th { border-color:#30363d; }
+  body.dark .export-bar button { background:#30363d; }
+  body.dark .export-bar button:hover { background:#3a424b; }
+  body.dark .risk.high { border-color:#ff6b81; box-shadow:0 0 0 2px rgba(255,107,129,.15); }
+  body.dark .risk.med { border-color:#ffa54d; }
+  body.dark .risk:before { background:#555; }
+  /* Threshold explanations */
+  .threshold-explanations { margin-top:16px; }
+  .threshold-item { margin-bottom:20px; padding:12px; background:rgba(255,255,255,0.05); border-left:4px solid #FF8B00; border-radius:4px; }
+  .threshold-metric { font-weight:600; margin-bottom:8px; color:#1a73e8; }
+  .threshold-impact { margin-bottom:8px; line-height:1.6; }
+  .threshold-action { font-style:italic; color:#666; }
+  .threshold-summary { margin-top:16px; font-weight:500; padding:12px; background:rgba(255,235,59,0.1); border-radius:4px; }
+  body.dark .threshold-item { background:rgba(255,255,255,0.03); border-left-color:#ffa54d; }
+  body.dark .threshold-metric { color:#4a9eff; }
+  body.dark .threshold-action { color:#9da5b4; }
+  body.dark .threshold-summary { background:rgba(255,235,59,0.05); }
+  body.dark .risk.high:before { background:#ff6b81; }
+  body.dark .risk.med:before { background:#ffa54d; }
+  body.dark .legend-dot.good { background:#4ad27a; }
+  body.dark .legend-dot.warn { background:#ffa54d; }
+  body.dark .legend-dot.bad { background:#ff6b81; }
+  body.dark .status-badge { filter:brightness(1.1); }
+  @media print { #btn-dark-mode,#btn-print,.legend-tile,.export-bar { display:none !important;} body { background:#fff; } }
+  </style></head><body>
+  <header><h1>Performance Report</h1><small>Generated 2025-10-13T13:23:23.183Z</small></header>
+  <main>
+    <div class="alert alert-good" aria-label="Executive Summary">
+      <h2>Executive Summary <span class="status-badge">Healthy</span></h2>
+  <p class="para-summary">All thresholds passed.</p>
+      <ul class="quick-points">
+        <li>4604.38 ms p95 (latency focus)</li>
+        <li>100.00% success (0.00% fail)</li>
+        <li>Avg iteration 21777.81 ms, VUs 1</li>
+      </ul>
+  <p class="muted para-hint">Generated automatically – highlight sections above for at-a-glance health. Use detailed tables below for deeper analysis.</p>
+    </div>
+    <div class="legend-tile" aria-label="Legend"><h4>Legend</h4><div class="legend-item"><span class="legend-dot good pattern"></span>Good</div><div class="legend-item"><span class="legend-dot warn pattern"></span>Attention</div><div class="legend-item"><span class="legend-dot bad pattern"></span>Action Needed</div></div>
+
+  <div class="slo-wrapper"><h3 class="slo-heading">SLO Progress (p95)</h3><div class="slo-bar" aria-label="p95 latency progress bar"><div class="fill " data-width="61.4" style="width:61.4%"></div></div><div class="slo-meta">4604.38 ms of target 7500 ms &mdash; 2895.62 ms headroom</div></div>
+
+    <h3>Plain Language Narrative</h3>
+    <div class="notes" id="narrative"><p>Test achieved a 100.00% success rate with p95 latency 4604.38 ms. All monitored objectives were met with no notable performance risks.</p></div>
+
+    <h3>Top Risks</h3>
+    <div class="notes"><em>No major risks detected.</em></div>
+
+    <h3>Recommended Actions</h3>
+    <div class="notes"><ul><li>No immediate action required. Continue monitoring and consider setting stricter SLOs as confidence grows.</li></ul></div>
+
+    <div class="export-bar" aria-label="Export and share tools">
+      <button id="btn-copy-summary" type="button">📋 Copy Summary</button>
+      <button id="btn-export-json" type="button">💾 Export JSON</button>
+      <button id="btn-export-bench" type="button">📈 Export Benchmarks CSV</button>
+      <button id="btn-print" type="button">🖨️ PDF/Print</button>
+      <button id="btn-dark-mode" type="button">🌙 Dark</button>
+    </div>
+    <h2>Key Performance Indicators</h2>
+    <div class="grid">
+      <div class="kpi kpi-good"><h4>Overall Test Status</h4><p>Healthy</p><div class="muted">All thresholds passed.</div></div>
+      <div class="kpi kpi-neutral"><h4>Total Requests</h4><p>12</p><div class="muted">Rate: 0.55 /s</div></div>
+      <div class="kpi kpi-good"><h4>Request Success Rate</h4><p>100.00%</p><div class="muted">HTTP errors 0.00%</div></div>
+  <div class="kpi kpi-good"><h4>Avg Duration (ms)</h4><p>1797.10</p><div class="muted">p95 4604.38</div><svg width="120" height="34" viewBox="0 0 120 34" class="spark"><path d="M0,32 L40,2.900610560268909 L80,2.455904603796437 L120,2" fill="none" stroke="#1B873F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="kpi kpi-good"><h4>Max Duration (ms)</h4><p>4664.74</p><div class="muted">Min 48.97</div></div>
+      <div class="kpi kpi-neutral"><h4>Data In</h4><p>664.00 KB</p><div class="muted">Raw: 679932 B</div></div>
+      <div class="kpi kpi-neutral"><h4>Data Out</h4><p>145.04 MB</p><div class="muted">Raw: 152090493 B</div></div>
+      <div class="kpi kpi-neutral"><h4>Iterations</h4><p>1</p><div class="muted">Avg Iter (ms) 21777.81</div></div>
+      <div class="kpi kpi-neutral"><h4>VUs</h4><p>1</p><div class="muted">Test Length 21.82 s</div></div>
+    </div>
+
+    
+
+    <h2>Overall Success Rate (Checks & Thresholds)</h2>
+    <div class="flex-row">
+      <div class="donut"><svg width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Success/Failure Donut">
+    <circle cx="55" cy="55" r="42" fill="none" stroke="#eee" stroke-width="14" />
+    <!-- Success ring (green) -->
+    <circle cx="55" cy="55" r="42" fill="none" stroke="#1B873F" stroke-width="14" 
+            stroke-dasharray="263.89378290154264 0" 
+            stroke-linecap="round" transform="rotate(-90 55 55)" />
+    <text x="55" y="50" text-anchor="middle" font-size="18" font-weight="600" fill="#333">100%</text>
+    <text x="55" y="68" text-anchor="middle" font-size="11" fill="#666">Success</text>
+  </svg><div class="muted mt-4">Checks: 28 pass / 0 fail</div><div class="notes" style="margin-top:10px; font-size:0.9em;">This shows the percentage of checks that passed. Checks include response time thresholds, HTTP status validation, and other test criteria.</div></div>
+      <div class="panel panel-wide">
+        <h3>Latency Distribution (Markers)</h3>
+        <div class="muted">Markers show relative position of key percentiles.</div>
+        <div class="lat-bar"><div class="scale"><span class="tick tick-0 lat-good" title="min: 48.97 ms"><i></i><em>min</em></span><span class="tick tick-1 lat-good" title="med: 693.41 ms"><i></i><em>med</em></span><span class="tick tick-2 lat-bad" title="p90: 4545.51 ms"><i></i><em>p90</em></span><span class="tick tick-3 lat-bad" title="p95: 4604.38 ms"><i></i><em>p95</em></span><span class="tick tick-4 lat-bad" title="max: 4664.74 ms"><i></i><em>max</em></span></div></div>
+        <div class="mt-10"><table class="latency"><tr><th>Metric</th><th>Min</th><th>Avg</th><th>Med</th><th>p(90)</th><th>p(95)</th><th>Max</th></tr><tr><td>Overall Duration</td><td>48.97</td><td>1797.10</td><td>693.41</td><td>4545.51</td><td>4604.38</td><td>4664.74</td></tr><tr><td>waiting</td><td>41.59</td><td>1660.36</td><td>693.41</td><td>4096.03</td><td>4171.84</td><td>4262.33</td></tr><tr><td>blocked</td><td>0.00</td><td>8.13</td><td>0.00</td><td>0.00</td><td>43.88</td><td>97.50</td></tr><tr><td>connecting</td><td>0.00</td><td>1.00</td><td>0.00</td><td>0.00</td><td>5.40</td><td>11.99</td></tr><tr><td>tls handshaking</td><td>0.00</td><td>4.68</td><td>0.00</td><td>0.00</td><td>25.28</td><td>56.17</td></tr><tr><td>sending</td><td>0.00</td><td>128.52</td><td>0.00</td><td>380.22</td><td>405.93</td><td>435.45</td></tr><tr><td>receiving</td><td>0.00</td><td>8.22</td><td>0.00</td><td>21.74</td><td>24.22</td><td>27.23</td></tr></table></div>
+      </div>
+    </div>
+
+  <h2>Thresholds <button class="toggle-btn" data-target="sec-thresholds">Toggle</button></h2>
+  <h3>SLA / Threshold Summary <button class="toggle-btn" data-target="sec-sla">Toggle</button></h3><div id="sec-sla" class="section-body"><table class="compact" id="sla-summary"><thead><tr><th>Operation</th><th>Target Max (ms)</th><th>p95 (ms)</th><th>p99 (ms)</th><th>Requests</th><th>Status</th></tr></thead><tbody><tr class="cell-good"><td>Upload Document</td><td>8000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Create Journal Post</td><td>6000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Create Case</td><td>5000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Authentication</td><td>5000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Get Case Templates</td><td>5000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Get JP Templates</td><td>5000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Attach Document</td><td>6000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>Verify Documents</td><td>8000</td><td>4604.38</td><td>n/a</td><td>12</td><td><span class="ok">PASS</span></td></tr></tbody></table><div class="notes"><p><strong>Meaning:</strong> Compares configured maxResponseTimeMs per operation to observed latency percentiles. p95 is primary SLA gate; p99 shown for tail awareness.</p></div></div>
+  <div id="sec-thresholds" class="section-body"><table class="compact"><thead><tr><th>Metric</th><th>Threshold</th><th>Actual</th><th>Status</th></tr></thead><tbody><tr class="cell-good"><td>http_req_failed</td><td><code>rate<0.05</code></td><td>0.0000</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_reqs</td><td><code>rate>0.5</code></td><td>0.5501</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(90)<5500</code></td><td>4545.51</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(95)<7500</code></td><td>4604.38</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>max<10000</code></td><td>4664.74</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>iteration_duration</td><td><code>p(95)<30000</code></td><td>21777.81</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>checks</td><td><code>rate>0.95</code></td><td>1.0000</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_waiting</td><td><code>p(95)<4800</code></td><td>4171.84</td><td class="cell-good"><span class="ok">PASS</span></td></tr></tbody></table></div>
+
+    <div class="notes" aria-label="Thresholds explanation">
+      <p><strong>What are thresholds?</strong> They are pre-defined pass/fail rules that describe the minimum acceptable performance or reliability. Example: <code>http_req_duration p(95)<3000</code> means “95% of all request durations must be below 3000&nbsp;ms”.</p>
+      <p><strong>How to read the table:</strong> Each row shows (1) the metric we watched, (2) the rule (threshold) we set before the test started, and (3) whether the live results satisfied that rule (PASS) or not (FAIL).</p>
+      <p><strong>Why it matters:</strong> A FAIL doesn’t always mean an outage, but it signals a potential risk or unmet service expectation (e.g. slower user experience or too many errors). Revisit failed thresholds by checking logs, slow endpoints, or adjusting unrealistic rules. Over time, refine thresholds so they align with your business Service Level Objectives (SLOs).</p>
+    </div>
+
+  <h3>Threshold Benchmarks (Actual vs Target) <button class="toggle-btn" data-target="sec-bench">Toggle</button></h3><div id="sec-bench" class="section-body"><table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody><tr class="cell-warn"><td>checks</td><td><code>rate>0.95</code></td><td>1</td><td>0.95</td><td class="cell-warn">+0.05 (+5.3%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_waiting</td><td><code>p(95)<4800</code></td><td>4171.84</td><td>4800</td><td class="cell-good">+628.16 (+13.1%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_failed</td><td><code>rate<0.05</code></td><td>0</td><td>0.05</td><td class="cell-good">+0.05 (+100.0%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_reqs</td><td><code>rate>0.5</code></td><td>0.5500658474658237</td><td>0.5</td><td class="cell-good">+0.05 (+10.0%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>max<10000</code></td><td>4664.74</td><td>10000</td><td class="cell-good">+5335.26 (+53.4%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(90)<5500</code></td><td>4545.51</td><td>5500</td><td class="cell-good">+954.49 (+17.4%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>http_req_duration</td><td><code>p(95)<7500</code></td><td>4604.38</td><td>7500</td><td class="cell-good">+2895.62 (+38.6%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr><tr class="cell-good"><td>iteration_duration</td><td><code>p(95)<30000</code></td><td>21777.81</td><td>30000</td><td class="cell-good">+8222.19 (+27.4%)</td><td class="cell-good"><span class="ok">PASS</span></td></tr></tbody></table><div class="notes"><p><strong>Actual</strong> is what the test measured; <strong>Target</strong> is the rule; <strong>Delta</strong> shows headroom (positive) or deficit (negative) relative to target.</p><p style="margin-top:6px;">Scroll down for automatic explanations of each failing rule and suggested remediation steps.</p></div><div class="notes" style="margin-top:12px; background:#e8f7ef; border:1px solid #b2e2c7; padding:10px 14px; border-radius:6px;">
+        <strong>All benchmark rules passed.</strong> No action required. Continue to monitor trends over time; consider tightening targets cautiously if headroom (&Delta; > 15%) is consistently high.
+      </div></div>
+
+  <h3>Baseline</h3>
+  <div id="baseline-comparison" class="section-body"><div class="notes"><em>No baseline provided. Supply a previous summary JSON as data.baseline to enable comparison.</em></div></div>
+
+    <h2>All Metrics (Raw Statistics) <button class="toggle-btn" data-target="sec-all-metrics">Toggle</button></h2>
+    <div class="panel mt-6 section-body" id="sec-all-metrics">
+      <p class="notes">Every metric collected during the run with its available statistics. Trend metrics expose percentiles (p(90), p(95), etc.), counters expose counts and derived rates, gauges expose the latest <code>value</code>, and rates show success ratios.</p>
+      
+      <div style="background: linear-gradient(135deg, #e3f2fd, #ffffff); border: 1px solid #90caf9; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <h3 style="margin-top: 0; color: #1976d2; font-size: 16px;">📖 Understanding Metrics - Quick Guide</h3>
+        <div style="font-size: 13px; line-height: 1.6;">
+          <p style="margin: 8px 0;"><strong>Response Time Benchmarks (p95):</strong> 
+            <span style="color: #1B873F; font-weight: 600;">✓ Excellent: &lt;800ms</span> | 
+            <span style="color: #FF8B00; font-weight: 600;">⚠ Good: 800-2000ms</span> | 
+            <span style="color: #B00020; font-weight: 600;">✗ Slow: &gt;2000ms</span>
+          </p>
+          <p style="margin: 8px 0;"><strong>Success Rate:</strong> 
+            <span style="color: #1B873F; font-weight: 600;">✓ Excellent: &gt;99%</span> | 
+            <span style="color: #FF8B00; font-weight: 600;">⚠ Acceptable: 95-99%</span> | 
+            <span style="color: #B00020; font-weight: 600;">✗ Poor: &lt;95%</span>
+          </p>
+          <details style="margin-top: 12px;">
+            <summary style="cursor: pointer; font-weight: 600; color: #1976d2;">📊 Click to see detailed metric explanations</summary>
+            <div style="margin-top: 12px; padding-left: 12px; border-left: 3px solid #90caf9;">
+              <p><strong>🔹 http_req_duration</strong> - Total time from sending request to receiving response (most important metric)</p>
+              <p><strong>🔹 http_req_waiting</strong> - Server processing time (excludes network)</p>
+              <p><strong>🔹 http_req_blocked</strong> - Time waiting for available connection (should be ~0ms)</p>
+              <p><strong>🔹 http_req_connecting</strong> - TCP connection setup time</p>
+              <p><strong>🔹 http_req_tls_handshaking</strong> - SSL/TLS encryption setup time</p>
+              <p><strong>🔹 http_req_sending</strong> - Time to upload request data</p>
+              <p><strong>🔹 http_req_receiving</strong> - Time to download response data</p>
+              <p><strong>🔹 http_req_failed</strong> - Percentage of failed requests (rate: 0.01 = 1%)</p>
+              <p><strong>🔹 http_reqs</strong> - Total requests and throughput (requests/second)</p>
+              <p><strong>🔹 data_received</strong> - Total data downloaded from server</p>
+              <p><strong>🔹 data_sent</strong> - Total data uploaded to server</p>
+              <p><strong>🔹 checks</strong> - Validation results (includes HTTP status + thresholds)</p>
+              <p><strong>🔹 iteration_duration</strong> - Complete test scenario time (all steps)</p>
+              <p><strong>🔹 vus</strong> - Number of virtual users (simulated concurrent users)</p>
+              <hr style="margin: 12px 0; border: none; border-top: 1px solid #90caf9;">
+              <p style="margin-top: 12px;"><strong>📐 Column Meanings:</strong></p>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><strong>min</strong> - Fastest (best case)</li>
+                <li><strong>avg</strong> - Average (can be skewed by outliers)</li>
+                <li><strong>med</strong> - Median/middle value (typical experience)</li>
+                <li><strong>p(90)</strong> - 90% were faster than this</li>
+                <li><strong>p(95)</strong> - 95% were faster (use this for SLAs) ⭐</li>
+                <li><strong>p(99)</strong> - 99% were faster than this</li>
+                <li><strong>max</strong> - Slowest (worst case)</li>
+                <li><strong>count</strong> - Total number</li>
+                <li><strong>rate</strong> - Per second or percentage (0.02 = 2%)</li>
+              </ul>
+              <p style="margin-top: 12px; padding: 10px; background: #fff3e0; border-radius: 4px;">
+                💡 <strong>Tip:</strong> Focus on <strong>p(95)</strong> response time and <strong>http_req_failed</strong> rate first. 
+                For complete benchmarks, see <strong>METRICS-GUIDE.md</strong> file.
+              </p>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="notes" style="margin:8px 0 20px 0; font-size:12px; line-height:1.5; background:linear-gradient(135deg,#fff7e0,#ffffff); border:1px solid #f5d487; padding:10px 12px; border-radius:6px;">
+        <strong>Reading <code>iteration_duration</code> (why it may be red):</strong><br>
+        <code>iteration_duration</code> is the total time to complete one full scripted business flow (all API calls, waits, logic). A red p95 means 95% of full flows exceed the current target band. If individual request latency looks fine but this is slow, overall time is usually dominated by: (1) many sequential steps, (2) large uploads / downloads, (3) deliberate pacing / sleep, or (4) setup / teardown overhead. Profile or add finer <code>group()</code> timings to locate the bottleneck. If the end‑to‑end flow legitimately requires longer, either (a) adjust the central p95/p99 thresholds in <code>performance-thresholds.json</code>, (b) apply a scenario multiplier in <code>performance-threshold-profiles.json</code>, or (c) introduce a dedicated iteration SLA field for clearer governance.
+      </div>
+      
+      <div class="notes legend"><strong>Legend:</strong> <span class="legend-box cell-good">✓ Good</span> <span class="legend-box cell-warn">⚠ Watch</span> <span class="legend-box cell-bad">✗ Investigate</span><br><strong style="margin-top:8px; display:inline-block;">Color Meanings:</strong><br>• <strong style="color:#1B873F;">Green (Good):</strong> Performance is within acceptable limits<br>• <strong style="color:#FF8B00;">Yellow (Watch):</strong> Performance is degraded but acceptable - monitor closely, may need optimization soon<br>• <strong style="color:#B00020;">Red (Investigate):</strong> Performance is poor - requires immediate attention and optimization<br><strong style="margin-top:8px; display:inline-block;">Bands:</strong> Response time p(95) ≤ 800ms (good) / ≤ 2000ms (watch) / > 2000ms (investigate); HTTP errors ≤1% / ≤5% / >5%; Check failures 0% / ≤2% / >2%</div><div class="notes" style="margin:12px 0; background:#fafafa; border:1px solid #ddd; padding:10px 12px; border-radius:6px;"><strong>Why some cells are Yellow or Red:</strong><div style="margin-top:4px;"><strong>Flow</strong><ul style="margin:4px 0 0 18px;"><li><a href="#metric-iteration_duration" style="text-decoration:none;"><strong>iteration_duration</strong></a> – <span class="cell-warn label-inline">Watch</span>: End-to-end flow p95 21777.81 ms exceeds good band (Good ≤ 8000 ms, Watch ≤ 30000 ms). <em style="color:#555;">Suggested: Break down slow phases; consider caching lookups.</em></li></ul></div><p style="margin-top:8px; font-size:11px;">Tip: Fix Investigate items first; schedule Watch items for iterative improvement.</p><details style="margin-top:10px;"><summary style="cursor:pointer;font-weight:600;">🔧 How to adjust targets (if justified)</summary><div style="margin-top:8px; font-size:11.5px; line-height:1.45;">
+      <p><strong>Latency (p95 / p99)</strong><br>Global: edit <code>defaults.k6.http_req_duration.p95</code> / <code>p99</code> in <code>src/config/performance-thresholds.json</code>.<br>Operation/group: edit <code>operations.&lt;Name&gt;.k6.group_duration{group:::...}.p95</code>.<br>Scenario-specific: add multiplier under <code>scenarios.&lt;scenario&gt;.multipliers</code> in <code>performance-threshold-profiles.json</code> (e.g. <code>"http_req_duration.p95": 1.2</code>).<br>Color bands only: tweak <code>uiBands.latencyMs</code> (does not change pass/fail thresholds).</p>
+      <p><strong>Error rate</strong><br>Prefer fixing root causes. If absolutely needed, adjust <code>defaults.k6.http_req_failed.rate</code> or color band <code>uiBands.errorRate</code>.</p>
+      <p><strong>Check failures</strong><br>Fix failing checks. Loosen only if unrealistic. UI band: <code>uiBands.checkFailureRate</code>.</p>
+      <p><strong>Iteration duration</strong><br>Add <code>group()</code> timings, reduce serial steps, cache repeated lookups. If inherently long, use a scenario multiplier short-term or (future) add an explicit iteration SLA field.</p>
+      <p style="margin-top:6px;"><em>Governance:</em> Document any relaxation and plan a path to tighten later. Avoid raising both canonical threshold and UI bands at once unless approved.</p>
+    </div></details></div><table class="compact"><thead><tr><th>Metric</th><th>count</th><th>passes</th><th>fails</th><th>rate</th><th>value</th><th>min</th><th>max</th><th>avg</th><th>med</th><th>p(90)</th><th>p(95)</th></tr></thead><tbody><tr id="metric-data_sent" class=""><td>data_sent</td><td class="">152090493</td><td class="">—</td><td class="">—</td><td class="">6971648.8270</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr id="metric-http_req_waiting" class="cell-good"><td>http_req_waiting</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">41.59</td><td class="">4262.33</td><td class="">1660.36</td><td class="">693.41</td><td class="">4096.03</td><td class="cell-good">4171.84</td></tr><tr id="metric-data_received" class=""><td>data_received</td><td class="">679932</td><td class="">—</td><td class="">—</td><td class="">31167.2810</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr id="metric-checks" class="cell-good"><td>checks</td><td class="">—</td><td class="">28</td><td class="cell-good">0</td><td class="cell-good">1.0000</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td></tr><tr id="metric-http_req_duration_expected_response_true_" class="cell-good"><td>http_req_duration{expected_response:true}</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">48.97</td><td class="">4664.74</td><td class="">1797.10</td><td class="">693.41</td><td class="">4545.51</td><td class="cell-good">4604.38</td></tr><tr id="metric-http_req_failed" class="cell-good"><td>http_req_failed</td><td class="">—</td><td class="">0</td><td class="cell-good">12</td><td class="cell-good">0.0000</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td></tr><tr id="metric-vus_max" class=""><td>vus_max</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">1.00</td><td class="">1.00</td><td class="">1.00</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr id="metric-http_req_blocked" class="cell-good"><td>http_req_blocked</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">97.50</td><td class="">8.13</td><td class="">0.00</td><td class="">0.00</td><td class="cell-good">43.88</td></tr><tr id="metric-http_req_connecting" class="cell-good"><td>http_req_connecting</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">11.99</td><td class="">1.00</td><td class="">0.00</td><td class="">0.00</td><td class="cell-good">5.40</td></tr><tr id="metric-http_req_duration" class="cell-good"><td>http_req_duration</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">48.97</td><td class="">4664.74</td><td class="">1797.10</td><td class="">693.41</td><td class="">4545.51</td><td class="cell-good">4604.38</td></tr><tr id="metric-http_req_receiving" class="cell-good"><td>http_req_receiving</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">27.23</td><td class="">8.22</td><td class="">0.00</td><td class="">21.74</td><td class="cell-good">24.22</td></tr><tr id="metric-http_req_sending" class="cell-good"><td>http_req_sending</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">435.45</td><td class="">128.52</td><td class="">0.00</td><td class="">380.22</td><td class="cell-good">405.93</td></tr><tr id="metric-http_reqs" class=""><td>http_reqs</td><td class="">12</td><td class="">—</td><td class="">—</td><td class="">0.5501</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr id="metric-group_duration" class="cell-good"><td>group_duration</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">51.40</td><td class="">4695.16</td><td class="">2204.27</td><td class="">833.90</td><td class="">4612.87</td><td class="cell-good">4694.97</td></tr><tr id="metric-iteration_duration" class="cell-warn"><td>iteration_duration</td><td class="">—</td><td class="">—</td><td class="cell-warn">—</td><td class="cell-warn">—</td><td class="">—</td><td class="">21777.81</td><td class="">21777.81</td><td class="">21777.81</td><td class="">21777.81</td><td class="">21777.81</td><td class="cell-warn">21777.81</td></tr><tr id="metric-http_req_tls_handshaking" class="cell-good"><td>http_req_tls_handshaking</td><td class="">—</td><td class="">—</td><td class="cell-good">—</td><td class="cell-good">—</td><td class="">—</td><td class="">0.00</td><td class="">56.17</td><td class="">4.68</td><td class="">0.00</td><td class="">0.00</td><td class="cell-good">25.28</td></tr><tr id="metric-vus" class=""><td>vus</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">1.00</td><td class="">1.00</td><td class="">1.00</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr><tr id="metric-iterations" class=""><td>iterations</td><td class="">1</td><td class="">—</td><td class="">—</td><td class="">0.0458</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td><td class="">—</td></tr></tbody></table>
+    </div>
+
+    <!-- Endpoint / Group Breakdown section removed per governance request -->
+
+    
+
+    
+
+    
+
+    <h2>Environment / Metadata</h2>
+    <table class="compact"><tbody>
+      <tr><th>Environment</th><td>Auto Test</td></tr>
+      <tr><th>Use Data File Config</th><td>Yes</td></tr>
+      <tr><th>Config File</th><td>autotest</td></tr>
+      <tr><th>API Host</th><td>autotest01.acoscloud.no</td></tr>
+      <tr><th>Total Users Available</th><td>7</td></tr>
+      <tr><th>Scenario Override</th><td>smoke_test</td></tr>
+      <tr><th>Test Execution Time</th><td>2025-10-13T13:23:23.180Z</td></tr>
+      <tr><th>Duration (s)</th><td>21.82</td></tr>
+      <tr><th>Summary Stats</th><td>min, avg, med, p(90), p(95), max</td></tr>
+      <tr><th>Verbose Logging</th><td><span style="color: #666;">✗ Disabled</span> - Use :verbose:report commands for detailed logs</td></tr>
+    </tbody></table>
+
+    <footer>Generated by custom k6 report generator &middot; 2025</footer>
+    <script>
+    (function(){
+      const payload = {
+        generated: new Date().toISOString(),
+        successRate: 100.00,
+        p95: 4604.383745,
+        p95Target: 7500,
+        thresholdsFailed: 0,
+        thresholdsTotal: 8,
+        benchmarks: [{"metricName":"checks","rule":"rate>0.95","stat":"rate","target":0.95,"actual":1,"delta":"+0.05 (+5.3%)","ok":true,"cls":"cell-warn"},{"metricName":"http_req_waiting","rule":"p(95)<4800","stat":"p(95)","target":4800,"actual":"4171.84","delta":"+628.16 (+13.1%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_failed","rule":"rate<0.05","stat":"rate","target":0.05,"actual":0,"delta":"+0.05 (+100.0%)","ok":true,"cls":"cell-good"},{"metricName":"http_reqs","rule":"rate>0.5","stat":"rate","target":0.5,"actual":0.5500658474658237,"delta":"+0.05 (+10.0%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_duration","rule":"max<10000","stat":"max","target":10000,"actual":"4664.74","delta":"+5335.26 (+53.4%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_duration","rule":"p(90)<5500","stat":"p(90)","target":5500,"actual":"4545.51","delta":"+954.49 (+17.4%)","ok":true,"cls":"cell-good"},{"metricName":"http_req_duration","rule":"p(95)<7500","stat":"p(95)","target":7500,"actual":"4604.38","delta":"+2895.62 (+38.6%)","ok":true,"cls":"cell-good"},{"metricName":"iteration_duration","rule":"p(95)<30000","stat":"p(95)","target":30000,"actual":"21777.81","delta":"+8222.19 (+27.4%)","ok":true,"cls":"cell-good"}],
+        classificationThresholds: {"KPI_SUCCESS_GOOD":99,"KPI_SUCCESS_WARN":95,"LAT_P95_GOOD_MS":800,"LAT_P95_WARN_MS":2000,"ERR_RATE_WARN":0.01,"ERR_RATE_BAD":0.05,"CHECK_FAIL_WARN":0.02,"CHECK_FAIL_BAD":0.05}
+        , slaSummary: [{"operation":"Upload Document","target":8000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Create Journal Post","target":6000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Create Case","target":5000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Authentication","target":5000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Get Case Templates","target":5000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Get JP Templates","target":5000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Attach Document","target":6000,"p95":4604.383745,"count":12,"pass":true},{"operation":"Verify Documents","target":8000,"p95":4604.383745,"count":12,"pass":true}]
+      };
+      window.__reportPayload__ = payload;
+      function download(filename, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); }
+      function toCsv(rows){
+        if(!rows.length) return 'metric,rule,actual,target,delta,status';
+        const header='metric,rule,actual,target,delta,status';
+        const body=rows.map(r=>[r.metricName,r.rule,r.actual,r.target,r.delta,r.ok?'PASS':'FAIL'].join(','));
+        return [header,...body].join(String.fromCharCode(10));
+      }
+      const copyBtn=document.getElementById('btn-copy-summary');
+      if(copyBtn) copyBtn.addEventListener('click',()=>{ const text=document.getElementById('narrative')?.innerText||'Summary unavailable'; navigator.clipboard.writeText(text).then(()=>{ copyBtn.textContent='✅ Copied'; setTimeout(()=>copyBtn.textContent='📋 Copy Summary',2000); }); });
+      const jsonBtn=document.getElementById('btn-export-json');
+      if(jsonBtn) jsonBtn.addEventListener('click',()=> download('report-summary.json', JSON.stringify(payload,null,2)) );
+      const benchBtn=document.getElementById('btn-export-bench');
+      if(benchBtn) benchBtn.addEventListener('click',()=> download('benchmarks.csv', toCsv(payload.benchmarks||[])) );
+      const printBtn=document.getElementById('btn-print'); if(printBtn) printBtn.addEventListener('click',()=> window.print());
+      const darkBtn=document.getElementById('btn-dark-mode');
+      if(darkBtn){
+        darkBtn.textContent=document.body.classList.contains('dark')?'☀️ Light':'🌙 Dark';
+        darkBtn.addEventListener('click',()=>{
+          document.body.classList.toggle('dark');
+          darkBtn.textContent=document.body.classList.contains('dark')?'☀️ Light':'🌙 Dark';
+        });
+      }
+      document.querySelectorAll('.toggle-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ const id=btn.getAttribute('data-target'); const el=document.getElementById(id); if(!el)return; el.classList.toggle('collapsed'); btn.textContent = el.classList.contains('collapsed')? 'Expand' : 'Toggle'; }); });
+    })();
+    </script>
+  </main></body></html>

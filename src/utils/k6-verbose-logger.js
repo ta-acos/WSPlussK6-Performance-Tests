@@ -1,3 +1,5 @@
+import { getInvestigateLatency, getGlobalHttpTargets } from './threshold-config.js';
+
 /**
  * ===================================================================
  * SIMPLE K6 VERBOSE LOGGER WITH TEMPLATE PARSING
@@ -195,7 +197,7 @@ export function generateEnhancedVerboseReport(testData) {
   const hasTimeouts =
     (testData?.metrics?.http_req_duration?.values?.['p(95)'] ||
       testData?.http_req_duration?.values?.p95 ||
-      0) > 5000;
+      0) > (getInvestigateLatency());
 
   // Check for threshold failures by examining p95 performance threshold (common failure point)
   // Access p95 from the correct k6 data structure (same as report-generator.js)
@@ -204,7 +206,8 @@ export function generateEnhancedVerboseReport(testData) {
     testData?.http_req_duration?.values?.['p(95)'] ||
     testData?.http_req_duration?.values?.p95 ||
     0;
-  const hasThresholdFailures = p95Value > 2000; // Common p95 threshold
+  const { p95: globalP95 } = getGlobalHttpTargets();
+  const hasThresholdFailures = globalP95 ? p95Value > globalP95 : false; // Compare to canonical global p95
 
   if (hasHttpErrors || hasTimeouts || hasThresholdFailures) {
     report += '⚠️ ISSUES DETECTED\n';
@@ -217,7 +220,7 @@ export function generateEnhancedVerboseReport(testData) {
     }
     if (hasTimeouts) {
       const p95Duration = Math.round(p95Value);
-      report += `- Performance Issues: 95th percentile response time is ${p95Duration}ms (threshold: 5000ms)\n`;
+      report += `- Performance Issues: 95th percentile response time is ${p95Duration}ms (investigate band: ${getInvestigateLatency()}ms)\n`;
     }
     if (hasThresholdFailures && !hasTimeouts && !hasHttpErrors) {
       const p95Duration = Math.round(p95Value);

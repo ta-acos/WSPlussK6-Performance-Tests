@@ -29,6 +29,7 @@
  *  k6 run tests/api/journalposts/create-jp.js --vus 1 --duration 10s
  */
 
+import { group } from 'k6';
 import { randomSleep } from '../../../src/utils/pacing.js';
 import {
   generateK6Options,
@@ -142,7 +143,9 @@ export default function createJournalPostTest(data) {
 
   // Step 3: Get JP templates for the created case
   logVUActivity(vuId, 'Getting JP templates', `For case ID: ${caseData.id}`);
-  const jpTemplates = getJpTemplates(testConfig, authHeaders, caseData.id, __VU);
+  const jpTemplates = group('Get JP Templates', () => {
+    return getJpTemplates(testConfig, authHeaders, caseData.id, __VU);
+  });
   if (!validateTemplates(jpTemplates, 'JP', __VU)) {
     logAPIRequest(vuId, 'JP Templates', false, 'No valid JP templates found');
     return;
@@ -162,7 +165,9 @@ export default function createJournalPostTest(data) {
 
   // Generate JP test data and create journal post
   const jpTestData = generateJpTestData('PerfTestJP', vuId);
-  const jpData = createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, __VU);
+  const jpData = group('Create Journal Post', () => {
+    return createJournalPost(testConfig, authHeaders, caseData.id, jpTemplates, jpTestData, __VU);
+  });
 
   if (jpData && jpData.id) {
     console.log(`✅ ${vuId}: Successfully created JP "${jpTestData.jpName}" with ID: ${jpData.id}`);

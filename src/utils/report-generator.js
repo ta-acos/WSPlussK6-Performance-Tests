@@ -57,6 +57,7 @@
  * }
  * ```
  */
+import { getLatencyBands, getWatchLatency, getIterationBands } from './threshold-config.js';
 
 // ========================================
 // UTILITY FUNCTIONS FOR DATA FORMATTING
@@ -161,18 +162,37 @@ function latencyBar(min, p50, p90, p95, max, thresholds) {
 
 function thresholdsTable(metrics) {
   const rows = [];
+  const opRegex = /(<=|>=|<|>|==)/;
+  
   Object.entries(metrics).forEach(([name, m]) => {
     if (m.thresholds) {
+      const values = m.values || {};
       Object.entries(m.thresholds).forEach(([thr, status]) => {
-        rows.push({ metric: name, threshold: thr, ok: !!status.ok });
+        // Extract actual value from the threshold expression
+        let actualValue = 'n/a';
+        const primary = thr.split('&&')[0].trim();
+        const match = primary.match(opRegex);
+        
+        if (match) {
+          const op = match[0];
+          const parts = primary.split(op);
+          const statKey = parts[0].trim();
+          const actual = values[statKey] !== undefined ? values[statKey] : values[statKey.replace(/[()]/g, '')] !== undefined ? values[statKey.replace(/[()]/g, '')] : undefined;
+          
+          if (actual !== undefined && !isNaN(actual)) {
+            actualValue = statKey.includes('rate') ? actual.toFixed(4) : actual.toFixed(2);
+          }
+        }
+        
+        rows.push({ metric: name, threshold: thr, actual: actualValue, ok: !!status.ok });
       });
     }
   });
   if (!rows.length) return '<p><em>No thresholds defined.</em></p>';
-  return `<table class="compact"><thead><tr><th>Metric</th><th>Threshold</th><th>Status</th></tr></thead><tbody>${rows
+  return `<table class="compact"><thead><tr><th>Metric</th><th>Threshold</th><th>Actual</th><th>Status</th></tr></thead><tbody>${rows
     .map(
       (r) =>
-        `<tr class="${r.ok ? 'cell-good' : 'cell-bad'}"><td>${r.metric}</td><td><code>${r.threshold}</code></td><td class="${r.ok ? 'cell-good' : 'cell-bad'}">${r.ok ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`
+        `<tr class="${r.ok ? 'cell-good' : 'cell-bad'}"><td>${r.metric}</td><td><code>${r.threshold}</code></td><td>${r.actual}</td><td class="${r.ok ? 'cell-good' : 'cell-bad'}">${r.ok ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`
     )
     .join('')}</tbody></table>`;
 }
@@ -248,8 +268,17 @@ function thresholdsBenchmarkTable(metrics) {
     });
   });
   if (!rows.length) return { html: '', rows: [] };
-  const html = `<table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody>${rows.map((r) => `<tr class="${r.cls}"><td>${r.metricName}</td><td><code>${r.rule}</code></td><td>${r.actual}</td><td>${r.target}</td><td class="${r.cls}">${r.delta}</td><td class="${r.ok ? 'cell-good' : 'cell-bad'}">${r.ok ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`).join('')}</tbody></table>`;
-  return { html, rows };
+  // Defensive de-duplication: if same metric+rule pair appears multiple times (e.g. builder invoked repeatedly)
+  const seen = new Set();
+  const unique = [];
+  for (const r of rows) {
+    const key = r.metricName + '|' + r.rule;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(r);
+  }
+  const html = `<table class="compact" id="benchmarks-table"><thead><tr><th>Metric</th><th>Rule</th><th>Actual</th><th>Target</th><th>Delta vs Target</th><th>Status</th></tr></thead><tbody>${unique.map((r) => `<tr class="${r.cls}"><td>${r.metricName}</td><td><code>${r.rule}</code></td><td>${r.actual}</td><td>${r.target}</td><td class="${r.cls}">${r.delta}</td><td class="${r.ok ? 'cell-good' : 'cell-bad'}">${r.ok ? '<span class="ok">PASS</span>' : '<span class="fail">FAIL</span>'}</td></tr>`).join('')}</tbody></table>`;
+  return { html, rows: unique };
 }
 
 function buildLatencyTable(metrics) {
@@ -332,11 +361,12 @@ function buildAllMetricsTable(metrics, perfThresholds) {
       const isLatencyMetric =
         /duration|http_req_(duration|waiting|blocked|connecting|tls_handshaking|sending|receiving)/.test(
           name
-        );
+        ) && name !== 'iteration_duration'; // Exclude iteration_duration - it's handled separately with iterationMs bands
       const uiBandsLocal = perfThresholds?.uiBands || {};
       if (isLatencyMetric && typeof p95 === 'number') {
-        const latGood = uiBandsLocal.latencyMs?.good ?? 800;
-        const latWatch = uiBandsLocal.latencyMs?.watch ?? 2000;
+        const latBandsDynamic = getLatencyBands();
+        const latGood = latBandsDynamic.good;
+        const latWatch = latBandsDynamic.watch;
         if (p95 <= latGood) rowClass = 'cell-good';
         else if (p95 <= latWatch) rowClass = 'cell-warn';
         else rowClass = 'cell-bad';
@@ -394,18 +424,24 @@ function buildAllMetricsTable(metrics, perfThresholds) {
         }
       }
       if (name === 'iteration_duration' && typeof p95 === 'number') {
-        // Provide a dedicated plain-language explanation aligned with earlier note
-        const status = rowClass === 'cell-warn' ? 'Watch' : rowClass === 'cell-bad' ? 'Investigate' : null;
+        const iterBands = getIterationBands();
+        let iterClass = '';
+        if (p95 <= iterBands.good) iterClass = 'cell-good';
+        else if (p95 <= iterBands.watch) iterClass = 'cell-warn';
+        else iterClass = 'cell-bad';
+        // Override rowClass specifically for iteration_duration to reflect iteration bands, not latencyMs
+        rowClass = iterClass;
+        const status = iterClass === 'cell-warn' ? 'Watch' : iterClass === 'cell-bad' ? 'Investigate' : null;
         if (status) {
           problemExplanations.push({
             metric: name,
             status,
-            reason: `End-to-end flow p95 ${fmt(p95)} ms – composed of multiple steps; optimize slow groups or reconsider SLA.`,
+            reason: `End-to-end flow p95 ${fmt(p95)} ms exceeds ${status === 'Watch' ? 'good' : 'watch'} band (Good ≤ ${iterBands.good} ms, Watch ≤ ${iterBands.watch} ms).`,
             category: 'Flow',
             suggestion:
               status === 'Watch'
-                ? 'Add group() timings to locate slow phases.'
-                : 'Drill into longest steps; parallelize or cache.'
+                ? 'Break down slow phases; consider caching lookups.'
+                : 'Investigate largest contributing groups; parallelize or optimize I/O.'
           });
         }
       }
@@ -545,15 +581,20 @@ export function generateHtmlReport(data, options = {}) {
   function getColorExplanation(metricType, value, className, extraData = {}) {
     if (className === 'kpi-neutral' || className === 'kpi-good') return '';
 
+    // Get dynamic band values from configuration
+    const bands = getLatencyBands();
+    const goodThreshold = bands.good;
+    const watchThreshold = bands.watch;
+
     const explanations = {
       'overall-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed / extraData.total) * 100, 0)}% failure rate, less than 30%). <strong>Ideal:</strong> 0% failures<br>Some performance goals were not met. Review the failed thresholds below and consider optimizations. <strong>Action:</strong> Check "Thresholds (Pass/Fail)" section for specific failures.</div>`,
       'overall-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>${extraData.failed} out of ${extraData.total} performance thresholds failed (${fmt((extraData.failed / extraData.total) * 100, 0)}% failure rate, 30% or more). <strong>Ideal:</strong> 0% failures<br>Critical: Many performance goals were not met. <strong>Action required:</strong> Review all failed thresholds in the "Thresholds (Pass/Fail)" section, prioritize fixing the most critical ones (response time and error rates first), and re-test after optimizations.</div>`,
       'success-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Success rate is ${fmt(value, 2)}% (between 95-99%). <strong>Ideal:</strong> ≥99%<br>This is acceptable but below optimal. Consider investigating occasional failures to improve reliability.</div>`,
       'success-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Success rate is ${fmt(value, 2)}% (below 95%). <strong>Ideal:</strong> ≥99%<br>This indicates significant failures. <strong>Action required:</strong> Check error logs, validate API endpoints, review authentication, and verify server capacity.</div>`,
-      'duration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>p95 latency is ${fmt(value)}ms (between 800-2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are slower than ideal. <strong>Consider:</strong> Optimizing database queries, adding caching, or reviewing API logic.</div>`,
-      'duration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>p95 latency is ${fmt(value)}ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>Responses are unacceptably slow. <strong>Action required:</strong> Profile slow endpoints, check database performance, review external API calls, verify server resources (CPU/memory), and consider load balancing.</div>`,
-      'maxduration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Max duration is ${fmt(value)}ms (between 800-2000ms). <strong>Ideal:</strong> &lt;800ms<br>Some requests are taking longer than ideal. This could indicate occasional slow queries or resource contention. <strong>Consider:</strong> Identifying the slowest endpoints and optimizing them.</div>`,
-      'maxduration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Max duration is ${fmt(value)}ms (above 2000ms). <strong>Ideal:</strong> &lt;800ms<br>At least one request took unacceptably long. <strong>Action required:</strong> Review the slowest endpoints (check logs for timeouts), investigate database locks, check for memory issues, and consider query optimization or adding timeouts.</div>`
+      'duration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>p95 latency is ${fmt(value)}ms (between ${goodThreshold}-${watchThreshold}ms). <strong>Ideal:</strong> &lt;${goodThreshold}ms<br>Responses are slower than ideal. <strong>Consider:</strong> Optimizing database queries, adding caching, or reviewing API logic.</div>`,
+      'duration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>p95 latency is ${fmt(value)}ms (above ${watchThreshold}ms). <strong>Ideal:</strong> &lt;${goodThreshold}ms<br>Responses are unacceptably slow. <strong>Action required:</strong> Profile slow endpoints, check database performance, review external API calls, verify server resources (CPU/memory), and consider load balancing.</div>`,
+      'maxduration-warn': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fff3d4; border-left:3px solid #FF8B00; border-radius:4px; font-size:0.85em;"><strong>⚠ Why Yellow (Watch)?</strong><br>Max duration is ${fmt(value)}ms (between ${goodThreshold}-${watchThreshold}ms). <strong>Ideal:</strong> &lt;${goodThreshold}ms<br>Some requests are taking longer than ideal. This could indicate occasional slow queries or resource contention. <strong>Consider:</strong> Identifying the slowest endpoints and optimizing them.</div>`,
+      'maxduration-bad': `<div class="color-reason" style="margin-top:8px; padding:8px; background:#fde2e0; border-left:3px solid #B00020; border-radius:4px; font-size:0.85em;"><strong>✗ Why Red (Investigate)?</strong><br>Max duration is ${fmt(value)}ms (above ${watchThreshold}ms). <strong>Ideal:</strong> &lt;${goodThreshold}ms<br>At least one request took unacceptably long. <strong>Action required:</strong> Review the slowest endpoints (check logs for timeouts), investigate database locks, check for memory issues, and consider query optimization or adding timeouts.</div>`
     };
 
     const key = `${metricType}-${className.replace('kpi-', '')}`;
@@ -839,7 +880,7 @@ export function generateHtmlReport(data, options = {}) {
 
   // Risk detection
   const risks = [];
-  if (p95Val && p95Val > (p95Target || 2000))
+  if (p95Val && p95Val > (p95Target || getWatchLatency()))
     risks.push({
       level: 'high',
       msg: `High p95 latency ${fmt(p95Val)} ms${p95Target ? ' (target ' + p95Target + ' ms)' : ''}`

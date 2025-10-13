@@ -36,7 +36,10 @@ function applyMetricSpec(metric, spec, add) {
     if (/^p\d{2}$/i.test(k)) add(metric, `p(${k.slice(1)})<${v}`);
     else if (/^p(95|99)$/i.test(k)) add(metric, `p(${k.replace(/[^0-9]/g, '')})<${v}`);
     else if (k === 'rate') add(metric, `rate<${v}`);
+    else if (k === 'passRate') add(metric, `rate>${v}`); // For checks: rate should be GREATER than threshold
+    else if (k === 'minRate') add(metric, `rate>${v}`); // For http_reqs: rate should be GREATER than minimum
     else if (k === 'value') add(metric, `value<${v}`);
+    else if (k === 'max') add(metric, `max<${v}`);
   });
 }
 
@@ -152,8 +155,17 @@ export function buildThresholds(params = {}) {
     const rule = rules[i][1];
     const parsed = parseRuleForAdjust(rule);
     if (!parsed) {
+      // Unparsed rule (e.g. max<, rate>, custom comparator). We need to preserve it.
+      // Two cases:
+      //  1) Metric not seen yet -> store as simple array
+      //  2) Metric already has parsed stats object -> attach to a reserved _extra array
       if (!finalMap[metric]) finalMap[metric] = [];
-      finalMap[metric].push(rule);
+      if (Array.isArray(finalMap[metric])) {
+        finalMap[metric].push(rule);
+      } else {
+        if (!finalMap[metric]._extra) finalMap[metric]._extra = [];
+        finalMap[metric]._extra.push(rule);
+      }
       continue;
     }
     const statKey = parsed.stat;
@@ -170,10 +182,11 @@ export function buildThresholds(params = {}) {
   Object.keys(finalMap).forEach(function (metric) {
     const v = finalMap[metric];
     if (Array.isArray(v)) out[metric] = v;
-    else
-      out[metric] = Object.keys(v).map(function (k) {
-        return v[k].rule;
-      });
+    else {
+      const extras = v._extra || [];
+      const keys = Object.keys(v).filter((k) => k !== '_extra');
+      out[metric] = keys.map((k) => v[k].rule).concat(extras);
+    }
   });
 
   return out;
