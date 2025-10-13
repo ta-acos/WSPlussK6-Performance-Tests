@@ -1,0 +1,62 @@
+{
+  "defaults": {
+    "maxResponseTimeMs": 5000,
+    "apdexT": 500,
+    "k6": {
+      "http_req_duration": { "p90": 5000, "p95": 5000, "p99": 8000, "max": 10000 },
+      "http_req_failed": { "rate": 0.05 },
+      "http_req_waiting": { "p95": 4800, "p99": 7500 },
+      "http_reqs": { "minRate": 0.5 },
+      "iteration_duration": { "p95": 30000, "p99": 45000 },
+      "checks": { "passRate": 0.95 }
+    }
+  },
+  "operations": {
+    "Upload Document": {
+      "maxResponseTimeMs": 8000
+    },
+    "Create Journal Post": {
+      "maxResponseTimeMs": 6000
+    },
+    "Create Case": {
+      "maxResponseTimeMs": 5000
+    },
+    "Authentication": {
+      "maxResponseTimeMs": 5000
+    },
+    "Get Case Templates": {
+      "maxResponseTimeMs": 5000
+    },
+    "Get JP Templates": {
+      "maxResponseTimeMs": 5000
+    },
+    "Attach Document": {
+      "maxResponseTimeMs": 6000
+    },
+    "Verify Documents": {
+      "maxResponseTimeMs": 8000
+    }
+  },
+  "uiBands": {
+    "latencyMs": {
+      "good": 6000,
+      "watch": 9000,
+      "investigate": 12000
+    },
+    "iterationMs": {
+      "good": 8000,
+      "watch": 30000,
+      "investigate": 45000
+    },
+    "errorRate": {
+      "good": 0.01,
+      "watch": 0.05,
+      "investigate": 0.05
+    },
+    "checkFailureRate": {
+      "good": 0.0,
+      "watch": 0.02,
+      "investigate": 0.02
+    }
+  }
+}

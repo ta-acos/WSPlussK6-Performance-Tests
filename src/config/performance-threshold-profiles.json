@@ -1,0 +1,23 @@
+{
+  "_doc": "Scenario and environment modifiers for performance thresholds. Multipliers apply to numeric targets in canonical thresholds.",
+  "scenarios": {
+    "smoke_test": { 
+  "multipliers": { 
+    "http_req_duration.p90": 1.1,
+    "http_req_duration.p95": 1.5,
+    "http_reqs.minRate": 0.4, 
+    "checks.passRate": 0.89 
+  },
+  "disabledStats": ["p(99)"]
+},
+    "load_test": {},
+    "stress_test": { "multipliers": { "http_req_duration.p95": 1.2, "http_req_duration.p99": 1.25 } },
+    "spike_test": { "multipliers": { "http_req_duration.p95": 1.3 } },
+    "endurance_test": { "addRules": { "http_req_duration": ["p(99)<9000"] } }
+  },
+  "environments": {
+    "dev": { "multipliers": { "http_req_duration.p95": 1.3 } },
+    "autotest": {},
+    "prod": { "multipliers": { "http_req_duration.p95": 0.9, "http_req_duration.p99": 0.9 } }
+  }
+}

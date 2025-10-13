@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>📋 K6 Performance Testing - Complete NPM Commands Reference Guide</title>
+<style>
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin: 2rem; line-height: 1.5; }
+  pre { background:#1e1e1e; color:#ddd; padding:12px; border-radius:6px; overflow:auto; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  h1,h2,h3,h4 { scroll-margin-top: 80px; }
+  table { border-collapse: collapse; width: 100%; margin:1rem 0; }
+  th, td { border:1px solid #ccc; padding:6px 10px; text-align:left; }
+  th { background:#f5f5f5; }
+  a { color:#0366d6; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .meta { font-size: 0.8rem; color:#666; margin-top:3rem; border-top:1px solid #eee; padding-top:0.5rem; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:1rem; border-radius:6px; }
+  .anchor { text-decoration:none; }
+</style>
+</head>
+<body>
+
+<style>
+  .collapsible-section{border:1px solid #e0e0e0;margin:1rem 0;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.04);}
+  .collapsible-section>summary{cursor:pointer;font-weight:600;padding:.6rem 1rem;background:linear-gradient(90deg,#fafafa,#f0f4f8);}
+  .collapsible-section[open]>summary{border-bottom:1px solid #e0e0e0;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75rem;font-weight:600;letter-spacing:.5px;color:#fff;}
+  .badge-smoke{background:#4caf50;}
+  .badge-load{background:#1976d2;}
+  .badge-stress{background:#e65100;}
+  .badge-spike{background:#6a1b9a;}
+  .badge-endurance{background:#455a64;}
+  .doc-toolbar{display:flex;gap:.5rem;position:sticky;top:0;background:#ffffffdd;padding:.5rem 0 1rem 0;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:50;}
+  .doc-toolbar button{background:#0366d6;color:#fff;border:none;padding:.45rem .9rem;border-radius:4px;cursor:pointer;font-size:.8rem;}
+  .doc-toolbar button:hover{background:#024f9f;}
+  pre .copy-btn{position:absolute;top:6px;right:6px;background:#444;border:none;color:#fff;font-size:.65rem;padding:4px 8px;border-radius:4px;cursor:pointer;}
+  pre .copy-btn:hover{background:#222;}
+</style><h1 id="-k6-performance-testing-complete-npm-commands-reference-guide" tabindex="-1">📋 K6 Performance Testing - Complete NPM Commands Reference Guide <a class="header-anchor" href="#-k6-performance-testing-complete-npm-commands-reference-guide" aria-hidden="true">#</a></h1>
+<p><strong>Version:</strong> 3.0.0<br>
+<strong>Last Updated:</strong> October 10, 2025<br>
+<strong>Project:</strong> ACOS GRAF Load Test - WebSak Plus Performance Testing Framework</p>
+<hr>
+<h2 id="-table-of-contents" tabindex="-1">📖 Table of Contents <a class="header-anchor" href="#-table-of-contents" aria-hidden="true">#</a></h2>
+<ol>
+<li><a href="#-quick-start-commands-for-non-technical-users">Quick Start Commands</a></li>
+<li><a href="#-test-scenarios-explained">Test Scenarios Explained</a></li>
+<li><a href="#-create-sak-case-tests">Create SAK (Case) Tests</a></li>
+<li><a href="#-create-jp-journal-post-tests">Create JP (Journal Post) Tests</a></li>
+<li><a href="#-create-jp-with-multiple-documents-tests">Create JP with Multiple Documents Tests</a></li>
+<li><a href="#-create-multiple-jps-incoming-outgoing-with-documents-tests">Create Multiple JPs with Documents Tests</a></li>
+<li><a href="#-verbose-logging-commands-detailed-debug-output">Verbose Logging Commands</a></li>
+<li><a href="#-html-report-generation-commands">HTML Report Generation Commands</a></li>
+<li><a href="#-run-all-tests-commands-autotest-json-configuration">Run All Tests Commands</a></li>
+<li><a href="#-environment-specific-tests">Environment-Specific Tests</a></li>
+<li><a href="#-report-management-commands">Report Management</a></li>
+<li><a href="#-development--utility-commands">Development &amp; Utility Commands</a></li>
+</ol>
+<hr>
+<h2 id="-quick-start-commands-for-non-technical-users" tabindex="-1">🚀 Quick Start Commands (For Non-Technical Users) <a class="header-anchor" href="#-quick-start-commands-for-non-technical-users" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run simple</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Quick validation test - verify system is working (1 user, basic case creation)</td>
+</tr>
+<tr>
+<td><code>npm run load</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Normal traffic test - 7 users for 2 minutes</td>
+</tr>
+<tr>
+<td><code>npm run stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>High traffic test - gradually increases from 7 to 14 users</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Document upload test - journal post with multiple attachments</td>
+</tr>
+<tr>
+<td><code>npm run complex</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Full feature test - multiple incoming/outgoing JPs with documents</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="1-1-quick-start-command-execution-mapping" tabindex="-1">1.1 Quick Start Command Execution Mapping <a class="header-anchor" href="#1-1-quick-start-command-execution-mapping" aria-hidden="true">#</a></h3>
+<p>This mapping expands each simplified npm command into the exact underlying k6 target, key environment variables, whether the enhanced verbose report is embedded, and the resulting HTML report file name.</p>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Invokes Script</th>
+<th>k6 Target File</th>
+<th><code>SCENARIO</code></th>
+<th><code>SCENARIO_NAME</code></th>
+<th>Verbose Report?</th>
+<th>Report File</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run simple</code></td>
+<td><code>test:simple</code></td>
+<td><code>tests/api/cases/create-sak.js</code></td>
+<td><code>smoke_test</code></td>
+<td><code>smoke_test</code></td>
+<td>Yes (<code>ENABLE_VERBOSE_REPORT=true</code>)</td>
+<td><code>create-sak-smoke_test-report.html</code></td>
+<td>Case (SAK) sanity check</td>
+</tr>
+<tr>
+<td><code>npm run load</code></td>
+<td><code>test:load</code></td>
+<td><code>tests/api/cases/create-sak.js</code></td>
+<td><code>load_test</code></td>
+<td><code>load_test</code></td>
+<td>Yes</td>
+<td><code>create-sak-load_test-report.html</code></td>
+<td>Sustained case load</td>
+</tr>
+<tr>
+<td><code>npm run stress</code></td>
+<td><code>test:stress</code></td>
+<td><code>tests/api/cases/create-sak.js</code></td>
+<td><code>stress_test</code></td>
+<td><code>stress_test</code></td>
+<td>Yes</td>
+<td><code>create-sak-stress_test-report.html</code></td>
+<td>Ramping stress find limits</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs</code></td>
+<td><code>test:simple:documents</code></td>
+<td><code>tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>smoke_test</code></td>
+<td><code>smoke_test</code></td>
+<td>Yes</td>
+<td><code>create-jp-with-multiple-document-smoke_test-report.html</code></td>
+<td>JP + multiple documents</td>
+</tr>
+<tr>
+<td><code>npm run complex</code></td>
+<td><code>test:simple:complex</code></td>
+<td><code>tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>smoke_test</code></td>
+<td><code>smoke_test</code></td>
+<td>Yes</td>
+<td><code>create-multiple-jp-with-multiple-document-smoke_test-report.html</code></td>
+<td>Multiple incoming &amp; outgoing JPs with docs</td>
+</tr>
+<tr>
+<td><code>npm run test:load:jp</code></td>
+<td><code>test:load:jp</code></td>
+<td><code>tests/api/journalposts/create-jp.js</code></td>
+<td><code>load_test</code></td>
+<td><code>load_test</code></td>
+<td>Yes</td>
+<td><code>create-jp-load_test-report.html</code></td>
+<td>Single JP load scenario</td>
+</tr>
+<tr>
+<td><code>npm run test:load:documents</code></td>
+<td><code>test:load:documents</code></td>
+<td><code>tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>load_test</code></td>
+<td><code>load_test</code></td>
+<td>Yes</td>
+<td><code>create-jp-with-multiple-document-load_test-report.html</code></td>
+<td>JP w/ documents load</td>
+</tr>
+<tr>
+<td><code>npm run test:load:complex</code></td>
+<td><code>test:load:complex</code></td>
+<td><code>tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>load_test</code></td>
+<td><code>load_test</code></td>
+<td>Yes</td>
+<td><code>create-multiple-jp-with-multiple-document-load_test-report.html</code></td>
+<td>Multi JP/doc load</td>
+</tr>
+<tr>
+<td><code>npm run jp:load:verbose:report</code></td>
+<td><code>jp:load:verbose:report</code></td>
+<td><code>tests/api/journalposts/create-jp.js</code></td>
+<td><code>load_test</code></td>
+<td><code>load_test</code></td>
+<td>Yes (console+HTML)</td>
+<td><code>create-jp-load_test-report.html</code></td>
+<td>JP load + verbose</td>
+</tr>
+<tr>
+<td><code>npm run complex:load:verbose:report</code></td>
+<td><code>complex:load:verbose:report</code></td>
+<td><code>tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>load_test</code></td>
+<td><code>load_test</code></td>
+<td>Yes (console+HTML)</td>
+<td><code>create-multiple-jp-with-multiple-document-load_test-report.html</code></td>
+<td>Complex load + verbose</td>
+</tr>
+</tbody>
+</table>
+<p><em>Report naming pattern:</em> <code>{base-test-file}-{SCENARIO_NAME}-report.html</code>. Override with a custom name using <code>-e SCENARIO_NAME=my_custom_name</code> to keep results separated.</p>
+<blockquote>
+<p>Need clarity? Commands without <code>jp</code>, <code>jp-docs</code>, or <code>complex</code> prefixes target the case (<code>create-sak.js</code>) test; those with the prefixes run Journal Post flows.</p>
+</blockquote>
+<hr>
+<h2 id="-test-scenarios-explained" tabindex="-1">📊 Test Scenarios Explained <a class="header-anchor" href="#-test-scenarios-explained" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Virtual Users (VUs)</th>
+<th>Duration/Pattern</th>
+<th>Purpose</th>
+<th>Report File Suffix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Smoke Test</strong></td>
+<td>1 VU</td>
+<td>1 iteration</td>
+<td>Quick validation - verify everything works</td>
+<td><code>-smoke_test-report.html</code></td>
+</tr>
+<tr>
+<td><strong>Load Test</strong></td>
+<td>7 VUs</td>
+<td>2 minutes constant</td>
+<td>Normal traffic - sustained realistic load</td>
+<td><code>-load_test-report.html</code></td>
+</tr>
+<tr>
+<td><strong>Stress Test</strong></td>
+<td>Ramps 1→7→14 VUs</td>
+<td>~14 minutes ramping</td>
+<td>High load - find breaking points</td>
+<td><code>-stress_test-report.html</code></td>
+</tr>
+<tr>
+<td><strong>Spike Test</strong></td>
+<td>Spikes to 14 VUs</td>
+<td>~4 minutes with spike</td>
+<td>Sudden traffic bursts - test resilience</td>
+<td><code>-spike_test-report.html</code></td>
+</tr>
+<tr>
+<td><strong>Endurance Test</strong></td>
+<td>5 VUs</td>
+<td>Extended duration</td>
+<td>Long-running - check for memory leaks</td>
+<td><code>-endurance_test-report.html</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-create-sak-case-tests" tabindex="-1">🎯 Create SAK (Case) Tests <a class="header-anchor" href="#-create-sak-case-tests" aria-hidden="true">#</a></h2>
+<h3 id="basic-sak-test-commands" tabindex="-1">Basic SAK Test Commands <a class="header-anchor" href="#basic-sak-test-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Scenario</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-sak</code></td>
+<td><code>k6 run tests/api/cases/create-sak.js</code></td>
+<td>Default</td>
+<td>Basic case creation test (uses default scenario)</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:smoke</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test tests/api/cases/create-sak.js</code></td>
+<td>Smoke</td>
+<td>Quick validation with 1 user, 1 case creation</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:load</code></td>
+<td><code>k6 run -e SCENARIO=load_test tests/api/cases/create-sak.js</code></td>
+<td>Load</td>
+<td>Sustained load with 7 users creating cases</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test tests/api/cases/create-sak.js</code></td>
+<td>Stress</td>
+<td>Push system beyond normal capacity (7→14 VUs)</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:spike</code></td>
+<td><code>k6 run -e SCENARIO=spike_test tests/api/cases/create-sak.js</code></td>
+<td>Spike</td>
+<td>Sudden traffic spikes to 14 VUs</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:endurance</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test tests/api/cases/create-sak.js</code></td>
+<td>Endurance</td>
+<td>Extended duration test (5 VUs, long-running)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sak-tests-no-pacing-maximum-throughput-" tabindex="-1">SAK Tests - No Pacing (Maximum Throughput) <a class="header-anchor" href="#sak-tests-no-pacing-maximum-throughput-" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-sak:smoke:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/api/cases/create-sak.js&quot;</code></td>
+<td>Smoke test without think time between actions</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:load:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/api/cases/create-sak.js&quot;</code></td>
+<td>Load test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:stress:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/api/cases/create-sak.js&quot;</code></td>
+<td>Stress test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:spike:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/api/cases/create-sak.js&quot;</code></td>
+<td>Spike test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-sak:endurance:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/api/cases/create-sak.js&quot;</code></td>
+<td>Endurance test at maximum throughput</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-create-jp-journal-post-tests" tabindex="-1">🎯 Create JP (Journal Post) Tests <a class="header-anchor" href="#-create-jp-journal-post-tests" aria-hidden="true">#</a></h2>
+<h3 id="basic-jp-test-commands" tabindex="-1">Basic JP Test Commands <a class="header-anchor" href="#basic-jp-test-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Scenario</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-jp</code></td>
+<td><code>k6 run tests/api/journalposts/create-jp.js</code></td>
+<td>Default</td>
+<td>Basic journal post creation</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:smoke</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js</code></td>
+<td>Smoke</td>
+<td>Quick validation with 1 user, 1 JP</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:load</code></td>
+<td><code>k6 run -e SCENARIO=load_test tests/api/journalposts/create-jp.js</code></td>
+<td>Load</td>
+<td>Sustained load with 7 users creating JPs</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test tests/api/journalposts/create-jp.js</code></td>
+<td>Stress</td>
+<td>High volume JP creation (7→14 VUs)</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:spike</code></td>
+<td><code>k6 run -e SCENARIO=spike_test tests/api/journalposts/create-jp.js</code></td>
+<td>Spike</td>
+<td>Sudden spikes in JP creation</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:endurance</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test tests/api/journalposts/create-jp.js</code></td>
+<td>Endurance</td>
+<td>Extended JP creation test</td>
+</tr>
+</tbody>
+</table>
+<h3 id="jp-tests-no-pacing-maximum-throughput-" tabindex="-1">JP Tests - No Pacing (Maximum Throughput) <a class="header-anchor" href="#jp-tests-no-pacing-maximum-throughput-" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-jp:smoke:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js&quot;</code></td>
+<td>Smoke test without think time</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:load:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/api/journalposts/create-jp.js&quot;</code></td>
+<td>Load test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:stress:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/api/journalposts/create-jp.js&quot;</code></td>
+<td>Stress test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:spike:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/api/journalposts/create-jp.js&quot;</code></td>
+<td>Spike test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp:endurance:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/api/journalposts/create-jp.js&quot;</code></td>
+<td>Endurance test at maximum throughput</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-create-jp-with-multiple-documents-tests" tabindex="-1">🎯 Create JP with Multiple Documents Tests <a class="header-anchor" href="#-create-jp-with-multiple-documents-tests" aria-hidden="true">#</a></h2>
+<h3 id="basic-jp-documents-test-commands" tabindex="-1">Basic JP + Documents Test Commands <a class="header-anchor" href="#basic-jp-documents-test-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Scenario</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document</code></td>
+<td><code>k6 run tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Default</td>
+<td>Single JP with multiple document attachments</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:smoke</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Smoke</td>
+<td>1 user creating 1 JP with multiple documents</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:load</code></td>
+<td><code>k6 run -e SCENARIO=load_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Load</td>
+<td>7 users creating JPs with document attachments</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Stress</td>
+<td>High volume JP+documents creation</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:spike</code></td>
+<td><code>k6 run -e SCENARIO=spike_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Spike</td>
+<td>Sudden spikes in JP+documents creation</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:endurance</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Endurance</td>
+<td>Extended JP+documents test</td>
+</tr>
+</tbody>
+</table>
+<h3 id="jp-documents-tests-no-pacing" tabindex="-1">JP + Documents Tests - No Pacing <a class="header-anchor" href="#jp-documents-tests-no-pacing" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:smoke:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-jp-with-multiple-document.js&quot;</code></td>
+<td>Smoke test without think time</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:load:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/api/journalposts/create-jp-with-multiple-document.js&quot;</code></td>
+<td>Load test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:stress:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/api/journalposts/create-jp-with-multiple-document.js&quot;</code></td>
+<td>Stress test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:spike:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/api/journalposts/create-jp-with-multiple-document.js&quot;</code></td>
+<td>Spike test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-jp-with-multiple-document:endurance:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/api/journalposts/create-jp-with-multiple-document.js&quot;</code></td>
+<td>Endurance test at maximum throughput</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-create-multiple-jps-incoming-outgoing-with-documents-tests" tabindex="-1">🎯 Create Multiple JPs (Incoming &amp; Outgoing) with Documents Tests <a class="header-anchor" href="#-create-multiple-jps-incoming-outgoing-with-documents-tests" aria-hidden="true">#</a></h2>
+<h3 id="basic-complex-multi-jp-test-commands" tabindex="-1">Basic Complex Multi-JP Test Commands <a class="header-anchor" href="#basic-complex-multi-jp-test-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Scenario</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document</code></td>
+<td><code>k6 run tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Default</td>
+<td>Multiple incoming/outgoing JPs with documents</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:smoke</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Smoke</td>
+<td>2 incoming + 2 outgoing JPs with 10 large documents (1MB-10MB)</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:smoke:synthetic</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e DOC_COUNT=3 -e USE_TEST_DOCS=false tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Smoke</td>
+<td>2 incoming + 2 outgoing JPs with 3 synthetic documents (fast)</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:load</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e USE_TEST_DOCS=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Load</td>
+<td>Multiple incoming/outgoing JPs with large documents</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e USE_TEST_DOCS=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Stress</td>
+<td>High volume complex JPs with documents</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:spike</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e USE_TEST_DOCS=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Spike</td>
+<td>Traffic spikes for complex JPs</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:endurance</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e USE_TEST_DOCS=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Endurance</td>
+<td>Extended complex JP creation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="complex-multi-jp-tests-no-pacing" tabindex="-1">Complex Multi-JP Tests - No Pacing <a class="header-anchor" href="#complex-multi-jp-tests-no-pacing" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:smoke:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=smoke_test tests/api/journalposts/create-multiple-jp-with-multiple-document.js&quot;</code></td>
+<td>Smoke test without think time</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:load:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=load_test tests/api/journalposts/create-multiple-jp-with-multiple-document.js&quot;</code></td>
+<td>Load test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:stress:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=stress_test tests/api/journalposts/create-multiple-jp-with-multiple-document.js&quot;</code></td>
+<td>Stress test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:spike:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=spike_test tests/api/journalposts/create-multiple-jp-with-multiple-document.js&quot;</code></td>
+<td>Spike test at maximum throughput</td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:endurance:nopace</code></td>
+<td><code>powershell -Command &quot;$env:PACING_MODE='none'; k6 run -e SCENARIO=endurance_test tests/api/journalposts/create-multiple-jp-with-multiple-document.js&quot;</code></td>
+<td>Endurance test at maximum throughput</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-verbose-logging-commands-detailed-debug-output" tabindex="-1">🔧 Verbose Logging Commands (Detailed Debug Output) <a class="header-anchor" href="#-verbose-logging-commands-detailed-debug-output" aria-hidden="true">#</a></h2>
+<h3 id="sak-case-tests-with-verbose-logging" tabindex="-1">SAK (Case) Tests with Verbose Logging <a class="header-anchor" href="#sak-case-tests-with-verbose-logging" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run sak:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>SAK smoke test with detailed console output</td>
+</tr>
+<tr>
+<td><code>npm run sak:load:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>SAK load test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run sak:stress:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>SAK stress test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run sak:spike:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>SAK spike test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run sak:endurance:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>SAK endurance test with verbose logging</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-flow-classification-verbose-report-controls" tabindex="-1">🧭 Flow Classification &amp; Verbose Report Controls <a class="header-anchor" href="#-flow-classification-verbose-report-controls" aria-hidden="true">#</a></h2>
+<p>The enhanced verbose report auto-detects whether to include Journal Post / Document flows or just Case Creation. Use these environment variables to override or guide classification:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Values</th>
+<th>Effect</th>
+<th>When to Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FLOW_TYPE</code></td>
+<td><code>case-only</code>, <code>jp</code>, <code>journalpost</code></td>
+<td>Hard override of flow classification (highest precedence).</td>
+<td>Force a known flow in CI or mixed pipelines.</td>
+</tr>
+<tr>
+<td><code>FORCE_CASE_ONLY</code></td>
+<td><code>true</code></td>
+<td>Forces Case-only flow even if heuristics lean JP.</td>
+<td>Long case load/endurance runs misclassified due to high request volume.</td>
+</tr>
+<tr>
+<td><code>IS_CASE_ONLY</code></td>
+<td><code>true</code></td>
+<td>Alias for <code>FLOW_TYPE=case-only</code>.</td>
+<td>Backward compatibility.</td>
+</tr>
+<tr>
+<td><code>JP_ENDPOINT_HIT</code></td>
+<td><code>true</code></td>
+<td>Signals JP endpoints were executed (prevents reclassification to case-only).</td>
+<td>Set in JP scripts if heuristics might under-detect.</td>
+</tr>
+<tr>
+<td><code>SCENARIO_NAME</code></td>
+<td>e.g. <code>create-sak-load_test</code></td>
+<td>Names containing <code>create-sak</code> / <code>sak</code> bias to case-only if no JP indicators.</td>
+<td>Improve clarity across multi-flow runs.</td>
+</tr>
+<tr>
+<td><code>ENABLE_VERBOSE_REPORT</code></td>
+<td><code>true</code></td>
+<td>Embeds verbose narrative in HTML report.</td>
+<td>Whenever you want detailed execution story.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>JP heuristic indicators:</strong> scenario name contains <code>journal</code>, <code>jp</code>, <code>document</code>; or env vars <code>DOC_COUNT</code>, <code>INCOMING_COUNT</code>, <code>OUTGOING_COUNT</code>, <code>USE_TEST_DOCS=true</code>; or very high total HTTP request volume (&gt; 40).</p>
+<p><strong>Case bias:</strong> scenario name contains <code>create-sak</code> (and no JP indicators) or explicit overrides.</p>
+<p><strong>Automatic JP flags:</strong> All Journal Post scripts now auto-set <code>FLOW_TYPE=jp</code> (when not already defined) and <code>JP_ENDPOINT_HIT=true</code> internally. This removes the need to manually export those for small JP tests while still allowing overrides (<code>FORCE_CASE_ONLY=true</code> or <code>FLOW_TYPE=case-only</code>).</p>
+<p><strong>Recommended explicit case run:</strong></p>
+<pre class="hljs"><code><span class="hljs-variable">$env:FORCE_CASE_ONLY</span>=<span class="hljs-string">&#x27;true&#x27;</span>; <span class="hljs-variable">$env:ENABLE_VERBOSE_REPORT</span>=<span class="hljs-string">&#x27;true&#x27;</span>; npm run load
+</code></pre>
+<p><strong>Recommended explicit JP run:</strong></p>
+<pre class="hljs"><code><span class="hljs-variable">$env:FLOW_TYPE</span>=<span class="hljs-string">&#x27;jp&#x27;</span>; <span class="hljs-variable">$env:ENABLE_VERBOSE_REPORT</span>=<span class="hljs-string">&#x27;true&#x27;</span>; npm run test:load:jp
+</code></pre>
+<blockquote>
+<p>Troubleshooting: If JP lines appear in a pure case test, add <code>FORCE_CASE_ONLY=true</code>. If case-only appears in a JP test, add <code>FLOW_TYPE=jp</code> or ensure the script sets <code>JP_ENDPOINT_HIT=true</code>.</p>
+</blockquote>
+<h3 id="journal-post-tests-with-verbose-logging" tabindex="-1">Journal Post Tests with Verbose Logging <a class="header-anchor" href="#journal-post-tests-with-verbose-logging" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run jp:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>JP smoke test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp:load:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>JP load test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp:stress:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>JP stress test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp:spike:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>JP spike test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp:endurance:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>JP endurance test with verbose logging</td>
+</tr>
+</tbody>
+</table>
+<h3 id="jp-with-documents-tests-with-verbose-logging" tabindex="-1">JP with Documents Tests with Verbose Logging <a class="header-anchor" href="#jp-with-documents-tests-with-verbose-logging" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run jp-docs:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>JP+docs smoke test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:load:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>JP+docs load test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:stress:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>JP+docs stress test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:spike:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>JP+docs spike test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:endurance:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>JP+docs endurance test with verbose logging</td>
+</tr>
+</tbody>
+</table>
+<h3 id="complex-multi-jp-tests-with-verbose-logging" tabindex="-1">Complex Multi-JP Tests with Verbose Logging <a class="header-anchor" href="#complex-multi-jp-tests-with-verbose-logging" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run complex:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Complex smoke test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run complex:load:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Complex load test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run complex:stress:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Complex stress test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run complex:spike:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Complex spike test with verbose logging</td>
+</tr>
+<tr>
+<td><code>npm run complex:endurance:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Complex endurance test with verbose logging</td>
+</tr>
+</tbody>
+</table>
+<h3 id="environment-specific-verbose-tests" tabindex="-1">Environment-Specific Verbose Tests <a class="header-anchor" href="#environment-specific-verbose-tests" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run dev:verbose</code></td>
+<td><code>k6 run --verbose --env CONFIG_ENV=dev -e SCENARIO=smoke_test tests/api/cases/create-sak.js</code></td>
+<td>Verbose test in development environment</td>
+</tr>
+<tr>
+<td><code>npm run autotest:verbose</code></td>
+<td><code>k6 run --verbose --env CONFIG_ENV=autotest -e SCENARIO=smoke_test tests/api/cases/create-sak.js</code></td>
+<td>Verbose test in autotest environment</td>
+</tr>
+<tr>
+<td><code>npm run dev:load:verbose</code></td>
+<td><code>k6 run --verbose --env CONFIG_ENV=dev -e SCENARIO=load_test tests/api/cases/create-sak.js</code></td>
+<td>Verbose load test in dev environment</td>
+</tr>
+<tr>
+<td><code>npm run autotest:load:verbose</code></td>
+<td><code>k6 run --verbose --env CONFIG_ENV=autotest -e SCENARIO=load_test tests/api/cases/create-sak.js</code></td>
+<td>Verbose load test in autotest environment</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-html-report-generation-commands" tabindex="-1">📈 HTML Report Generation Commands <a class="header-anchor" href="#-html-report-generation-commands" aria-hidden="true">#</a></h2>
+<h3 id="sak-case-reports-with-verbose-logs" tabindex="-1">SAK (Case) Reports with Verbose Logs <a class="header-anchor" href="#sak-case-reports-with-verbose-logs" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Generated Report File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run simple:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td><code>create-sak-smoke_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run load:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td><code>create-sak-load_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run stress:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td><code>create-sak-stress_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run spike:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td><code>create-sak-spike_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run endurance:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td><code>create-sak-endurance_test-report.html</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="journal-post-reports-with-verbose-logs" tabindex="-1">Journal Post Reports with Verbose Logs <a class="header-anchor" href="#journal-post-reports-with-verbose-logs" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Generated Report File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run jp:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td><code>create-jp-smoke_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp:load:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td><code>create-jp-load_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp:stress:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td><code>create-jp-stress_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp:spike:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td><code>create-jp-spike_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp:endurance:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td><code>create-jp-endurance_test-report.html</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="jp-with-documents-reports-with-verbose-logs" tabindex="-1">JP with Documents Reports with Verbose Logs <a class="header-anchor" href="#jp-with-documents-reports-with-verbose-logs" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Generated Report File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run jp-docs:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>create-jp-with-multiple-document-smoke_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:load:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>create-jp-with-multiple-document-load_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:stress:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>create-jp-with-multiple-document-stress_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:spike:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>create-jp-with-multiple-document-spike_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run jp-docs:endurance:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td><code>create-jp-with-multiple-document-endurance_test-report.html</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="complex-multi-jp-reports-with-verbose-logs" tabindex="-1">Complex Multi-JP Reports with Verbose Logs <a class="header-anchor" href="#complex-multi-jp-reports-with-verbose-logs" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Generated Report File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run complex:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-smoke_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run complex:load:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-load_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run complex:stress:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-stress_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run complex:spike:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-spike_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run complex:endurance:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-endurance_test-report.html</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="full-name-multi-jp-reports-with-real-test-documents-" tabindex="-1">Full-Name Multi-JP Reports (With Real Test Documents) <a class="header-anchor" href="#full-name-multi-jp-reports-with-real-test-documents-" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Generated Report File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:smoke:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-smoke_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:load:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-load_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:stress:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-stress_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:spike:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-spike_test-report.html</code></td>
+</tr>
+<tr>
+<td><code>npm run test:create-multiplejp-with-multiple-document:endurance:verbose:report</code></td>
+<td><code>k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td><code>create-multiple-jp-with-multiple-document-endurance_test-report.html</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-run-all-tests-commands-autotest-json-configuration" tabindex="-1">🏃 Run All Tests Commands (autotest.json Configuration) <a class="header-anchor" href="#-run-all-tests-commands-autotest-json-configuration" aria-hidden="true">#</a></h2>
+<h3 id="run-all-tests-by-type-5-scenarios-each-" tabindex="-1">Run All Tests by Type (5 Scenarios Each) <a class="header-anchor" href="#run-all-tests-by-type-5-scenarios-each-" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Description</th>
+<th>Scenarios</th>
+<th>Total Reports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run run-all-sak-autotest</code></td>
+<td>Run ALL SAK (case) tests with all 5 scenarios using autotest.json</td>
+<td>smoke, load, stress, spike, endurance</td>
+<td>5 HTML reports</td>
+</tr>
+<tr>
+<td><code>npm run run-all-jp-autotest</code></td>
+<td>Run ALL JP tests with all 5 scenarios using autotest.json</td>
+<td>smoke, load, stress, spike, endurance</td>
+<td>5 HTML reports</td>
+</tr>
+<tr>
+<td><code>npm run run-all-jp-docs-autotest</code></td>
+<td>Run ALL JP+documents tests with all 5 scenarios using autotest.json</td>
+<td>smoke, load, stress, spike, endurance</td>
+<td>5 HTML reports</td>
+</tr>
+<tr>
+<td><code>npm run run-all-complex-autotest</code></td>
+<td>Run ALL complex multi-JP tests with all 5 scenarios using autotest.json</td>
+<td>smoke, load, stress, spike, endurance</td>
+<td>5 HTML reports</td>
+</tr>
+<tr>
+<td><code>npm run run-all-autotest</code></td>
+<td><strong>Run EVERYTHING</strong> - All 4 test types × 5 scenarios = 20 tests</td>
+<td>ALL scenarios across ALL test types</td>
+<td>20 HTML reports</td>
+</tr>
+</tbody>
+</table>
+<h3 id="run-all-tests-commands-detailed-breakdown" tabindex="-1">Run All Tests Commands - Detailed Breakdown <a class="header-anchor" href="#run-all-tests-commands-detailed-breakdown" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual Command Chain</th>
+<th>Total Tests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run run-all-sak-autotest</code></td>
+<td><code>npm run simple:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run load:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run stress:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run spike:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run endurance:verbose:report -- --env CONFIG_ENV=autotest</code></td>
+<td>5 tests</td>
+</tr>
+<tr>
+<td><code>npm run run-all-jp-autotest</code></td>
+<td><code>npm run jp:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp:load:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp:stress:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp:spike:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp:endurance:verbose:report -- --env CONFIG_ENV=autotest</code></td>
+<td>5 tests</td>
+</tr>
+<tr>
+<td><code>npm run run-all-jp-docs-autotest</code></td>
+<td><code>npm run jp-docs:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp-docs:load:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp-docs:stress:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp-docs:spike:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run jp-docs:endurance:verbose:report -- --env CONFIG_ENV=autotest</code></td>
+<td>5 tests</td>
+</tr>
+<tr>
+<td><code>npm run run-all-complex-autotest</code></td>
+<td><code>npm run complex:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run complex:load:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run complex:stress:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run complex:spike:verbose:report -- --env CONFIG_ENV=autotest &amp;&amp; npm run complex:endurance:verbose:report -- --env CONFIG_ENV=autotest</code></td>
+<td>5 tests</td>
+</tr>
+</tbody>
+</table>
+<h3 id="individual-scenario-runs-all-test-types-" tabindex="-1">Individual Scenario Runs (All Test Types) <a class="header-anchor" href="#individual-scenario-runs-all-test-types-" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual Command Chain</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run run-all-smoke</code></td>
+<td><code>npm run test:simple -- -e SCENARIO_NAME=sak_smoke_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:simple:jp -- -e SCENARIO_NAME=jp_smoke_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:simple:documents -- -e SCENARIO_NAME=jp_docs_smoke_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:simple:complex -- -e SCENARIO_NAME=complex_smoke_test -e ENABLE_VERBOSE_REPORT=true</code></td>
+<td>Run smoke tests for all 4 test types</td>
+</tr>
+<tr>
+<td><code>npm run run-all-load</code></td>
+<td><code>npm run test:load -- -e SCENARIO_NAME=sak_load_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:load:jp -- -e SCENARIO_NAME=jp_load_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:load:documents -- -e SCENARIO_NAME=jp_docs_load_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:load:complex -- -e SCENARIO_NAME=complex_load_test -e ENABLE_VERBOSE_REPORT=true</code></td>
+<td>Run load tests for all 4 test types</td>
+</tr>
+<tr>
+<td><code>npm run run-all-stress</code></td>
+<td><code>npm run test:stress -- -e SCENARIO_NAME=sak_stress_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:stress:jp -- -e SCENARIO_NAME=jp_stress_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:stress:documents -- -e SCENARIO_NAME=jp_docs_stress_test -e ENABLE_VERBOSE_REPORT=true &amp;&amp; npm run test:stress:complex -- -e SCENARIO_NAME=complex_stress_test -e ENABLE_VERBOSE_REPORT=true</code></td>
+<td>Run stress tests for all 4 test types</td>
+</tr>
+<tr>
+<td><code>npm run run-all-tests</code></td>
+<td><code>npm run run-all-smoke &amp;&amp; npm run run-all-load &amp;&amp; npm run run-all-stress</code></td>
+<td>Execute smoke, load, and stress tests sequentially</td>
+</tr>
+<tr>
+<td><code>npm run run-comprehensive</code></td>
+<td><code>echo '=== Running Comprehensive Test Suite with Unique Scenario Names ===' &amp;&amp; npm run run-all-tests &amp;&amp; echo '=== All tests completed! Check reports in src/reports/ with unique scenario names ==='</code></td>
+<td>Complete suite with status messages</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-environment-specific-tests" tabindex="-1">🌍 Environment-Specific Tests <a class="header-anchor" href="#-environment-specific-tests" aria-hidden="true">#</a></h2>
+<h3 id="development-environment-tests" tabindex="-1">Development Environment Tests <a class="header-anchor" href="#development-environment-tests" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:dev</code></td>
+<td><code>k6 run -e CONFIG_ENV=dev tests/api/cases/create-sak.js</code></td>
+<td>Run SAK test in dev environment</td>
+</tr>
+<tr>
+<td><code>npm run test:dev:load</code></td>
+<td><code>k6 run -e CONFIG_ENV=dev -e SCENARIO=load_test tests/api/cases/create-sak.js</code></td>
+<td>Run SAK load test in dev environment</td>
+</tr>
+<tr>
+<td><code>npm run test:dev:jp:smoke</code></td>
+<td><code>k6 run --env CONFIG_ENV=dev -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js</code></td>
+<td>Run JP smoke test in dev environment</td>
+</tr>
+<tr>
+<td><code>npm run test:dev:jp:load</code></td>
+<td><code>k6 run --env CONFIG_ENV=dev -e SCENARIO=load_test tests/api/journalposts/create-jp.js</code></td>
+<td>Run JP load test in dev environment</td>
+</tr>
+<tr>
+<td><code>npm run test:dev:jp-docs</code></td>
+<td><code>k6 run --env CONFIG_ENV=dev -e SCENARIO=smoke_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Run JP+docs test in dev environment</td>
+</tr>
+</tbody>
+</table>
+<h3 id="autotest-environment-tests" tabindex="-1">Autotest Environment Tests <a class="header-anchor" href="#autotest-environment-tests" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:autotest</code></td>
+<td><code>k6 run -e CONFIG_ENV=autotest tests/api/cases/create-sak.js</code></td>
+<td>Run SAK test in autotest environment</td>
+</tr>
+<tr>
+<td><code>npm run test:autotest:load</code></td>
+<td><code>k6 run -e CONFIG_ENV=autotest -e SCENARIO=load_test tests/api/cases/create-sak.js</code></td>
+<td>Run SAK load test in autotest environment</td>
+</tr>
+<tr>
+<td><code>npm run test:autotest:jp:smoke</code></td>
+<td><code>k6 run --env CONFIG_ENV=autotest -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js</code></td>
+<td>Run JP smoke test in autotest environment</td>
+</tr>
+<tr>
+<td><code>npm run test:autotest:jp:load</code></td>
+<td><code>k6 run --env CONFIG_ENV=autotest -e SCENARIO=load_test tests/api/journalposts/create-jp.js</code></td>
+<td>Run JP load test in autotest environment</td>
+</tr>
+<tr>
+<td><code>npm run test:autotest:jp-docs</code></td>
+<td><code>k6 run --env CONFIG_ENV=autotest -e SCENARIO=smoke_test tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Run JP+docs test in autotest environment</td>
+</tr>
+<tr>
+<td><code>npm run test:autotest:complex</code></td>
+<td><code>k6 run --env CONFIG_ENV=autotest -e SCENARIO=load_test tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Run complex test in autotest environment</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-report-management-commands" tabindex="-1">📄 Report Management Commands <a class="header-anchor" href="#-report-management-commands" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run reports:view</code></td>
+<td><code>start src/reports</code></td>
+<td>Open the reports folder in Windows Explorer</td>
+</tr>
+<tr>
+<td><code>npm run reports:clean</code></td>
+<td><code>powershell -Command &quot;Remove-Item -Path 'src/reports/*.html', 'src/reports/*.json' -Force -ErrorAction SilentlyContinue&quot;</code></td>
+<td>Delete all HTML and JSON reports from reports folder</td>
+</tr>
+<tr>
+<td><code>npm run reports:verbose:info</code></td>
+<td><code>echo 'Verbose logs are now integrated into HTML reports! Run any :verbose:report command, then open the HTML report and look for the &quot;Verbose Debug Logs&quot; section with expand/collapse.'</code></td>
+<td>Display information about verbose reports</td>
+</tr>
+<tr>
+<td><code>npm run report:open</code></td>
+<td><code>powershell -Command &quot;if (Test-Path src/reports/create-sak-report.html) { Start-Process src/reports/create-sak-report.html } else { Write-Host 'Report not found. Run a test first.' }&quot;</code></td>
+<td>Open the latest SAK report in default browser</td>
+</tr>
+<tr>
+<td><code>npm run report:open:jp</code></td>
+<td><code>powershell -Command &quot;if (Test-Path src/reports/create-jp-report.html) { Start-Process src/reports/create-jp-report.html } else { Write-Host 'JP Report not found. Run a test first.' }&quot;</code></td>
+<td>Open the latest JP report in default browser</td>
+</tr>
+<tr>
+<td><code>npm run report:list</code></td>
+<td><code>Get-ChildItem src/reports/*-report.html -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object Name,LastWriteTime</code></td>
+<td>List all report files with timestamps (sorted by newest first)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-development-utility-commands" tabindex="-1">🛠️ Development &amp; Utility Commands <a class="header-anchor" href="#-development-utility-commands" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run help</code></td>
+<td><code>echo 'Available commands: npm run simple (basic test), npm run load (performance test), npm run stress (high load), npm run jp-docs (document upload test), npm run complex (full feature test)'</code></td>
+<td>Display available quick start commands</td>
+</tr>
+<tr>
+<td><code>npm run test:info</code></td>
+<td><code>echo 'Test Types: simple=basic JP creation, load=performance testing, stress=high volume, jp-docs=document uploads, complex=multiple JPs with documents'</code></td>
+<td>Show information about test types</td>
+</tr>
+<tr>
+<td><code>npm run lint</code></td>
+<td><code>eslint &quot;tests/**/*.js&quot; &quot;src/**/*.js&quot; --quiet</code></td>
+<td>Run ESLint on all test and source files (quiet mode)</td>
+</tr>
+<tr>
+<td><code>npm run format</code></td>
+<td><code>prettier --write &quot;tests/**/*.js&quot; &quot;src/**/*.js&quot;</code></td>
+<td>Format all JavaScript files with Prettier</td>
+</tr>
+<tr>
+<td><code>npm run prepare</code></td>
+<td><code>husky install</code></td>
+<td>Install Husky git hooks (runs automatically after npm install)</td>
+</tr>
+<tr>
+<td><code>npm run quick-smoke</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=quick_smoke -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js &amp;&amp; echo 'Quick smoke test completed! Check: src/reports/create-sak-quick_smoke-report.html'</code></td>
+<td>Quick smoke test with instant results</td>
+</tr>
+<tr>
+<td><code>npm run quick-load</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=quick_load -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js &amp;&amp; echo 'Quick load test completed! Check: src/reports/create-jp-quick_load-report.html'</code></td>
+<td>Quick load test with instant results</td>
+</tr>
+<tr>
+<td><code>npm run quick-stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=quick_stress -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js &amp;&amp; echo 'Quick stress test completed! Check: src/reports/create-jp-with-multiple-document-quick_stress-report.html'</code></td>
+<td>Quick stress test with instant results</td>
+</tr>
+<tr>
+<td><code>npm run test:verbose</code></td>
+<td><code>k6 run --verbose -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js</code></td>
+<td>Run JP test with verbose console output</td>
+</tr>
+<tr>
+<td><code>npm run test:debug</code></td>
+<td><code>k6 run --verbose --env CONFIG_ENV=dev -e SCENARIO=smoke_test tests/api/journalposts/create-jp.js</code></td>
+<td>Run JP test in dev environment with verbose output</td>
+</tr>
+<tr>
+<td><code>npm run simple:verbose</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Simple test with verbose console output</td>
+</tr>
+<tr>
+<td><code>npm run load:verbose</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Load test with verbose console output</td>
+</tr>
+<tr>
+<td><code>npm run stress:verbose</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Stress test with verbose console output</td>
+</tr>
+<tr>
+<td><code>npm run spike:verbose</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Spike test with verbose console output</td>
+</tr>
+<tr>
+<td><code>npm run endurance:verbose</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Endurance test with verbose console output</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-additional-test-variants" tabindex="-1">📚 Additional Test Variants <a class="header-anchor" href="#-additional-test-variants" aria-hidden="true">#</a></h2>
+<h3 id="simple-test-shortcuts" tabindex="-1">Simple Test Shortcuts <a class="header-anchor" href="#simple-test-shortcuts" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:simple</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Simple SAK smoke test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:simple:verbose</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Simple SAK smoke test with verbose output</td>
+</tr>
+<tr>
+<td><code>npm run test:simple:jp</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>Simple JP smoke test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:simple:documents</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Simple JP+documents smoke test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:simple:complex</code></td>
+<td><code>k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Simple complex multi-JP smoke test with report</td>
+</tr>
+</tbody>
+</table>
+<h3 id="load-test-shortcuts" tabindex="-1">Load Test Shortcuts <a class="header-anchor" href="#load-test-shortcuts" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:load</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Load SAK test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:load:verbose</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Load SAK test with verbose output</td>
+</tr>
+<tr>
+<td><code>npm run test:load:jp</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>Load JP test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:load:documents</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Load JP+documents test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:load:complex</code></td>
+<td><code>k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Load complex multi-JP test with report</td>
+</tr>
+</tbody>
+</table>
+<h3 id="stress-test-shortcuts" tabindex="-1">Stress Test Shortcuts <a class="header-anchor" href="#stress-test-shortcuts" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:stress</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Stress SAK test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:stress:verbose</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Stress SAK test with verbose output</td>
+</tr>
+<tr>
+<td><code>npm run test:stress:jp</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>Stress JP test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:stress:documents</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Stress JP+documents test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:stress:complex</code></td>
+<td><code>k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Stress complex multi-JP test with report</td>
+</tr>
+</tbody>
+</table>
+<h3 id="spike-test-shortcuts" tabindex="-1">Spike Test Shortcuts <a class="header-anchor" href="#spike-test-shortcuts" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:spike</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Spike SAK test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:spike:verbose</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Spike SAK test with verbose output</td>
+</tr>
+<tr>
+<td><code>npm run test:spike:jp</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>Spike JP test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:spike:documents</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Spike JP+documents test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:spike:complex</code></td>
+<td><code>k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Spike complex multi-JP test with report</td>
+</tr>
+</tbody>
+</table>
+<h3 id="endurance-test-shortcuts" tabindex="-1">Endurance Test Shortcuts <a class="header-anchor" href="#endurance-test-shortcuts" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>NPM Command</th>
+<th>Actual K6 Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run test:endurance</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/cases/create-sak.js</code></td>
+<td>Endurance SAK test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:endurance:verbose</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true --verbose tests/api/cases/create-sak.js</code></td>
+<td>Endurance SAK test with verbose output</td>
+</tr>
+<tr>
+<td><code>npm run test:endurance:jp</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp.js</code></td>
+<td>Endurance JP test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:endurance:documents</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-jp-with-multiple-document.js</code></td>
+<td>Endurance JP+documents test with report</td>
+</tr>
+<tr>
+<td><code>npm run test:endurance:complex</code></td>
+<td><code>k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true tests/api/journalposts/create-multiple-jp-with-multiple-document.js</code></td>
+<td>Endurance complex multi-JP test with report</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-key-notes-for-end-users" tabindex="-1">📝 Key Notes for End Users <a class="header-anchor" href="#-key-notes-for-end-users" aria-hidden="true">#</a></h2>
+<h3 id="-most-recommended-commands" tabindex="-1">🎯 Most Recommended Commands <a class="header-anchor" href="#-most-recommended-commands" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong><code>npm run simple</code></strong> - Start here! Quick 1-minute validation test</li>
+<li><strong><code>npm run load</code></strong> - Test system under normal load (2 minutes, 7 users)</li>
+<li><strong><code>npm run stress</code></strong> - Find system limits (~14 minutes, 7→14 users)</li>
+<li><strong><code>npm run run-all-sak-autotest</code></strong> - Run all 5 SAK scenarios with autotest.json</li>
+<li><strong><code>npm run run-all-autotest</code></strong> - Run EVERYTHING (20 tests total)</li>
+<li><strong><code>npm run reports:view</code></strong> - Open reports folder to view results</li>
+</ol>
+<h3 id="-report-locations-naming" tabindex="-1">📊 Report Locations &amp; Naming <a class="header-anchor" href="#-report-locations-naming" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Report Folder:</strong> <code>src/reports/</code></li>
+<li><strong>Report Format:</strong> <code>{test-name}-{scenario}-report.html</code></li>
+<li><strong>Examples:</strong>
+<ul>
+<li><code>create-sak-smoke_test-report.html</code></li>
+<li><code>create-jp-load_test-report.html</code></li>
+<li><code>create-multiple-jp-with-multiple-document-stress_test-report.html</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="-performance-test-duration-guide" tabindex="-1">⚡ Performance Test Duration Guide <a class="header-anchor" href="#-performance-test-duration-guide" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Typical Duration</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Smoke</td>
+<td>&lt; 1 minute</td>
+<td>Quick validation before deployments</td>
+</tr>
+<tr>
+<td>Load</td>
+<td>2-5 minutes</td>
+<td>Regular performance baseline testing</td>
+</tr>
+<tr>
+<td>Stress</td>
+<td>10-15 minutes</td>
+<td>Finding breaking points, capacity planning</td>
+</tr>
+<tr>
+<td>Spike</td>
+<td>3-5 minutes</td>
+<td>Testing resilience during traffic bursts</td>
+</tr>
+<tr>
+<td>Endurance</td>
+<td>15-60 minutes</td>
+<td>Memory leak detection, long-term stability</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-when-to-use-what" tabindex="-1">🔧 When to Use What <a class="header-anchor" href="#-when-to-use-what" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Smoke Tests</strong>: Before every deployment, quick health checks</li>
+<li><strong>Load Tests</strong>: Weekly baseline measurements, regression testing</li>
+<li><strong>Stress Tests</strong>: Capacity planning, finding system limits</li>
+<li><strong>Spike Tests</strong>: Testing system resilience during sudden traffic increases</li>
+<li><strong>Endurance Tests</strong>: Checking for memory leaks and long-term stability</li>
+<li><strong>No-Pacing Tests</strong>: Maximum throughput testing (no think time)</li>
+</ul>
+<h3 id="-understanding-test-reports" tabindex="-1">📈 Understanding Test Reports <a class="header-anchor" href="#-understanding-test-reports" aria-hidden="true">#</a></h3>
+<p>Each HTML report includes:</p>
+<ul>
+<li><strong>KPI Metrics</strong>: Response times, throughput, error rates, VU counts</li>
+<li><strong>Performance Graphs</strong>: Visual charts of metrics over time</li>
+<li><strong>Detailed Metrics Table</strong>: Comprehensive statistics (min, max, avg, percentiles)</li>
+<li><strong>Verbose Debug Logs</strong>: Expandable section with detailed console output</li>
+<li><strong>Test Configuration</strong>: Scenario settings, environment details</li>
+</ul>
+<h3 id="-environment-configuration" tabindex="-1">🌍 Environment Configuration <a class="header-anchor" href="#-environment-configuration" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Default</strong>: Uses <code>dev.json</code> configuration (if no environment specified)</li>
+<li><strong>Dev Environment</strong>: Use <code>--env CONFIG_ENV=dev</code> or commands with <code>:dev:</code></li>
+<li><strong>Autotest Environment</strong>: Use <code>--env CONFIG_ENV=autotest</code> or commands with <code>:autotest:</code></li>
+<li><strong>Run-All Commands</strong>: Automatically use <code>autotest.json</code> via <code>--env CONFIG_ENV=autotest</code></li>
+</ul>
+<h3 id="-pro-tips" tabindex="-1">💡 Pro Tips <a class="header-anchor" href="#-pro-tips" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Always check reports</strong>: After running tests, open <code>npm run reports:view</code></li>
+<li><strong>Clean old reports</strong>: Use <code>npm run reports:clean</code> before major test runs</li>
+<li><strong>Start small</strong>: Begin with smoke tests before running load/stress tests</li>
+<li><strong>Use verbose for debugging</strong>: Add <code>:verbose</code> or <code>:verbose:report</code> for detailed logs</li>
+<li><strong>Monitor system resources</strong>: Keep an eye on CPU/Memory during stress tests</li>
+<li><strong>Sequential vs Parallel</strong>: All <code>run-all-*</code> commands run tests sequentially (one after another)</li>
+</ol>
+<h3 id="-troubleshooting" tabindex="-1">🚨 Troubleshooting <a class="header-anchor" href="#-troubleshooting" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Test Failed?</strong> Check the HTML report verbose logs section</li>
+<li><strong>Authentication Issues?</strong> Verify <code>users-config.json</code> credentials</li>
+<li><strong>File Not Found?</strong> Ensure test documents exist in <code>src/data/testDocuments/</code></li>
+<li><strong>API Errors?</strong> Check <code>websak-api-config.json</code> for correct API endpoints</li>
+<li><strong>Reports Missing?</strong> Ensure <code>-e ENABLE_VERBOSE_REPORT=true</code> is in command</li>
+</ul>
+<hr>
+<h2 id="-performance-governance-validation" tabindex="-1">�️ Performance Governance &amp; Validation <a class="header-anchor" href="#-performance-governance-validation" aria-hidden="true">#</a></h2>
+<p>Central performance rules (k6 enforcement and UI classification) are managed centrally – do NOT add <code>thresholds:</code> blocks inside test scripts.</p>
+<h3 id="single-source-of-truth" tabindex="-1">Single Source of Truth <a class="header-anchor" href="#single-source-of-truth" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/config/performance-thresholds.json</code></td>
+<td>Defines global k6 thresholds (<code>defaults.k6.*</code> plus optional <code>operations.*.k6</code> overrides) and presentation-only <code>uiBands</code> used for coloring latency, error rate, and check failure rate in HTML reports.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-lives-where" tabindex="-1">What Lives Where <a class="header-anchor" href="#what-lives-where" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Location</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>k6 pass/fail thresholds (p95/p99, error rate)</td>
+<td><code>performance-thresholds.json &gt; defaults.k6</code> and optional <code>operations.*.k6</code></td>
+<td>Merged at runtime; no inline thresholds permitted.</td>
+</tr>
+<tr>
+<td>Operation-specific overrides</td>
+<td><code>performance-thresholds.json &gt; operations</code></td>
+<td>Adds/tightens thresholds for semantic groups (e.g. grouped durations).</td>
+</tr>
+<tr>
+<td>Visual status colors (Good / Watch / Investigate)</td>
+<td><code>performance-thresholds.json &gt; uiBands</code></td>
+<td>Presentation only; doesn’t affect exit code.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="validation-commands" tabindex="-1">Validation Commands <a class="header-anchor" href="#validation-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run validate:thresholds</code></td>
+<td>Schema + ordering validation of <code>performance-thresholds.json</code> (Ajv).</td>
+</tr>
+<tr>
+<td><code>npm run validate:no-inline-thresholds</code></td>
+<td>Scans <code>tests/**</code> for disallowed inline <code>thresholds:</code> definitions.</td>
+</tr>
+<tr>
+<td><code>npm run validate:perf</code></td>
+<td>Runs both of the above. Use before every commit.</td>
+</tr>
+</tbody>
+</table>
+<p>The Husky <code>pre-commit</code> hook (installed via <code>npm run prepare</code>) automatically runs <code>validate:perf</code> and blocks commits if governance fails.</p>
+<h3 id="uibands-guidance" tabindex="-1">uiBands Guidance <a class="header-anchor" href="#uibands-guidance" aria-hidden="true">#</a></h3>
+<p><code>uiBands</code> classify aggregate metrics; recommended inequality:</p>
+<pre class="hljs"><code>good &lt;= watch &lt;= investigate
+</code></pre>
+<p>If <code>investigate</code> equals <code>watch</code> you effectively have two tiers; raise <code>investigate</code> to restore three distinct signal levels.</p>
+<h3 id="changing-thresholds-workflow" tabindex="-1">Changing Thresholds – Workflow <a class="header-anchor" href="#changing-thresholds-workflow" aria-hidden="true">#</a></h3>
+<ol>
+<li>Edit <code>src/config/performance-thresholds.json</code> (update <code>defaults</code>, add/adjust an <code>operations</code> entry, or tune <code>uiBands</code>).</li>
+<li>Run <code>npm run validate:perf</code> until it passes.</li>
+<li>Commit (hook re-validates).</li>
+<li>Re-run representative tests; inspect new HTML report (colors &amp; pass/fail markers update automatically).</li>
+</ol>
+<h3 id="typical-validation-failures" tabindex="-1">Typical Validation Failures <a class="header-anchor" href="#typical-validation-failures" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Example Message</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Band ordering anomaly</td>
+<td><code>Warning: uiBands.latencyMs.good (900) &gt; watch (800)</code></td>
+<td>Correct numerical ordering.</td>
+</tr>
+<tr>
+<td>Missing required property</td>
+<td><code>defaults.k6.http_req_duration.p95 is required</code></td>
+<td>Add the missing field.</td>
+</tr>
+<tr>
+<td>Inline thresholds detected</td>
+<td><code>Inline thresholds found in tests/api/cases/create-sak.js</code></td>
+<td>Remove the inline block; rely on central file.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Policy: All performance changes must pass <code>validate:perf</code>; inline threshold regressions will be rejected.</p>
+</blockquote>
+<hr>
+<h2 id="-support-documentation" tabindex="-1">�📧 Support &amp; Documentation <a class="header-anchor" href="#-support-documentation" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Main Documentation</strong>: <code>documents/README.md</code></li>
+<li><strong>Architecture Guide</strong>: <code>documents/ARCHITECTURE.md</code></li>
+<li><strong>Metrics Guide</strong>: <code>documents/METRICS-GUIDE.md</code></li>
+<li><strong>Configuration Files</strong>:
+<ul>
+<li><code>src/config/autotest.json</code> - Autotest environment settings</li>
+<li><code>src/config/dev.json</code> - Development environment settings</li>
+<li><code>src/config/paths-config.json</code> - File paths configuration</li>
+<li><code>src/data/users-config.json</code> - User credentials</li>
+<li><code>src/data/websak-api-config.json</code> - API endpoints</li>
+</ul>
+</li>
+</ul>
+<p>For technical support or questions about test results, contact your performance testing team.</p>
+<hr>
+<p><strong>Document Version:</strong> 1.0<br>
+<strong>Last Updated:</strong> October 10, 2025<br>
+<strong>Framework Version:</strong> 3.0.0<br>
+<strong>K6 Version:</strong> 0.57.0</p>
+
+<script>
+(function(){
+  function wrapSections(){
+    const h2s=[...document.querySelectorAll('h2')].filter(h=>!h.textContent.trim().match(/^📋|^📖|^Table of Contents/i));
+    h2s.forEach(h=>{
+      if(h.dataset.enhanced) return;
+      const details=document.createElement('details');
+      details.open=false;
+      details.className='collapsible-section';
+      const summary=document.createElement('summary');
+      summary.innerHTML=h.innerHTML;
+      details.appendChild(summary);
+      let next=h.nextSibling;
+      while(next && !(next.tagName && next.tagName.match(/^H1|H2$/))){
+        const toMove=next;
+        next=next.nextSibling;
+        details.appendChild(toMove);
+      }
+      h.parentNode.replaceChild(details,h);
+    });
+  }
+  function addBadges(){
+    const map={Smoke:'badge-smoke',Load:'badge-load',Stress:'badge-stress',Spike:'badge-spike',Endurance:'badge-endurance'};
+    document.querySelectorAll('table td').forEach(td=>{
+      const txt=td.textContent.trim();
+      if(map[txt]){ td.innerHTML='<span class="badge '+map[txt]+'">'+txt+'</span>'; }
+    });
+  }
+  function addCopyButtons(){
+    document.querySelectorAll('pre').forEach(pre=>{
+      if(pre.querySelector('.copy-btn')) return;
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='copy-btn';
+      btn.textContent='Copy';
+      btn.addEventListener('click',()=>{
+        const code=pre.innerText;
+        navigator.clipboard.writeText(code).then(()=>{ btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1500); });
+      });
+      pre.style.position='relative';
+      pre.appendChild(btn);
+    });
+  }
+  function addToolbar(){
+    if(document.querySelector('.doc-toolbar')) return;
+    const bar=document.createElement('div');
+    bar.className='doc-toolbar';
+    bar.innerHTML='<button id="toggleAll">Toggle All</button><button id="expandAll">Expand All</button><button id="collapseAll">Collapse All</button>';
+    document.body.insertBefore(bar,document.body.firstChild.nextSibling);
+    const getDetails=()=>[...document.querySelectorAll('details.collapsible-section')];
+    bar.querySelector('#toggleAll').onclick=()=>{getDetails().forEach(d=>d.open=!d.open);};
+    bar.querySelector('#expandAll').onclick=()=>{getDetails().forEach(d=>d.open=true);};
+    bar.querySelector('#collapseAll').onclick=()=>{getDetails().forEach(d=>d.open=false);};
+  }
+  document.addEventListener('DOMContentLoaded',()=>{wrapSections(); addBadges(); addCopyButtons(); addToolbar();});
+})();
+</script>
+<div class="meta">Generated from <code>documents/NPM-COMMANDS-REFERENCE.md</code> on 2025-10-10T11:24:15.273Z</div>
+</body>
+</html>

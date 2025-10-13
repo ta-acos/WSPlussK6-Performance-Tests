@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>WebSak Plus Performance Test Framework – Non‑Technical Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+ body{font-family:Segoe UI,Arial,sans-serif;line-height:1.5;margin:0;background:#f8f9fb;color:#222}
+ header{background:#163d6d;color:#fff;padding:30px 28px}
+ h1{margin:0 0 10px;font-size:28px}
+ h2{margin-top:42px;color:#163d6d;border-bottom:2px solid #e2e8f2;padding-bottom:4px}
+ h3{margin-top:28px;color:#264b7f}
+ p{max-width:960px}
+ a{color:#0b5ed7;text-decoration:none}
+ a:hover{text-decoration:underline}
+ code,pre{background:#eef3f9;font-family:Consolas,monospace;padding:2px 5px;border-radius:4px;font-size:90%}
+ pre{padding:14px;overflow:auto}
+ nav{background:#0f2e52;color:#fff;padding:10px 20px;font-size:14px}
+ nav a{color:#fff;margin-right:14px}
+ .container{padding:26px 32px 60px}
+ .kv{display:flex;flex-wrap:wrap;gap:16px;margin:12px 0 24px}
+ .card{background:#fff;border:1px solid #d9e2ec;border-radius:10px;padding:18px 20px;flex:1 1 300px;box-shadow:0 2px 4px rgba(0,0,0,.05)}
+ .card h3{margin-top:0;font-size:18px}
+ .step-flow{counter-reset:step}
+ .step{position:relative;background:#fff;border-left:5px solid #163d6d;margin:0 0 18px;padding:14px 18px 14px 48px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+ .step:before{counter-increment:step;content:counter(step);position:absolute;left:14px;top:14px;background:#163d6d;color:#fff;font-weight:600;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+ .pill{display:inline-block;padding:2px 8px;border-radius:14px;background:#163d6d;color:#fff;font-size:11px;letter-spacing:.5px;margin-right:6px}
+ table{border-collapse:collapse;margin:14px 0;width:100%;max-width:1300px}
+ th,td{border:1px solid #d0dae5;padding:6px 10px;font-size:13px;text-align:left;vertical-align:top}
+ th{background:#f1f5fa}
+ tr:nth-child(even) td{background:#fafcfe}
+ .cat{font-weight:600;color:#163d6d}
+ details{background:#fff;border:1px solid #d7e2ed;border-radius:8px;padding:10px 16px;margin:10px 0}
+ details summary{cursor:pointer;font-weight:600}
+ .good{color:#1B873F;font-weight:600}
+ .warn{color:#ff8b00;font-weight:600}
+ .bad{color:#b00020;font-weight:600}
+ .note{background:#fff7d6;border-left:5px solid #e8c200;padding:10px 14px;border-radius:6px;margin:18px 0;max-width:960px}
+ .tip{background:#e6f7ef;border-left:5px solid #18a058;padding:10px 14px;border-radius:6px;margin:18px 0;max-width:960px}
+ .danger{background:#fdecea;border-left:5px solid #d93025;padding:10px 14px;border-radius:6px;margin:18px 0;max-width:960px}
+ .mono{font-family:Consolas,monaco,monospace;font-size:12px}
+ footer{background:#163d6d;color:#fff;padding:24px 32px;font-size:13px}
+ ul.compact li{margin:4px 0}
+ .toc ol{columns:2;column-gap:40px;list-style:decimal-leading-zero}
+ @media (max-width:900px){.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>WebSak Plus Performance Test Framework</h1>
+  <p>Plain‑language guide for non‑technical readers: what each file is for, and what happens when you run a test.</p>
+</header>
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#quickstart">Quick Start</a>
+  <a href="#flow">Execution Flow</a>
+  <a href="#files">File Purposes</a>
+  <a href="#reports">Reading Reports</a>
+  <a href="#faq">FAQ</a>
+  <a href="#glossary">Glossary</a>
+</nav>
+<div class="container">
+<h2 id="overview">1. What This Project Does (In Simple Words)</h2>
+<p>This project <strong>pretends to be real users</strong> of the WebSak Plus system. It signs in, creates cases, creates journal posts, attaches documents, and measures how fast and reliable the system is under different levels of activity (light, normal, heavy, spikes, long‑running).</p>
+<div class="kv">
+  <div class="card"><h3>Business Goal</h3><p>Confirm the system can handle expected and peak workloads without slowing down too much or producing errors.</p></div>
+  <div class="card"><h3>How It Works</h3><p>Automated virtual users call the real APIs in controlled patterns (scenarios). All results are turned into an easy‑to‑read HTML report.</p></div>
+  <div class="card"><h3>Core Outcomes</h3><ul class="compact"><li>Response time (speed)</li><li>Error rate (reliability)</li><li>Stability under load</li><li>Pass or fail vs. agreed targets</li></ul></div>
+</div>
+
+<h2 id="quickstart">2. Quick Start – If You Only Want To Run a Test</h2>
+<ol>
+  <li>Open a terminal in the project folder.</li>
+  <li>Run a simple quick health test: <code>npm run simple</code></li>
+  <li>Run a normal load test: <code>npm run load</code></li>
+  <li>When it finishes, open the HTML report inside <code>src/reports/</code></li>
+</ol>
+<p><strong>You do not need to edit any files</strong> for basic usage.</p>
+
+<h2 id="flow">3. What Happens When I Run a Test Command?</h2>
+<p>Example command: <code>npm run load</code> (which internally runs a k6 command with environment variables).</p>
+<div class="step-flow">
+  <div class="step"><strong>1. You start the command</strong><br/>The chosen script in <code>package.json</code> invokes the k6 test file (for example a script in <code>tests/api/...</code>) and sets scenario type (e.g. <code>load_test</code>).</div>
+  <div class="step"><strong>2. Initialization Phase</strong><br/>Before any virtual users run actions, configuration files are read:<ul><li><code>environments.json</code> – which server to target (host, protocol).</li><li><code>autotest.json</code> – defines load patterns (how many users, how long).</li><li><code>performance-thresholds.json</code> – target performance limits.</li><li><code>websak-api-config.json</code> and <code>users-config.json</code> – endpoints and test accounts.</li></ul></div>
+  <div class="step"><strong>3. Options & Scenarios Built</strong><br/><code>config-manager.js</code> combines scenario settings and thresholds → passes them to k6 so it knows how many virtual users, duration, and pass/fail criteria.</div>
+  <div class="step"><strong>4. Virtual Users Start</strong><br/>Each simulated user picks a test account (from <code>users-config.json</code>), authenticates via <code>auth-module.js</code>, and begins performing actions (create case, etc.).</div>
+  <div class="step"><strong>5. Workflows Run</strong><br/><code>test-workflow.js</code> and modules like <code>case-module.js</code>, <code>jp-module.js</code>, <code>payload-module.js</code> assemble realistic API requests.</div>
+  <div class="step"><strong>6. Measurements Collected</strong><br/>For every API call the time taken and success/failure are recorded (metrics like <code>http_req_duration</code>, <code>http_req_failed</code>).</div>
+  <div class="step"><strong>7. Threshold Check</strong><br/>At the end k6 compares actual performance to targets (for example “95% of requests must be faster than 4.5 seconds”). Any breach = FAIL status for that rule.</div>
+  <div class="step"><strong>8. Report Generated</strong><br/><code>report-generator.js</code> builds an HTML report (plus a JSON summary). You open it from <code>src/reports/</code>.</div>
+</div>
+
+<h2 id="files">4. File & Folder Purpose (Plain Language)</h2>
+<p>Grouped so you can ignore technical details and just understand the role.</p>
+<table>
+<thead><tr><th>Location / File</th><th>What It Is</th><th>Why It Matters</th></tr></thead>
+<tbody>
+<tr><td class="cat" colspan="3">Top Level</td></tr>
+<tr><td><code>package.json</code></td><td>List of run commands (scripts) and tools.</td><td>You run tests through the commands defined here.</td></tr>
+<tr><td><code>README.md</code></td><tdHigh level overview.</td><td>Starting reference for developers.</td></tr>
+
+<tr><td class="cat" colspan="3">Configuration (Central Brains)</td></tr>
+<tr><td><code>src/config/environments.json</code></td><td>Server addresses and auth settings for each environment (dev/test/prod).</td><td>Switches which system you test against without editing code.</td></tr>
+<tr><td><code>src/config/autotest.json</code></td><td>Defines scenario shapes: user counts and durations.</td><td>Determines the “pattern” of virtual user activity.</td></tr>
+<tr><td><code>src/config/performance-thresholds.json</code></td><td>Performance targets (speed & reliability) plus “color band” ranges.</td><td>Decides pass/fail and how the report colors data (green/yellow/red).</td></tr>
+<tr><td><code>src/config/paths-config.json</code></td><td>Where reports & test data live (fallback defaults).</td><td>Central place if locations ever need changing.</td></tr>
+<tr><td><code>src/data/users-config.json</code></td><td>List of test users (client credentials).</td><td>Lets each virtual user log in authentically.</td></tr>
+<tr><td><code>src/data/websak-api-config.json</code></td><td>API endpoint names and default templates.</td><td>Ensures all tests call consistent endpoints.</td></tr>
+
+<tr><td class="cat" colspan="3">Test Scripts (You Start Here When Running)</td></tr>
+<tr><td><code>tests/api/cases/create-sak.js</code></td><td>Entry script for creating cases under different loads.</td><td>The command <code>npm run load</code> ultimately drives this.</td></tr>
+<tr><td><code>tests/api/journalposts/*.js</code></td><td>Scripts for creating journal posts (single, multiple, with documents).</td><td>Select different complexity levels: simple vs multi‑doc vs complex.</td></tr>
+
+<tr><td class="cat" colspan="3">Core Logic Modules</td></tr>
+<tr><td><code>src/lib/config-manager.js</code></td><td>Combines all configs and produces k6 options.</td><td>Guarantees every test uses the same rules.</td></tr>
+<tr><td><code>src/lib/auth-module.js</code></td><td>Handles login (OAuth token retrieval).</td><td>Without this nothing can call the secure APIs.</td></tr>
+<tr><td><code>src/lib/case-module.js</code></td><td>Gets templates & creates cases.</td><td>Simulates real user case creation.</td></tr>
+<tr><td><code>src/lib/jp-module.js</code></td><td>Creates journal posts and attaches docs.</td><td>Measures performance of document & journal flows.</td></tr>
+<tr><td><code>src/lib/payload-module.js</code></td><td>Builds realistic request bodies (titles, descriptions).</td><td>Ensures consistent, valid test data each run.</td></tr>
+
+<tr><td class="cat" colspan="3">Utility Helpers</td></tr>
+<tr><td><code>src/utils/api-client.js</code></td><td>Standard way to make API calls & record timings.</td><td>Ensures all calls measure speed & errors uniformly.</td></tr>
+<tr><td><code>src/utils/test-workflow.js</code></td><td>Reusable setup + execution steps.</td><td>Prevents repeating boilerplate in each test file.</td></tr>
+<tr><td><code>src/utils/report-generator.js</code></td><td>Builds the HTML report.</td><td>Transforms raw technical metrics into stakeholder view.</td></tr>
+<tr><td><code>src/utils/pacing.js</code></td><td>Adds realistic “thinking” delays.</td><td>Prevents totally artificial constant hammering (unless disabled).</td></tr>
+<tr><td><code>src/utils/test-validation.js</code></td><td>Checks that config, users, and actions succeeded.</td><td>Better error messages when something goes wrong.</td></tr>
+<tr><td><code>src/utils/error-tracker.js</code></td><td>Captures and classifies API errors.</td><td>Feeds structured error info to reports.</td></tr>
+<tr><td><code>src/utils/console-logger.js</code></td><td>Formatting helpers for log output.</td><td>Makes console easier to read during runs.</td></tr>
+<tr><td><code>src/utils/document-attachment.js</code></td><td>Handles attaching documents to JPs.</td><td>Simulates heavier document workflows.</td></tr>
+<tr><td><code>src/utils/test-summary.js</code></td><td>Prepares summary objects.</td><td>Used when passing data into final report phase.</td></tr>
+<tr><td><code>src/utils/test-teardown.js</code></td><td>Final clean‑up tasks.</td><td>Runs at the end if special teardown needed.</td></tr>
+<tr><td><code>src/utils/validation.js</code></td><td>General validation helpers.</td><td>Supports consistent rule checks.</td></tr>
+<tr><td><code>src/utils/k6-verbose-logger.js</code></td><td>Collects extra debug logs for embedding.</td><td>You can enable verbose reporting to see deeper detail.</td></tr>
+
+<tr><td class="cat" colspan="3">Governance & Quality</td></tr>
+<tr><td><code>performance-thresholds.schema.json</code></td><td>Rules describing allowed structure of thresholds file.</td><td>Prevents accidental breaking edits to performance standards.</td></tr>
+<tr><td><code>scripts/validate-thresholds.js</code></td><td>Checks thresholds file matches the schema.</td><td>Stops invalid formats before they get used.</td></tr>
+<tr><td><code>scripts/validate-no-inline-http-thresholds.js</code></td><td>Ensures no rogue duplicated latency rules appear elsewhere.</td><td>Keeps performance governance in one location.</td></tr>
+
+<tr><td class="cat" colspan="3">Reports & Data</td></tr>
+<tr><td><code>src/reports/*.html</code></td><td>Generated performance reports.</td><td>Open in a browser for visual results.</td></tr>
+<tr><td><code>src/reports/*-summary.json</code></td><td>Raw machine summary of same test.</td><td>Could be consumed by dashboards later.</td></tr>
+<tr><td><code>src/data/testDocuments/*</code></td><td>Sample doc files (1MB–10MB etc.).</td><td>Used to simulate real document upload payloads.</td></tr>
+</tbody>
+</table>
+
+<h2 id="reports">5. Reading the HTML Report</h2>
+<p>The HTML report is your main artifact. Key areas:</p>
+<ul>
+  <li><strong>Executive Summary</strong> – One‑screen verdict (PASS/FAIL notes).</li>
+  <li><strong>KPI Cards</strong> – Success rate, error rate, key percentiles (95% / 99%).</li>
+  <li><strong>Latency Distribution</strong> – Shows spread; watch 95th percentile value.</li>
+  <li><strong>Threshold Table</strong> – Each rule and whether it passed.</li>
+  <li><strong>Verbose Logs (optional)</strong> – Only if you ran a <code>:verbose</code> script.</li>
+</ul>
+<div class="tip"><strong>Color meanings:</strong><br/>Green = on target. Yellow = keep an eye on it. Red = needs investigation.</div>
+<div class="note"><strong>Why 95th percentile?</strong> It tells you how slow the slowest typical users are (excluding rare outliers). If this is high, many users feel slowness.</div>
+
+<h2 id="faq">6. Frequently Asked Questions</h2>
+<details open><summary>How do I know if the test PASSED?</summary><p>If all thresholds in the “Threshold Table” show PASS. Any FAIL means the test overall should be treated as failed.</p></details>
+<details><summary>Why are some tests called smoke / load / stress / spike / endurance?</summary><p>They mimic different real‑world patterns: quick check, normal traffic, pushing limits, sudden bursts, and long stability check.</p></details>
+<details><summary>Can I ignore red iteration_duration?</summary><p>Iteration duration measures a whole loop of user actions—not just one API call. It can appear larger and is explained inline in the report.</p></details>
+<details><summary>Where can I adjust performance targets?</summary><p>Only in <code>src/config/performance-thresholds.json</code>. Edit carefully then run <code>npm run validate:perf</code>.</p></details>
+<details><summary>How do I switch environment (e.g. dev vs autotest)?</summary><p>Add <code>-e CONFIG_ENV=dev</code> to the k6 command or use a script that sets it.</p></details>
+<details><summary>How do I add more virtual users?</summary><p>Update the scenario definition (e.g. in <code>autotest.json</code>) or temporarily override via environment variables in a custom script.</p></details>
+
+<h2 id="glossary">7. Glossary (Plain Language)</h2>
+<ul>
+  <li><strong>Virtual User (VU)</strong> – A simulated user performing actions.</li>
+  <li><strong>Scenario</strong> – Pattern describing how many users and how long.</li>
+  <li><strong>Threshold</strong> – A performance rule (e.g., “95% of responses < 4.5s”).</li>
+  <li><strong>Percentile (p95)</strong> – Value under which 95% of measurements fall.</li>
+  <li><strong>Error Rate</strong> – Portion of API calls that failed.</li>
+  <li><strong>Apdex</strong> – User satisfaction index (not heavily emphasized here but supported).</li>
+  <li><strong>Bandwidth / Payload</strong> – Data being sent (e.g., document uploads).</li>
+</ul>
+
+<h2>8. What To Do After a Test</h2>
+<ol>
+  <li>Open the HTML report.</li>
+  <li>Check for any red FAIL thresholds.</li>
+  <li>If FAIL: capture the report, note scenario + environment, raise to engineering with the JSON summary.</li>
+  <li>If all PASS but yellow areas growing: schedule optimization discussion.</li>
+</ol>
+<div class="danger"><strong>Never change thresholds to “green‑wash” a problem</strong>. Investigate root cause first (slow endpoint, document size, authentication slowness).</div>
+
+<h2>9. Safe Ways to Experiment</h2>
+<ul>
+  <li>Run a smoke test first (fast, low risk).</li>
+  <li>Use <code>:verbose</code> variants only when debugging (they produce more output).</li>
+  <li>Change just one scenario parameter at a time when exploring.</li>
+  <li>Run <code>npm run validate:perf</code> before committing threshold changes.</li>
+</ul>
+
+<h2>10. Need Deeper Technical Detail?</h2>
+<p>Point a developer to modules inside <code>src/lib</code> and <code>src/utils</code>. They contain inline comments for internal logic.</p>
+
+<footer>
+  <p>Generated Non‑Technical Documentation – This file can be updated as the framework evolves. Keep it close to reality: update when adding modules or changing governance.</p>
+</footer>
+</div>
+</body>
+</html>

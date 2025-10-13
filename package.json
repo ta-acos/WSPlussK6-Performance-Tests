@@ -1,0 +1,331 @@
+{
+  "name": "acos-graf-load-test",
+  "version": "3.0.0",
+  "description": "Acos GRAF - Load Test v3.0: Enhanced K6 performance testing framework for WebSak Plus with centralized path management, environment metadata, and advanced configuration system",
+  "scripts": {
+    "__comment_help": "=== QUICK START - Run these commands with: npm run <command-name> ===",
+    "__comment_help_desc": "Example: npm run simple or npm run load",
+    
+    "__comment_quick_start": "=== QUICK START COMMANDS (for non-technical users) ===",
+    "simple": "npm run test:simple",
+    "load": "npm run test:load",
+    "stress": "npm run test:stress", 
+    "jp-docs": "npm run test:simple:documents",
+    "complex": "npm run test:simple:complex",
+    
+    "__comment_simple": "=== SIMPLE TESTS (Start Here!) ===",
+    "test:simple": "k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:simple:verbose": "k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true --verbose tests/api/cases/create-sak.js",
+    "test:simple:jp": "k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:simple:documents": "k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "test:simple:complex": "k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_load": "=== LOAD TESTS (Normal Traffic) ===",
+    "test:load": "k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:load:verbose": "k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true --verbose tests/api/cases/create-sak.js",
+    "test:load:jp": "k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:load:documents": "k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "test:load:complex": "k6 run -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_stress": "=== STRESS TESTS (High Traffic) ===",
+    "test:stress": "k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:stress:verbose": "k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true --verbose tests/api/cases/create-sak.js",
+    "test:stress:jp": "k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:stress:documents": "k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "test:stress:complex": "k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_spike": "=== SPIKE TESTS (Traffic Bursts) ===",
+    "test:spike": "k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:spike:verbose": "k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true --verbose tests/api/cases/create-sak.js",
+    "test:spike:jp": "k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:spike:documents": "k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "test:spike:complex": "k6 run -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_endurance": "=== ENDURANCE TESTS (Long Duration) ===",
+    "test:endurance": "k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:endurance:verbose": "k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true --verbose tests/api/cases/create-sak.js",
+    "test:endurance:jp": "k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:endurance:documents": "k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "test:endurance:complex": "k6 run -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_environment": "=== ENVIRONMENT SPECIFIC TESTS ===",
+    "test:dev": "k6 run -e CONFIG_ENV=dev -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:autotest": "k6 run -e CONFIG_ENV=autotest -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:dev:load": "k6 run -e CONFIG_ENV=dev -e SCENARIO=load_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "test:autotest:load": "k6 run -e CONFIG_ENV=autotest -e SCENARIO=load_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+    "__comment_sak": "=== Create Sak (Case) Tests - All Scenarios ===",
+    "__comment_sak_desc": "Tests for creating WebSak cases with various load patterns",
+    "test:create-sak": "k6 run -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+    "__comment_sak_smoke": "Smoke test: Quick validation with 1 user, 1 case creation",
+    "test:create-sak:smoke": "k6 run -e SCENARIO=smoke_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+    "__comment_sak_load": "Load test: Sustained load with multiple users creating cases",
+    "test:create-sak:load": "k6 run -e SCENARIO=load_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+    "__comment_sak_stress": "Stress test: Push system beyond normal capacity to find breaking points",
+    "test:create-sak:stress": "k6 run -e SCENARIO=stress_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+    "__comment_sak_spike": "Spike test: Sudden traffic spikes to test system resilience",
+    "test:create-sak:spike": "k6 run -e SCENARIO=spike_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+  "__comment_sak_endurance": "Endurance test: Extended duration test to check for memory leaks and stability",
+  "test:create-sak:endurance": "k6 run -e SCENARIO=endurance_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+  "__comment_sak_nopace": "No-pacing variants: Run tests without think time (maximum throughput)",
+  "test:create-sak:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FORCE_CASE_ONLY='true'; k6 run -e SCENARIO=load_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js\"",
+  "test:create-sak:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FORCE_CASE_ONLY='true'; k6 run -e SCENARIO=stress_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js\"",
+  "test:create-sak:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FORCE_CASE_ONLY='true'; k6 run -e SCENARIO=spike_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js\"",
+  "test:create-sak:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FORCE_CASE_ONLY='true'; k6 run -e SCENARIO=smoke_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js\"",
+  "test:create-sak:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FORCE_CASE_ONLY='true'; k6 run -e SCENARIO=endurance_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js\"",
+
+    "__comment_jp": "=== Create JP (Journal Post) Tests ===",
+    "__comment_jp_desc": "Tests for creating single Journal Posts with various load patterns",
+    "test:create-jp": "k6 run -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+
+    "__comment_jp_smoke": "Smoke test: Quick validation with 1 user, 1 JP creation",
+    "test:create-jp:smoke": "k6 run -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+
+    "__comment_jp_load": "Load test: Sustained load with multiple users creating JPs",
+    "test:create-jp:load": "k6 run -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+
+    "__comment_jp_stress": "Stress test: Push system beyond normal capacity for JP creation",
+    "test:create-jp:stress": "k6 run -e SCENARIO=stress_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+
+    "__comment_jp_spike": "Spike test: Sudden traffic spikes for JP creation",
+    "test:create-jp:spike": "k6 run -e SCENARIO=spike_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+
+  "__comment_jp_endurance": "Endurance test: Extended JP creation to check stability",
+  "test:create-jp:endurance": "k6 run -e SCENARIO=endurance_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+
+  "__comment_jp_nopace": "No-pacing variants: JP tests without think time (maximum throughput)",
+  "test:create-jp:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js\"",
+  "test:create-jp:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=stress_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js\"",
+  "test:create-jp:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=spike_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js\"",
+  "test:create-jp:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js\"",
+  "test:create-jp:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=endurance_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js\"",
+
+    "__comment_jp_multidoc": "=== Create Single JP with Multiple Documents Tests ===",
+    "__comment_jp_multidoc_desc": "Tests for creating a single Journal Post with multiple document attachments",
+    "test:create-jp-with-multiple-document": "k6 run -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_jp_multidoc_smoke": "Smoke test: 1 JP with multiple documents attached",
+    "test:create-jp-with-multiple-document:smoke": "k6 run -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_jp_multidoc_load": "Load test: Multiple users creating JPs with document attachments",
+    "test:create-jp-with-multiple-document:load": "k6 run -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_jp_multidoc_stress": "Stress test: High volume JP+documents creation",
+    "test:create-jp-with-multiple-document:stress": "k6 run -e SCENARIO=stress_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_jp_multidoc_spike": "Spike test: Sudden spikes in JP+documents creation",
+    "test:create-jp-with-multiple-document:spike": "k6 run -e SCENARIO=spike_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_jp_multidoc_endurance": "Endurance test: Extended JP+documents creation for stability",
+    "test:create-jp-with-multiple-document:endurance": "k6 run -e SCENARIO=endurance_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_jp_multidoc_nopace": "No-pacing variants: JP+documents tests without think time",
+    "test:create-jp-with-multiple-document:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js\"",
+    "test:create-jp-with-multiple-document:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js\"",
+    "test:create-jp-with-multiple-document:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=stress_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js\"",
+    "test:create-jp-with-multiple-document:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=spike_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js\"",
+    "test:create-jp-with-multiple-document:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=endurance_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js\"",
+
+    "__comment_multiplejp": "=== Create Multiple JPs (Incoming & Outgoing) with Multiple Documents Tests ===",
+    "test:create-multiplejp-with-multiple-document": "k6 run -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_smoke": "Smoke test: 2 incoming + 2 outgoing JPs with 10 large test documents each (1MB-10MB files)",
+    "test:create-multiplejp-with-multiple-document:smoke": "k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_synthetic": "Smoke test: 2 incoming + 2 outgoing JPs with 3 synthetic documents each (fast, lightweight)",
+    "test:create-multiplejp-with-multiple-document:smoke:synthetic": "k6 run -e SCENARIO=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e DOC_COUNT=3 -e USE_TEST_DOCS=false -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_load": "Load test: Multiple incoming/outgoing JPs with large test documents (realistic performance testing)",
+    "test:create-multiplejp-with-multiple-document:load": "k6 run -e SCENARIO=load_test -e USE_TEST_DOCS=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_stress": "Stress test: High volume JPs creation with large documents to test system limits",
+    "test:create-multiplejp-with-multiple-document:stress": "k6 run -e SCENARIO=stress_test -e USE_TEST_DOCS=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_spike": "Spike test: Traffic spikes for complex JPs with documents",
+    "test:create-multiplejp-with-multiple-document:spike": "k6 run -e SCENARIO=spike_test -e USE_TEST_DOCS=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_endurance": "Endurance test: Extended complex JP creation for stability testing",
+    "test:create-multiplejp-with-multiple-document:endurance": "k6 run -e SCENARIO=endurance_test -e USE_TEST_DOCS=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_multiplejp_nopace": "No-pacing variants: Complex JP tests without think time (maximum throughput)",
+    "test:create-multiplejp-with-multiple-document:smoke:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js\"",
+    "test:create-multiplejp-with-multiple-document:load:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js\"",
+    "test:create-multiplejp-with-multiple-document:stress:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=stress_test -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js\"",
+    "test:create-multiplejp-with-multiple-document:spike:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=spike_test -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js\"",
+    "test:create-multiplejp-with-multiple-document:endurance:nopace": "powershell -Command \"$env:PACING_MODE='none'; $env:FLOW_TYPE='jp'; k6 run -e SCENARIO=endurance_test -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js\"",
+
+    "__comment_env_jp": "=== JP Environment-Specific Tests ===",
+    "__comment_dev_jp": "Development environment JP tests",
+    "test:dev:jp:smoke": "k6 run --env CONFIG_ENV=dev -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:dev:jp:load": "k6 run --env CONFIG_ENV=dev -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:dev:jp-docs": "k6 run --env CONFIG_ENV=dev -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+
+    "__comment_autotest_jp": "Autotest environment JP tests (full test suite)",
+    "test:autotest:jp:smoke": "k6 run --env CONFIG_ENV=autotest -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:autotest:jp:load": "k6 run --env CONFIG_ENV=autotest -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:autotest:jp-docs": "k6 run --env CONFIG_ENV=autotest -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "test:autotest:complex": "k6 run --env CONFIG_ENV=autotest -e SCENARIO=load_test -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+
+    "__comment_utilities": "=== UTILITIES ===",
+    "__comment_verbose": "=== VERBOSE LOGGING COMMANDS (Full Debug Output) ===",
+    "__comment_verbose_desc": "All commands with --verbose flag for detailed debugging and troubleshooting",
+    
+    "__comment_verbose_simple": "Simple tests with verbose logging",
+    "test:verbose": "k6 run --verbose -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "test:debug": "k6 run --verbose --env CONFIG_ENV=dev -e SCENARIO=smoke_test -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "simple:verbose": "npm run test:simple:verbose",
+    "load:verbose": "npm run test:load:verbose",
+    "stress:verbose": "npm run test:stress:verbose",
+    "spike:verbose": "npm run test:spike:verbose",
+    "endurance:verbose": "npm run test:endurance:verbose",
+    
+    "__comment_verbose_sak": "SAK (Case) tests with verbose logging",
+    "sak:verbose": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "sak:load:verbose": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "sak:stress:verbose": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "sak:spike:verbose": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "sak:endurance:verbose": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    
+    "__comment_verbose_jp": "Journal Post tests with verbose logging",
+    "jp:verbose": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:load:verbose": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:stress:verbose": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:spike:verbose": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:endurance:verbose": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    
+    "__comment_verbose_jp_docs": "JP with Documents tests with verbose logging",
+    "jp-docs:verbose": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:load:verbose": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:stress:verbose": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:spike:verbose": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:endurance:verbose": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    
+    "__comment_verbose_complex": "Complex Multi-JP tests with verbose logging",
+    "complex:verbose": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:load:verbose": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:stress:verbose": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:spike:verbose": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:endurance:verbose": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    
+    "__comment_verbose_env": "Environment-specific verbose tests",
+    "dev:verbose": "k6 run --verbose --env CONFIG_ENV=dev -e SCENARIO=smoke_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "autotest:verbose": "k6 run --verbose --env CONFIG_ENV=autotest -e SCENARIO=smoke_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "dev:load:verbose": "k6 run --verbose --env CONFIG_ENV=dev -e SCENARIO=load_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "autotest:load:verbose": "k6 run --verbose --env CONFIG_ENV=autotest -e SCENARIO=load_test -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+
+    "__comment_verbose_reports": "=== VERBOSE TESTS WITH ENHANCED HTML REPORTS ===",
+    "__comment_verbose_reports_desc": "Generate HTML reports WITH verbose debug logs embedded (expand/collapse)",
+    
+    "simple:verbose:report": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "load:verbose:report": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "stress:verbose:report": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "spike:verbose:report": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    "endurance:verbose:report": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js",
+    
+    "jp:verbose:report": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:load:verbose:report": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:stress:verbose:report": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:spike:verbose:report": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    "jp:endurance:verbose:report": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js",
+    
+    "jp-docs:verbose:report": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:load:verbose:report": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:stress:verbose:report": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:spike:verbose:report": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    "jp-docs:endurance:verbose:report": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js",
+    
+    "complex:verbose:report": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:load:verbose:report": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:stress:verbose:report": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:spike:verbose:report": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "complex:endurance:verbose:report": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    
+    "__comment_multiplejp_verbose_reports": "Full name verbose report commands for multiplejp tests",
+    "test:create-multiplejp-with-multiple-document:smoke:verbose:report": "k6 run --verbose -e SCENARIO=smoke_test -e SCENARIO_NAME=smoke_test -e INCOMING_COUNT=2 -e OUTGOING_COUNT=2 -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "test:create-multiplejp-with-multiple-document:load:verbose:report": "k6 run --verbose -e SCENARIO=load_test -e SCENARIO_NAME=load_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "test:create-multiplejp-with-multiple-document:stress:verbose:report": "k6 run --verbose -e SCENARIO=stress_test -e SCENARIO_NAME=stress_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "test:create-multiplejp-with-multiple-document:spike:verbose:report": "k6 run --verbose -e SCENARIO=spike_test -e SCENARIO_NAME=spike_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    "test:create-multiplejp-with-multiple-document:endurance:verbose:report": "k6 run --verbose -e SCENARIO=endurance_test -e SCENARIO_NAME=endurance_test -e USE_TEST_DOCS=true -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-multiple-jp-with-multiple-document.js",
+    
+    "__comment_reports_mgmt": "Report management utilities",
+  "reports:view": "start src/reports",
+  "reports:clean": "powershell -Command \"Remove-Item -Path 'src/reports/*.html', 'src/reports/*.json' -Force -ErrorAction SilentlyContinue\"",
+  "reports:verbose:info": "echo 'Verbose logs are now integrated into HTML reports! Run any :verbose:report command, then open the HTML report and look for the \"Verbose Debug Logs\" section with expand/collapse.'",
+
+  "__comment_help_cmds": "Help and documentation commands",
+  "help": "echo 'Available commands: npm run simple (basic test), npm run load (performance test), npm run stress (high load), npm run jp-docs (document upload test), npm run complex (full feature test)'",
+  "test:info": "echo 'Test Types: simple=basic JP creation, load=performance testing, stress=high volume, jp-docs=document uploads, complex=multiple JPs with documents'",
+
+    "__comment_reports": "=== Report Management ===",
+    "__comment_reports_desc": "Commands for viewing and managing test reports",
+    "report:open": "powershell -Command \"if (Test-Path src/reports/create-sak-report.html) { Start-Process src/reports/create-sak-report.html } else { Write-Host 'Report not found. Run a test first.' }\"",
+
+    "report:open:jp": "powershell -Command \"if (Test-Path src/reports/create-jp-report.html) { Start-Process src/reports/create-jp-report.html } else { Write-Host 'JP Report not found. Run a test first.' }\"",
+    "report:list": "Get-ChildItem src/reports/*-report.html -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object Name,LastWriteTime",
+
+    "__comment_dev": "=== Development Tools ===",
+    "__comment_dev_desc": "Linting, formatting, and project setup commands",
+    "lint": "eslint \"tests/**/*.js\" \"src/**/*.js\" --quiet",
+
+  "format": "prettier --write \"tests/**/*.js\" \"src/**/*.js\"",
+  "prepare": "husky install",
+
+    "__comment_run_all": "=== RUN ALL TESTS (Sequential) ===", 
+    "__comment_run_all_desc": "Execute all test types with unique scenario names and verbose reporting",
+    "run-all-tests": "npm run run-all-smoke && npm run run-all-load && npm run run-all-stress",
+    "run-all-autotest": "npm run run-all-sak-autotest && npm run run-all-jp-autotest && npm run run-all-jp-docs-autotest && npm run run-all-complex-autotest",
+    
+    "__comment_run_all_by_test": "Run all scenarios for specific test types with autotest.json",
+    "run-all-sak-autotest": "npm run simple:verbose:report -- --env CONFIG_ENV=autotest && npm run load:verbose:report -- --env CONFIG_ENV=autotest && npm run stress:verbose:report -- --env CONFIG_ENV=autotest && npm run spike:verbose:report -- --env CONFIG_ENV=autotest && npm run endurance:verbose:report -- --env CONFIG_ENV=autotest",
+    "run-all-jp-autotest": "npm run jp:verbose:report -- --env CONFIG_ENV=autotest && npm run jp:load:verbose:report -- --env CONFIG_ENV=autotest && npm run jp:stress:verbose:report -- --env CONFIG_ENV=autotest && npm run jp:spike:verbose:report -- --env CONFIG_ENV=autotest && npm run jp:endurance:verbose:report -- --env CONFIG_ENV=autotest",
+    "run-all-jp-docs-autotest": "npm run jp-docs:verbose:report -- --env CONFIG_ENV=autotest && npm run jp-docs:load:verbose:report -- --env CONFIG_ENV=autotest && npm run jp-docs:stress:verbose:report -- --env CONFIG_ENV=autotest && npm run jp-docs:spike:verbose:report -- --env CONFIG_ENV=autotest && npm run jp-docs:endurance:verbose:report -- --env CONFIG_ENV=autotest",
+    "run-all-complex-autotest": "npm run complex:verbose:report -- --env CONFIG_ENV=autotest && npm run complex:load:verbose:report -- --env CONFIG_ENV=autotest && npm run complex:stress:verbose:report -- --env CONFIG_ENV=autotest && npm run complex:spike:verbose:report -- --env CONFIG_ENV=autotest && npm run complex:endurance:verbose:report -- --env CONFIG_ENV=autotest",
+    "run-all-smoke": "npm run test:simple -- -e SCENARIO_NAME=sak_smoke_test -e ENABLE_VERBOSE_REPORT=true && npm run test:simple:jp -- -e SCENARIO_NAME=jp_smoke_test -e ENABLE_VERBOSE_REPORT=true && npm run test:simple:documents -- -e SCENARIO_NAME=jp_docs_smoke_test -e ENABLE_VERBOSE_REPORT=true && npm run test:simple:complex -- -e SCENARIO_NAME=complex_smoke_test -e ENABLE_VERBOSE_REPORT=true",
+    "run-all-load": "npm run test:load -- -e SCENARIO_NAME=sak_load_test -e ENABLE_VERBOSE_REPORT=true && npm run test:load:jp -- -e SCENARIO_NAME=jp_load_test -e ENABLE_VERBOSE_REPORT=true && npm run test:load:documents -- -e SCENARIO_NAME=jp_docs_load_test -e ENABLE_VERBOSE_REPORT=true && npm run test:load:complex -- -e SCENARIO_NAME=complex_load_test -e ENABLE_VERBOSE_REPORT=true",
+    "run-all-stress": "npm run test:stress -- -e SCENARIO_NAME=sak_stress_test -e ENABLE_VERBOSE_REPORT=true && npm run test:stress:jp -- -e SCENARIO_NAME=jp_stress_test -e ENABLE_VERBOSE_REPORT=true && npm run test:stress:documents -- -e SCENARIO_NAME=jp_docs_stress_test -e ENABLE_VERBOSE_REPORT=true && npm run test:stress:complex -- -e SCENARIO_NAME=complex_stress_test -e ENABLE_VERBOSE_REPORT=true",
+    "run-comprehensive": "echo '=== Running Comprehensive Test Suite with Unique Scenario Names ===' && npm run run-all-tests && echo '=== All tests completed! Check reports in src/reports/ with unique scenario names ==='",
+
+    "__comment_quick_run": "=== QUICK RUNS (Single Command) ===",
+    "quick-smoke": "k6 run -e SCENARIO=smoke_test -e SCENARIO_NAME=quick_smoke -e ENABLE_VERBOSE_REPORT=true -e FORCE_CASE_ONLY=true tests/api/cases/create-sak.js && echo 'Quick smoke test completed! Check: src/reports/create-sak-quick_smoke-report.html'",
+    "quick-load": "k6 run -e SCENARIO=load_test -e SCENARIO_NAME=quick_load -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp.js && echo 'Quick load test completed! Check: src/reports/create-jp-quick_load-report.html'",
+    "quick-stress": "k6 run -e SCENARIO=stress_test -e SCENARIO_NAME=quick_stress -e ENABLE_VERBOSE_REPORT=true -e FLOW_TYPE=jp tests/api/journalposts/create-jp-with-multiple-document.js && echo 'Quick stress test completed! Check: src/reports/create-jp-with-multiple-document-quick_stress-report.html'",
+
+    "__comment_validation": "=== PERFORMANCE CONFIG VALIDATION ===",
+    "validate:thresholds": "node scripts/validate-thresholds.js",
+    "validate:no-inline-thresholds": "node scripts/validate-no-inline-thresholds.js",
+  "validate:perf": "npm run validate:thresholds && npm run validate:no-inline-thresholds && npm run validate:no-inline-http",
+  "validate:no-inline-http": "node ./scripts/validate-no-inline-http-thresholds.js",
+    "docs:html": "node scripts/build-docs.js"
+  },
+  "keywords": [
+    "k6",
+    "performance",
+    "testing",
+    "websak",
+    "load-testing",
+    "acos",
+    "graf",
+    "framework"
+  ],
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "husky": "^9.0.10",
+    "ajv": "^8.17.1",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^8.6.7",
+    "highlight.js": "^11.9.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

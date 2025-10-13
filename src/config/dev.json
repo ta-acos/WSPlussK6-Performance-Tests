@@ -1,0 +1,55 @@
+{
+  "_comment_environment": "Environment-specific settings (api, auth) are now loaded from environments.json",
+  "environment": "development",
+  "thresholds": {
+    "http_req_duration": ["p(95)<2000"],
+    "http_req_failed": ["rate<0.05"]
+  },
+  "load": {
+    "vus": 5,
+    "duration": "1m",
+    "rampUp": "30s",
+    "rampDown": "30s"
+  },
+  "scenarios": {
+    "quick_smoke_test": {
+      "executor": "constant-vus",
+      "vus": 1,
+      "duration": "30s",
+      "env": { "TEST_TYPE": "case_only" }
+    },
+    "auth_test": {
+      "executor": "constant-vus",
+      "vus": 2,
+      "duration": "20s",
+      "env": { "TEST_TYPE": "auth_only" }
+    },
+    "basic_case_creation": {
+      "executor": "constant-vus",
+      "vus": 2,
+      "duration": "1m",
+      "env": { "TEST_TYPE": "case_only" }
+    },
+    "template_performance": {
+      "executor": "constant-vus",
+      "vus": 3,
+      "duration": "30s",
+      "env": { "TEST_TYPE": "templates_only" }
+    }
+  },
+  "testDocuments": {
+    "basePath": "../utils/modules/data/testDocuments",
+    "files": [
+      "1mb.pdf",
+      "1mb.docx",
+      "3-mb.pdf",
+      "5mb.docx",
+      "6mb.pdf",
+      "10mb.pdf",
+      "10mb.docx",
+      "PerfTestingGuide.docx",
+      "PerfTestScenarios.xlsx",
+      "benchmarks.csv"
+    ]
+  }
+}

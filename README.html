@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Acos GRAF - Load Test v3.0</title>
+<style>
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin: 2rem; line-height: 1.5; }
+  pre { background:#1e1e1e; color:#ddd; padding:12px; border-radius:6px; overflow:auto; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  h1,h2,h3,h4 { scroll-margin-top: 80px; }
+  table { border-collapse: collapse; width: 100%; margin:1rem 0; }
+  th, td { border:1px solid #ccc; padding:6px 10px; text-align:left; }
+  th { background:#f5f5f5; }
+  a { color:#0366d6; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .meta { font-size: 0.8rem; color:#666; margin-top:3rem; border-top:1px solid #eee; padding-top:0.5rem; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:1rem; border-radius:6px; }
+  .anchor { text-decoration:none; }
+</style>
+</head>
+<body>
+<h1 id="acos-graf-load-test-v3-0" tabindex="-1">Acos GRAF - Load Test v3.0 <a class="header-anchor" href="#acos-graf-load-test-v3-0" aria-hidden="true">#</a></h1>
+<p>Enhanced K6 performance testing framework for WebSak Plus with centralized path management, environment metadata, and advanced configuration system.</p>
+<h2 id="-quick-start" tabindex="-1">🚀 Quick Start <a class="header-anchor" href="#-quick-start" aria-hidden="true">#</a></h2>
+<h3 id="prerequisites" tabindex="-1">Prerequisites <a class="header-anchor" href="#prerequisites" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Install K6</strong>: Download and install <a href="https://k6.io/docs/getting-started/installation/">K6</a></li>
+<li><strong>Install Node.js</strong>: Version 14.0.0 or higher</li>
+<li><strong>Install Dependencies</strong>: Run <code>npm install</code></li>
+</ol>
+<h3 id="run-your-first-test" tabindex="-1">Run Your First Test <a class="header-anchor" href="#run-your-first-test" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-comment"># Simple case creation test (recommended for first-time users)</span>
+npm run simple
+
+<span class="hljs-comment"># Journal post creation test</span>
+npm run jp-docs
+
+<span class="hljs-comment"># View the generated report</span>
+npm run report:open
+</code></pre>
+<h2 id="-test-types-available" tabindex="-1">📊 Test Types Available <a class="header-anchor" href="#-test-types-available" aria-hidden="true">#</a></h2>
+<h3 id="-basic-tests-start-here-" tabindex="-1">🟢 Basic Tests (Start Here!) <a class="header-anchor" href="#-basic-tests-start-here-" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+<th>What It Tests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run simple</code></td>
+<td>Case creation only</td>
+<td>Authentication → Case Templates → Create Case</td>
+</tr>
+<tr>
+<td><code>npm run jp-docs</code></td>
+<td>Journal posts with documents</td>
+<td>Above + JP Creation + Document Upload</td>
+</tr>
+<tr>
+<td><code>npm run complex</code></td>
+<td>Multiple JPs with documents</td>
+<td>Above + Multiple JP Creation + Batch Upload</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-performance-test-scenarios" tabindex="-1">🔵 Performance Test Scenarios <a class="header-anchor" href="#-performance-test-scenarios" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Users</th>
+<th>Duration</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Smoke</strong></td>
+<td>1 user</td>
+<td>30s</td>
+<td>Verify functionality works</td>
+</tr>
+<tr>
+<td><strong>Load</strong></td>
+<td>5-10 users</td>
+<td>2-5 min</td>
+<td>Normal usage simulation</td>
+</tr>
+<tr>
+<td><strong>Stress</strong></td>
+<td>15-25 users</td>
+<td>5-10 min</td>
+<td>High load testing</td>
+</tr>
+<tr>
+<td><strong>Spike</strong></td>
+<td>1→50→1 users</td>
+<td>Bursts</td>
+<td>Traffic spike testing</td>
+</tr>
+<tr>
+<td><strong>Endurance</strong></td>
+<td>10 users</td>
+<td>30+ min</td>
+<td>Long-term stability</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-advanced-commands" tabindex="-1">🔴 Advanced Commands <a class="header-anchor" href="#-advanced-commands" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-comment"># Different test types with different scenarios</span>
+npm run <span class="hljs-built_in">test</span>:load        <span class="hljs-comment"># Load test - case creation</span>
+npm run <span class="hljs-built_in">test</span>:stress:jp   <span class="hljs-comment"># Stress test - journal posts</span>
+npm run <span class="hljs-built_in">test</span>:spike:documents  <span class="hljs-comment"># Spike test - with documents</span>
+
+<span class="hljs-comment"># Environment-specific tests</span>
+npm run <span class="hljs-built_in">test</span>:dev         <span class="hljs-comment"># Development environment</span>
+npm run <span class="hljs-built_in">test</span>:autotest    <span class="hljs-comment"># Auto-test environment</span>
+
+<span class="hljs-comment"># Comprehensive testing</span>
+npm run run-all-tests    <span class="hljs-comment"># Run all test types sequentially</span>
+</code></pre>
+<h2 id="-understanding-reports" tabindex="-1">📈 Understanding Reports <a class="header-anchor" href="#-understanding-reports" aria-hidden="true">#</a></h2>
+<p>After running tests, reports are generated in <code>src/reports/</code>:</p>
+<ul>
+<li><strong>HTML Report</strong>: <code>create-sak-report.html</code> - Visual performance dashboard</li>
+<li><strong>JSON Summary</strong>: <code>create-sak-summary.json</code> - Raw metrics data</li>
+</ul>
+<h3 id="key-metrics-to-monitor" tabindex="-1">Key Metrics to Monitor <a class="header-anchor" href="#key-metrics-to-monitor" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Good</th>
+<th>Warning</th>
+<th>Critical</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Response Time (p95)</strong></td>
+<td>&lt;800ms</td>
+<td>800-2000ms</td>
+<td>&gt;2000ms</td>
+</tr>
+<tr>
+<td><strong>Success Rate</strong></td>
+<td>&gt;99%</td>
+<td>95-99%</td>
+<td>&lt;95%</td>
+</tr>
+<tr>
+<td><strong>Error Rate</strong></td>
+<td>&lt;1%</td>
+<td>1-5%</td>
+<td>&gt;5%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="report-features" tabindex="-1">Report Features <a class="header-anchor" href="#report-features" aria-hidden="true">#</a></h3>
+<p>✅ <strong>Performance Benchmarks</strong> - Compare against industry standards<br>
+✅ <strong>Verbose Activity Logs</strong> - See exactly what each test did<br>
+✅ <strong>Error Detection</strong> - Automatic highlighting of issues<br>
+✅ <strong>Threshold Analysis</strong> - Pass/fail status for all metrics<br>
+✅ <strong>Export Options</strong> - JSON, CSV, and PDF export</p>
+<h2 id="-configuration" tabindex="-1">🛠 Configuration <a class="header-anchor" href="#-configuration" aria-hidden="true">#</a></h2>
+<h3 id="environment-setup" tabindex="-1">Environment Setup <a class="header-anchor" href="#environment-setup" aria-hidden="true">#</a></h3>
+<p>Tests can run against different environments:</p>
+<ul>
+<li><strong>autotest</strong> (default) - <code>autotest01.acoscloud.no</code></li>
+<li><strong>dev</strong> - Development environment</li>
+<li><strong>prod</strong> - Production environment (use with caution)</li>
+</ul>
+<p>Configuration files:</p>
+<ul>
+<li><code>src/config/environments.json</code> - Environment settings</li>
+<li><code>src/config/autotest.json</code> - Test scenarios and thresholds</li>
+<li><code>src/data/users-config.json</code> - Test user credentials</li>
+</ul>
+<h3 id="test-configuration" tabindex="-1">Test Configuration <a class="header-anchor" href="#test-configuration" aria-hidden="true">#</a></h3>
+<p>Each test uses a centralized configuration system:</p>
+<pre class="hljs"><code><span class="hljs-comment">// Enable/disable data file configuration</span>
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">USE_DATA_FILE_CONFIG</span> = <span class="hljs-literal">true</span>;
+
+<span class="hljs-comment">// Choose environment</span>
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">CONFIG_ENVIRONMENT</span> = <span class="hljs-string">&#x27;autotest&#x27;</span>;
+
+<span class="hljs-comment">// Override scenario via command line</span>
+<span class="hljs-comment">// Example: k6 run -e SCENARIO=stress_test tests/api/cases/create-sak.js</span>
+</code></pre>
+<h3 id="-performance-governance-central-thresholds-bands-" tabindex="-1">🛡️ Performance Governance (Central Thresholds &amp; Bands) <a class="header-anchor" href="#-performance-governance-central-thresholds-bands-" aria-hidden="true">#</a></h3>
+<p>All performance SLOs (k6 pass/fail) and visual classification bands are defined once in <code>src/config/performance-thresholds.json</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>defaults.k6</code></td>
+<td>Global p95/p99 &amp; error/check failure thresholds (test pass/fail)</td>
+</tr>
+<tr>
+<td><code>operations.*.k6</code></td>
+<td>Operation/group-specific overrides for finer control</td>
+</tr>
+<tr>
+<td><code>uiBands</code></td>
+<td>Visual Good / Watch / Investigate coloring in HTML reports (presentation only)</td>
+</tr>
+</tbody>
+</table>
+<p>Validation scripts:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run validate:thresholds</code></td>
+<td>Schema + ordering validation of central thresholds file</td>
+</tr>
+<tr>
+<td><code>npm run validate:no-inline-thresholds</code></td>
+<td>Guards against inline <code>thresholds:</code> blocks reappearing in test scripts</td>
+</tr>
+<tr>
+<td><code>npm run validate:perf</code></td>
+<td>Runs both (Husky pre-commit hook enforces)</td>
+</tr>
+</tbody>
+</table>
+<p>Change workflow:</p>
+<ol>
+<li>Edit <code>performance-thresholds.json</code>.</li>
+<li>Run <code>npm run validate:perf</code> until passing.</li>
+<li>Commit (hook re-validates) and run representative tests.</li>
+<li>Review updated HTML report for new colors &amp; pass/fail states.</li>
+</ol>
+<blockquote>
+<p>Policy: No inline <code>thresholds:</code> blocks inside test scripts—central JSON is the single source of truth.</p>
+</blockquote>
+<h2 id="-available-npm-commands" tabindex="-1">📋 Available NPM Commands <a class="header-anchor" href="#-available-npm-commands" aria-hidden="true">#</a></h2>
+<h3 id="quick-start-commands" tabindex="-1">Quick Start Commands <a class="header-anchor" href="#quick-start-commands" aria-hidden="true">#</a></h3>
+<ul>
+<li><code>npm run simple</code> - Simple case creation test</li>
+<li><code>npm run load</code> - Load testing</li>
+<li><code>npm run stress</code> - Stress testing</li>
+<li><code>npm run jp-docs</code> - Journal post with documents</li>
+<li><code>npm run complex</code> - Complex multi-JP test</li>
+</ul>
+<h3 id="test-categories" tabindex="-1">Test Categories <a class="header-anchor" href="#test-categories" aria-hidden="true">#</a></h3>
+<h4 id="simple-tests-smoke-testing-" tabindex="-1">Simple Tests (Smoke Testing) <a class="header-anchor" href="#simple-tests-smoke-testing-" aria-hidden="true">#</a></h4>
+<ul>
+<li><code>npm run test:simple</code> - Basic case creation</li>
+<li><code>npm run test:simple:verbose</code> - With detailed logging</li>
+<li><code>npm run test:simple:jp</code> - Journal post creation</li>
+<li><code>npm run test:simple:documents</code> - JP with document upload</li>
+<li><code>npm run test:simple:complex</code> - Multiple JPs with documents</li>
+</ul>
+<h4 id="load-tests-normal-traffic-" tabindex="-1">Load Tests (Normal Traffic) <a class="header-anchor" href="#load-tests-normal-traffic-" aria-hidden="true">#</a></h4>
+<ul>
+<li><code>npm run test:load</code> - Load test cases</li>
+<li><code>npm run test:load:jp</code> - Load test journal posts</li>
+<li><code>npm run test:load:documents</code> - Load test with documents</li>
+<li><code>npm run test:load:complex</code> - Load test complex scenarios</li>
+</ul>
+<h4 id="stress-tests-high-traffic-" tabindex="-1">Stress Tests (High Traffic) <a class="header-anchor" href="#stress-tests-high-traffic-" aria-hidden="true">#</a></h4>
+<ul>
+<li><code>npm run test:stress</code> - Stress test cases</li>
+<li><code>npm run test:stress:jp</code> - Stress test journal posts</li>
+<li><code>npm run test:stress:documents</code> - Stress test with documents</li>
+<li><code>npm run test:stress:complex</code> - Stress test complex scenarios</li>
+</ul>
+<h4 id="environment-specific-tests" tabindex="-1">Environment-Specific Tests <a class="header-anchor" href="#environment-specific-tests" aria-hidden="true">#</a></h4>
+<ul>
+<li><code>npm run test:dev</code> - Development environment</li>
+<li><code>npm run test:autotest</code> - Auto-test environment</li>
+<li><code>npm run test:dev:jp:smoke</code> - Dev environment JP smoke test</li>
+<li><code>npm run test:autotest:load</code> - Auto-test environment load test</li>
+</ul>
+<h3 id="report-management" tabindex="-1">Report Management <a class="header-anchor" href="#report-management" aria-hidden="true">#</a></h3>
+<ul>
+<li><code>npm run report:open</code> - Open latest case creation report</li>
+<li><code>npm run report:open:jp</code> - Open latest JP report</li>
+<li><code>npm run report:list</code> - List all available reports</li>
+</ul>
+<h3 id="development-tools" tabindex="-1">Development Tools <a class="header-anchor" href="#development-tools" aria-hidden="true">#</a></h3>
+<ul>
+<li><code>npm run lint</code> - Check code quality</li>
+<li><code>npm run format</code> - Format code with Prettier</li>
+</ul>
+<h3 id="comprehensive-testing" tabindex="-1">Comprehensive Testing <a class="header-anchor" href="#comprehensive-testing" aria-hidden="true">#</a></h3>
+<ul>
+<li><code>npm run run-all-tests</code> - Run smoke, load, and stress tests</li>
+<li><code>npm run run-comprehensive</code> - Complete test suite with reporting</li>
+</ul>
+<h2 id="-project-structure" tabindex="-1">📁 Project Structure <a class="header-anchor" href="#-project-structure" aria-hidden="true">#</a></h2>
+<pre class="hljs"><code>WSPlussK6-Performance-Tests/
+├── 📁 src/
+│   ├── 📁 config/           # Test configurations
+│   │   ├── environments.json    # Environment settings
+│   │   ├── autotest.json       # Scenario shapes ONLY (no thresholds)
+│   │   ├── performance-thresholds.json # Central thresholds (enforcement) + uiBands (presentation)
+│   │   ├── dev.json            # Development config
+│   │   └── paths-config.json   # Path configurations
+│   ├── 📁 data/             # Test data
+│   │   ├── users-config.json   # Test user accounts
+│   │   ├── websak-api-config.json # API endpoints
+│   │   └── 📁 testDocuments/   # Sample files for upload tests
+│   ├── 📁 lib/              # Core libraries
+│   │   ├── auth-module.js      # Authentication handling
+│   │   ├── case-module.js      # Case creation logic
+│   │   ├── jp-module.js        # Journal post handling
+│   │   └── config-manager.js   # Configuration management
+│   ├── 📁 utils/            # Utilities
+│   │   ├── report-generator.js # HTML report generation
+│   │   ├── k6-verbose-logger.js # Enhanced logging
+│   │   ├── document-attachment.js # File upload handling
+│   │   └── test-workflow.js    # Test execution flow
+│   └── 📁 reports/          # Generated test reports
+├── 📁 tests/
+│   └── 📁 api/
+│       ├── 📁 cases/        # Case creation tests
+│       │   └── create-sak.js
+│       └── 📁 journalposts/ # Journal post tests
+│           ├── create-jp.js
+│           ├── create-jp-with-multiple-document.js
+│           └── create-multiple-jp-with-multiple-document.js
+├── 📁 examples/             # Usage examples
+├── 📁 documents/            # Documentation
+└── package.json             # NPM configuration
+</code></pre>
+<h2 id="-test-details" tabindex="-1">🔍 Test Details <a class="header-anchor" href="#-test-details" aria-hidden="true">#</a></h2>
+<h3 id="case-creation-test-create-sak-js-" tabindex="-1">Case Creation Test (<code>create-sak.js</code>) <a class="header-anchor" href="#case-creation-test-create-sak-js-" aria-hidden="true">#</a></h3>
+<p><strong>What it does:</strong></p>
+<ol>
+<li>Authenticates test user</li>
+<li>Retrieves case templates</li>
+<li>Creates new case</li>
+<li>Fetches reference data (case types, decision codes)</li>
+</ol>
+<p><strong>Performance expectations:</strong></p>
+<ul>
+<li>Response time: &lt;800ms (p95)</li>
+<li>Success rate: &gt;99%</li>
+<li>Typical duration: 2-4 seconds per iteration</li>
+</ul>
+<h3 id="journal-post-tests-create-jp-js-" tabindex="-1">Journal Post Tests (<code>create-jp*.js</code>) <a class="header-anchor" href="#journal-post-tests-create-jp-js-" aria-hidden="true">#</a></h3>
+<p><strong>What they do:</strong></p>
+<ol>
+<li>All case creation steps above</li>
+<li>Retrieves JP templates</li>
+<li>Creates journal posts (incoming/outgoing)</li>
+<li>Optionally uploads documents</li>
+</ol>
+<p><strong>Document upload variants:</strong></p>
+<ul>
+<li><code>create-jp.js</code> - Simple JP creation (no documents)</li>
+<li><code>create-jp-with-multiple-document.js</code> - Single JP + 3 documents</li>
+<li><code>create-multiple-jp-with-multiple-document.js</code> - Multiple JPs + documents each</li>
+</ul>
+<h2 id="-troubleshooting" tabindex="-1">🐛 Troubleshooting <a class="header-anchor" href="#-troubleshooting" aria-hidden="true">#</a></h2>
+<h3 id="common-issues" tabindex="-1">Common Issues <a class="header-anchor" href="#common-issues" aria-hidden="true">#</a></h3>
+<p><strong>Test fails with authentication error:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Check if test users are configured correctly</span>
+<span class="hljs-built_in">ls</span> src/data/users-config.json
+
+<span class="hljs-comment"># Verify environment configuration</span>
+<span class="hljs-built_in">ls</span> src/config/environments.json
+</code></pre>
+<p><strong>No reports generated:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Ensure verbose reporting is enabled</span>
+npm run <span class="hljs-built_in">test</span>:simple -- -e ENABLE_VERBOSE_REPORT=<span class="hljs-literal">true</span>
+
+<span class="hljs-comment"># Check reports directory</span>
+<span class="hljs-built_in">ls</span> src/reports/
+</code></pre>
+<p><strong>K6 not found:</strong></p>
+<pre class="hljs"><code><span class="hljs-comment"># Install K6 first</span>
+<span class="hljs-comment"># Windows: choco install k6</span>
+<span class="hljs-comment"># macOS: brew install k6</span>
+<span class="hljs-comment"># Linux: See https://k6.io/docs/getting-started/installation/</span>
+</code></pre>
+<h3 id="performance-issues" tabindex="-1">Performance Issues <a class="header-anchor" href="#performance-issues" aria-hidden="true">#</a></h3>
+<p><strong>High response times:</strong></p>
+<ol>
+<li>Check network connectivity</li>
+<li>Verify environment isn't under load</li>
+<li>Review enforcement thresholds in <code>src/config/performance-thresholds.json</code> (never in test files or autotest.json)</li>
+</ol>
+<p><strong>Test failures:</strong></p>
+<ol>
+<li>Check verbose logs in HTML reports</li>
+<li>Look for specific error messages</li>
+<li>Verify test user permissions</li>
+</ol>
+<h2 id="-advanced-usage" tabindex="-1">🔧 Advanced Usage <a class="header-anchor" href="#-advanced-usage" aria-hidden="true">#</a></h2>
+<h2 id="-configuration-integrity-validation" tabindex="-1">✅ Configuration Integrity &amp; Validation <a class="header-anchor" href="#-configuration-integrity-validation" aria-hidden="true">#</a></h2>
+<p>This project includes automated validation to keep performance governance centralized and clean.</p>
+<h3 id="validation-commands" tabindex="-1">Validation Commands <a class="header-anchor" href="#validation-commands" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run validate:thresholds</code></td>
+<td>Validates <code>src/config/performance-thresholds.json</code> against <code>performance-thresholds.schema.json</code></td>
+</tr>
+<tr>
+<td><code>npm run validate:no-inline-thresholds</code></td>
+<td>Ensures no inline <code>thresholds:</code> definitions exist inside test scripts (<code>tests/**</code>)</td>
+</tr>
+<tr>
+<td><code>npm run validate:perf</code></td>
+<td>Runs both of the above (use this before committing)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-gets-enforced" tabindex="-1">What Gets Enforced <a class="header-anchor" href="#what-gets-enforced" aria-hidden="true">#</a></h3>
+<ol>
+<li>Schema shape (required sections: <code>defaults</code>, <code>operations</code>, <code>uiBands</code>).</li>
+<li>Numeric ranges (latency &gt; 0, rates between 0–1, etc.).</li>
+<li>No accidental re‑introduction of k6 inline threshold blocks in test files.</li>
+</ol>
+<h3 id="uibands-ordering-guidance" tabindex="-1">uiBands Ordering Guidance <a class="header-anchor" href="#uibands-ordering-guidance" aria-hidden="true">#</a></h3>
+<p>The <code>uiBands</code> section in <code>performance-thresholds.json</code> drives visual classification in the HTML report. Recommended ordering:</p>
+<pre class="hljs"><code>good &lt;= watch &lt;= investigate
+</code></pre>
+<p>If <code>investigate</code> equals <code>watch</code>, the “Investigate” tier collapses and you effectively have only two bands. To restore a distinct third tier, raise <code>investigate</code> above <code>watch</code> (e.g. <code>good: 800</code>, <code>watch: 2000</code>, <code>investigate: 3000</code>). This can help highlight truly degraded states without over-highlighting moderate slowdowns.</p>
+<h3 id="typical-failure-cases" tabindex="-1">Typical Failure Cases <a class="header-anchor" href="#typical-failure-cases" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Example Output</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Missing required property</td>
+<td><code>defaults.k6.http_req_duration.p95 is required</code></td>
+<td>Add the field to the JSON</td>
+</tr>
+<tr>
+<td>Invalid rate</td>
+<td><code>errorRate.good must be &lt;= 1</code></td>
+<td>Clamp to 0–1 range</td>
+</tr>
+<tr>
+<td>Inline thresholds detected</td>
+<td>Lists offending test file path(s)</td>
+<td>Remove <code>thresholds:</code> from test; rely on central config</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pre-commit-hook" tabindex="-1">Pre-Commit Hook <a class="header-anchor" href="#pre-commit-hook" aria-hidden="true">#</a></h3>
+<p>A Husky <code>pre-commit</code> hook (if enabled—see below) will block commits that fail <code>npm run validate:perf</code>. Run it manually anytime:</p>
+<pre class="hljs"><code>npm run validate:perf
+</code></pre>
+<p>If you need to temporarily bypass (not recommended), you can commit with <code>--no-verify</code>, but any CI pipeline should still run the validation.</p>
+<h3 id="evolving-thresholds" tabindex="-1">Evolving Thresholds <a class="header-anchor" href="#evolving-thresholds" aria-hidden="true">#</a></h3>
+<p>To adjust performance expectations as load patterns change:</p>
+<ol>
+<li>Edit <code>src/config/performance-thresholds.json</code>.</li>
+<li>(Optional) Add or adjust an <code>operations</code> entry for new business actions.</li>
+<li>Run <code>npm run validate:perf</code>.</li>
+<li>Re-run representative tests and review the updated HTML report coloring.</li>
+</ol>
+<p>Keep changes additive and review diffs of the central file in pull requests for traceability.</p>
+<h3 id="custom-test-scenarios" tabindex="-1">Custom Test Scenarios <a class="header-anchor" href="#custom-test-scenarios" aria-hidden="true">#</a></h3>
+<p>Create custom scenarios by modifying <code>src/config/autotest.json</code>:</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;scenarios&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;custom_scenario&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;executor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;constant-vus&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;vus&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">10</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;5m&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;env&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;TEST_TYPE&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;custom&quot;</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 id="environment-variables" tabindex="-1">Environment Variables <a class="header-anchor" href="#environment-variables" aria-hidden="true">#</a></h3>
+<p>Control test behavior via environment variables:</p>
+<pre class="hljs"><code><span class="hljs-comment"># Scenario selection</span>
+k6 run -e SCENARIO=load_test tests/api/cases/create-sak.js
+
+<span class="hljs-comment"># Scenario naming (for report identification)</span>
+k6 run -e SCENARIO_NAME=my_custom_test tests/api/cases/create-sak.js
+
+<span class="hljs-comment"># Enable verbose reporting</span>
+k6 run -e ENABLE_VERBOSE_REPORT=<span class="hljs-literal">true</span> tests/api/cases/create-sak.js
+
+<span class="hljs-comment"># Environment selection</span>
+k6 run -e CONFIG_ENV=dev tests/api/cases/create-sak.js
+</code></pre>
+<h3 id="custom-thresholds" tabindex="-1">Custom Thresholds <a class="header-anchor" href="#custom-thresholds" aria-hidden="true">#</a></h3>
+<p>Modify performance thresholds in test files or config:</p>
+<pre class="hljs"><code><span class="hljs-attr">thresholds</span>: {
+  <span class="hljs-string">&#x27;http_req_duration&#x27;</span>: [<span class="hljs-string">&#x27;p(95)&lt;1000&#x27;</span>],  <span class="hljs-comment">// 95% under 1 second</span>
+  <span class="hljs-string">&#x27;http_req_failed&#x27;</span>: [<span class="hljs-string">&#x27;rate&lt;0.01&#x27;</span>],     <span class="hljs-comment">// Less than 1% errors</span>
+  <span class="hljs-string">&#x27;http_reqs&#x27;</span>: [<span class="hljs-string">&#x27;rate&gt;10&#x27;</span>]              <span class="hljs-comment">// At least 10 req/sec</span>
+}
+</code></pre>
+<h2 id="-support" tabindex="-1">📞 Support <a class="header-anchor" href="#-support" aria-hidden="true">#</a></h2>
+<p>For issues or questions:</p>
+<ol>
+<li>Check the <a href="#-troubleshooting">Troubleshooting</a> section</li>
+<li>Review test logs in <code>src/reports/</code></li>
+<li>Examine configuration files in <code>src/config/</code></li>
+<li>Check the <a href="#-project-structure">Project Structure</a> for file locations</li>
+</ol>
+<h2 id="-license" tabindex="-1">📄 License <a class="header-anchor" href="#-license" aria-hidden="true">#</a></h2>
+<p>ISC License - See package.json for details.</p>
+
+<div class="meta">Generated from <code>README.md</code> on 2025-10-10T11:24:15.233Z</div>
+</body>
+</html>

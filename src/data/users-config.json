@@ -1,0 +1,11 @@
+{
+  "users": [
+    { "userName": "TA_ARK",    "clientId": "autotest",        "clientSecret": "autotest1234!" },
+    { "userName": "Arkivar",   "clientId": "autotest-ark",    "clientSecret": "autotest1234!" },
+    { "userName": "Arkivar1",  "clientId": "autotest-ark1",   "clientSecret": "autotest1234!" },
+    { "userName": "Leder",     "clientId": "autotest-ldr",    "clientSecret": "autotest1234!" },
+    { "userName": "Leder1",    "clientId": "autotest-ldr1",   "clientSecret": "autotest1234!" },
+    { "userName": "Saksbe",    "clientId": "autotest-sak",    "clientSecret": "autotest1234!" },
+    { "userName": "Saksbe1",   "clientId": "autotest-sak1",   "clientSecret": "autotest1234!" }
+  ]
+}

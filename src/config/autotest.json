@@ -1,0 +1,94 @@
+{
+  "_comment_environment": "Environment-specific settings (api, auth) are now loaded from environments.json",
+  "environment": "Automated Test",
+  "useDataFileConfig": true,
+  "configEnvironment": "autotest",
+
+  "loadTest": {
+    "useAllUsers": true,
+    "totalUsers": 7,
+
+    "scenarios": {
+      "smoke_test": {
+        "executor": "shared-iterations",
+        "vus": 1,
+        "iterations": 1,
+        "maxDuration": "2m"
+      },
+      "load_test": {
+        "executor": "constant-vus",
+        "vus": 7,
+        "duration": "2m",
+        "gracefulStop": "30s"
+      },
+      "stress_test": {
+        "executor": "ramping-vus",
+        "startVUs": 1,
+        "stages": [
+          { "duration": "2m", "target": 7 },
+          { "duration": "5m", "target": 7 },
+          { "duration": "2m", "target": 14 },
+          { "duration": "3m", "target": 14 },
+          { "duration": "2m", "target": 0 }
+        ],
+        "gracefulRampDown": "30s"
+      },
+      "spike_test": {
+        "executor": "ramping-vus",
+        "startVUs": 1,
+        "stages": [
+          { "duration": "1m", "target": 2 },
+          { "duration": "30s", "target": 14 },
+          { "duration": "1m", "target": 14 },
+          { "duration": "30s", "target": 2 },
+          { "duration": "1m", "target": 0 }
+        ],
+        "gracefulRampDown": "30s"
+      },
+      "endurance_test": {
+        "executor": "constant-vus",
+        "vus": 5,
+        "duration": "15m",
+        "gracefulStop": "60s"
+      }
+    },
+
+    "_comment_activeScenario": "WHICH TEST TO RUN: Change this value to run different test types (smoke_test, load_test, stress_test, spike_test, endurance_test)",
+    "activeScenario": "smoke_test",
+
+    "descriptions": {
+      "smoke_test": "Quick validation - 1 user, 1 action, verify basic functionality works",
+      "load_test": "Normal load - All 7 users running simultaneously for 5 minutes",
+      "stress_test": "Stress testing - Up to 14 concurrent users to test system limits",
+      "spike_test": "Traffic spike - Sudden increase from 2 to 14 users to test resilience",
+      "endurance_test": "Long duration - 5 users running continuously for 15 minutes"
+    }
+  },
+
+  "performanceProfile": {
+    "scenario": "load_test",
+    "environment": "autotest"
+  },
+
+  "options": {
+    "noConnectionReuse": false,
+    "userAgent": "K6-LoadTest-AutoTest/1.0"
+  },
+
+  "_comment_testDocuments": "TEST DOCUMENT PATHS: File paths for test documents used in performance tests",
+  "testDocuments": {
+    "basePath": "../utils/modules/data/testDocuments",
+    "files": [
+      "1mb.pdf",
+      "1mb.docx",
+      "3-mb.pdf",
+      "5mb.docx",
+      "6mb.pdf",
+      "10mb.pdf",
+      "10mb.docx",
+      "PerfTestingGuide.docx",
+      "PerfTestScenarios.xlsx",
+      "benchmarks.csv"
+    ]
+  }
+}

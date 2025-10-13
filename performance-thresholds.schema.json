@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Performance Thresholds Schema",
+  "type": "object",
+  "required": ["defaults", "operations", "uiBands"],
+  "properties": {
+    "defaults": {
+      "type": "object",
+      "required": ["maxResponseTimeMs", "apdexT", "k6"],
+      "properties": {
+        "maxResponseTimeMs": { "type": "number", "minimum": 1 },
+        "apdexT": { "type": "number", "minimum": 1 },
+        "k6": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "object",
+              "properties": {
+                "p95": { "type": "number", "minimum": 1 },
+                "p99": { "type": "number", "minimum": 1 },
+                "rate": { "type": "number", "minimum": 0, "maximum": 1 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "object",
+      "patternProperties": {
+        ".+": {
+          "type": "object",
+          "required": ["maxResponseTimeMs", "k6"],
+          "properties": {
+            "maxResponseTimeMs": { "type": "number", "minimum": 1 },
+            "k6": {
+              "type": "object",
+              "patternProperties": {
+                ".*": {
+                  "type": "object",
+                  "properties": {
+                    "p95": { "type": "number", "minimum": 1 },
+                    "p99": { "type": "number", "minimum": 1 },
+                    "rate": { "type": "number", "minimum": 0, "maximum": 1 }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "uiBands": {
+      "type": "object",
+      "required": ["latencyMs", "errorRate", "checkFailureRate"],
+      "properties": {
+        "latencyMs": {
+          "type": "object",
+          "required": ["good", "watch", "investigate"],
+          "properties": {
+            "good": { "type": "number", "minimum": 1 },
+            "watch": { "type": "number", "minimum": 1 },
+            "investigate": { "type": "number", "minimum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "errorRate": {
+          "type": "object",
+          "required": ["good", "watch", "investigate"],
+          "properties": {
+            "good": { "type": "number", "minimum": 0, "maximum": 1 },
+            "watch": { "type": "number", "minimum": 0, "maximum": 1 },
+            "investigate": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "checkFailureRate": {
+          "type": "object",
+          "required": ["good", "watch", "investigate"],
+          "properties": {
+            "good": { "type": "number", "minimum": 0, "maximum": 1 },
+            "watch": { "type": "number", "minimum": 0, "maximum": 1 },
+            "investigate": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

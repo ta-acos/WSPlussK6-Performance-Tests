@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Architecture Documentation</title>
+<style>
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin: 2rem; line-height: 1.5; }
+  pre { background:#1e1e1e; color:#ddd; padding:12px; border-radius:6px; overflow:auto; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  h1,h2,h3,h4 { scroll-margin-top: 80px; }
+  table { border-collapse: collapse; width: 100%; margin:1rem 0; }
+  th, td { border:1px solid #ccc; padding:6px 10px; text-align:left; }
+  th { background:#f5f5f5; }
+  a { color:#0366d6; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .meta { font-size: 0.8rem; color:#666; margin-top:3rem; border-top:1px solid #eee; padding-top:0.5rem; }
+  .toc { background:#fafafa; border:1px solid #eee; padding:1rem; border-radius:6px; }
+  .anchor { text-decoration:none; }
+</style>
+</head>
+<body>
+<h1 id="architecture-documentation" tabindex="-1">Architecture Documentation <a class="header-anchor" href="#architecture-documentation" aria-hidden="true">#</a></h1>
+<h2 id="system-overview" tabindex="-1">System Overview <a class="header-anchor" href="#system-overview" aria-hidden="true">#</a></h2>
+<p>Acos GRAF Load Test v3.0 is a comprehensive K6-based performance testing framework designed for WebSak Plus applications. The system employs a modular architecture with centralized configuration management, environment abstraction, and enhanced reporting capabilities.</p>
+<h2 id="core-principles" tabindex="-1">Core Principles <a class="header-anchor" href="#core-principles" aria-hidden="true">#</a></h2>
+<h3 id="1-modularity" tabindex="-1">1. Modularity <a class="header-anchor" href="#1-modularity" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Separation of Concerns</strong>: Each module handles a specific aspect (auth, cases, journal posts, documents)</li>
+<li><strong>Reusable Components</strong>: Common functionality abstracted into utility modules</li>
+<li><strong>Pluggable Architecture</strong>: Easy to add new test types or modify existing ones</li>
+</ul>
+<h3 id="2-configuration-management" tabindex="-1">2. Configuration Management <a class="header-anchor" href="#2-configuration-management" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Environment Abstraction</strong>: Support for multiple environments (autotest, dev, prod)</li>
+<li><strong>Centralized Settings</strong>: All configuration in dedicated JSON files</li>
+<li><strong>Dynamic Loading</strong>: Runtime environment and scenario selection</li>
+</ul>
+<h3 id="3-enhanced-reporting-governance" tabindex="-1">3. Enhanced Reporting &amp; Governance <a class="header-anchor" href="#3-enhanced-reporting-governance" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Verbose Logging</strong>: Detailed activity tracking with smart content detection</li>
+<li><strong>Multi-format Reports</strong>: HTML dashboards, JSON summaries, CSV exports</li>
+<li><strong>Central Threshold Governance</strong>: All performance &amp; presentation bands centrally defined</li>
+<li><strong>Automated Validation</strong>: Schema + inline threshold guard executed pre-commit</li>
+</ul>
+<h2 id="system-architecture" tabindex="-1">System Architecture <a class="header-anchor" href="#system-architecture" aria-hidden="true">#</a></h2>
+<pre class="hljs"><code>┌─────────────────────────────────────────────────────────┐
+│                   NPM Script Layer                      │
+│  (50+ commands organized by complexity &amp; test type)     │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│                 K6 Test Layer                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │   Cases     │  │Journal Posts│  │   Documents     │ │
+│  │create-sak.js│  │ create-jp.js│  │ Multi-uploads   │ │
+│  └─────────────┘  └─────────────┘  └─────────────────┘ │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│              Business Logic Layer                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │Auth Module  │  │Case Module  │  │  JP Module      │ │
+│  │ • Login     │  │• Templates  │  │ • Templates     │ │
+│  │ • Session   │  │• Creation   │  │ • Creation      │ │
+│  │ • Refresh   │  │• Validation │  │ • Documents     │ │
+│  └─────────────┘  └─────────────┘  └─────────────────┘ │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│                Utility Layer                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │Config Mgmt  │  │Report Gen   │  │ Verbose Logger  │ │
+│  │• Env Load   │  │• HTML       │  │ • Smart Content │ │
+│  │• Dynamic    │  │• JSON       │  │ • Test Detection│ │
+│  │• Validation │  │• Thresholds │  │ • Activity Log  │ │
+│  └─────────────┘  └─────────────┘  └─────────────────┘ │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│             Configuration Layer                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
+│  │Environment  │  │Test Data    │  │  Scenarios      │ │
+│  │• API URLs   │  │• Users      │  │ • Load Profiles │ │
+│  │• Settings   │  │• Documents  │  │ • Thresholds    │ │
+│  │• Paths      │  │• Templates  │  │ • Duration      │ │
+│  └─────────────┘  └─────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="module-breakdown" tabindex="-1">Module Breakdown <a class="header-anchor" href="#module-breakdown" aria-hidden="true">#</a></h2>
+<h3 id="1-configuration-system" tabindex="-1">1. Configuration System <a class="header-anchor" href="#1-configuration-system" aria-hidden="true">#</a></h3>
+<h4 id="configuration-manager-src-lib-config-manager-js-" tabindex="-1">Configuration Manager (<code>src/lib/config-manager.js</code>) <a class="header-anchor" href="#configuration-manager-src-lib-config-manager-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Centralized configuration loading and environment management</p>
+<p><strong>Key Features</strong>:</p>
+<ul>
+<li>Dynamic environment detection</li>
+<li>Configuration validation</li>
+<li>Runtime parameter override</li>
+<li>Error handling with fallbacks</li>
+</ul>
+<p><strong>Configuration Files (Core)</strong>:</p>
+<pre class="hljs"><code>src/config/
+├── environments.json            # Environment definitions (URLs, metadata)
+├── autotest.json                # Scenario shapes (NO thresholds here)
+├── dev.json                     # Dev scenario overrides (if any)
+├── paths-config.json            # Path and endpoint configurations
+└── performance-thresholds.json  # Single source of truth for performance SLOs + UI bands
+</code></pre>
+<p><strong>Usage Pattern</strong>:</p>
+<pre class="hljs"><code><span class="hljs-comment">// Dynamic environment loading</span>
+<span class="hljs-keyword">const</span> config = <span class="hljs-title function_">loadConfig</span>(environment || <span class="hljs-string">&#x27;autotest&#x27;</span>);
+<span class="hljs-keyword">const</span> apiUrl = config.<span class="hljs-property">environments</span>[environment].<span class="hljs-property">baseUrl</span>;
+</code></pre>
+<h3 id="2-authentication-system" tabindex="-1">2. Authentication System <a class="header-anchor" href="#2-authentication-system" aria-hidden="true">#</a></h3>
+<h4 id="auth-module-src-lib-auth-module-js-" tabindex="-1">Auth Module (<code>src/lib/auth-module.js</code>) <a class="header-anchor" href="#auth-module-src-lib-auth-module-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Handle authentication flows and session management</p>
+<p><strong>Capabilities</strong>:</p>
+<ul>
+<li>User authentication with credentials</li>
+<li>Session token management</li>
+<li>Token refresh handling</li>
+<li>Authentication error recovery</li>
+</ul>
+<p><strong>Flow</strong>:</p>
+<ol>
+<li>Load user credentials from <code>users-config.json</code></li>
+<li>Perform login API call</li>
+<li>Extract and store session tokens</li>
+<li>Provide authentication headers for subsequent requests</li>
+</ol>
+<h3 id="3-test-workflow-system" tabindex="-1">3. Test Workflow System <a class="header-anchor" href="#3-test-workflow-system" aria-hidden="true">#</a></h3>
+<h4 id="case-module-src-lib-case-module-js-" tabindex="-1">Case Module (<code>src/lib/case-module.js</code>) <a class="header-anchor" href="#case-module-src-lib-case-module-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Handle case-related operations</p>
+<p><strong>Operations</strong>:</p>
+<ul>
+<li>Retrieve case templates</li>
+<li>Create new cases</li>
+<li>Fetch reference data (case types, decision codes)</li>
+<li>Validate case creation responses</li>
+</ul>
+<h4 id="jp-module-src-lib-jp-module-js-" tabindex="-1">JP Module (<code>src/lib/jp-module.js</code>) <a class="header-anchor" href="#jp-module-src-lib-jp-module-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Handle journal post operations</p>
+<p><strong>Operations</strong>:</p>
+<ul>
+<li>Retrieve JP templates</li>
+<li>Create journal posts (incoming/outgoing)</li>
+<li>Handle document attachments</li>
+<li>Validate JP creation responses</li>
+</ul>
+<h3 id="4-utility-systems" tabindex="-1">4. Utility Systems <a class="header-anchor" href="#4-utility-systems" aria-hidden="true">#</a></h3>
+<h4 id="report-generator-src-utils-report-generator-js-" tabindex="-1">Report Generator (<code>src/utils/report-generator.js</code>) <a class="header-anchor" href="#report-generator-src-utils-report-generator-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Generate comprehensive performance reports</p>
+<p><strong>Features</strong>:</p>
+<ul>
+<li>HTML dashboard generation</li>
+<li>JSON summary export</li>
+<li>Performance threshold analysis</li>
+<li>Benchmark comparisons</li>
+<li>Error rate calculations</li>
+</ul>
+<h4 id="verbose-logger-src-utils-k6-verbose-logger-js-" tabindex="-1">Verbose Logger (<code>src/utils/k6-verbose-logger.js</code>) <a class="header-anchor" href="#verbose-logger-src-utils-k6-verbose-logger-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Enhanced logging with smart content detection</p>
+<p><strong>Capabilities</strong>:</p>
+<ul>
+<li>Test type detection (case-only vs JP vs documents)</li>
+<li>Dynamic content generation based on test flow</li>
+<li>Activity timeline tracking</li>
+<li>Error highlighting and categorization</li>
+</ul>
+<h4 id="document-attachment-src-utils-document-attachment-js-" tabindex="-1">Document Attachment (<code>src/utils/document-attachment.js</code>) <a class="header-anchor" href="#document-attachment-src-utils-document-attachment-js-" aria-hidden="true">#</a></h4>
+<p><strong>Purpose</strong>: Handle file upload operations</p>
+<p><strong>Features</strong>:</p>
+<ul>
+<li>Multi-file upload support</li>
+<li>File type validation</li>
+<li>Size limit checking</li>
+<li>Upload progress tracking</li>
+</ul>
+<h2 id="test-execution-flow" tabindex="-1">Test Execution Flow <a class="header-anchor" href="#test-execution-flow" aria-hidden="true">#</a></h2>
+<h3 id="1-initialization-phase" tabindex="-1">1. Initialization Phase <a class="header-anchor" href="#1-initialization-phase" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-comment">// 1. Load configuration</span>
+<span class="hljs-keyword">const</span> config = <span class="hljs-title function_">loadConfig</span>(<span class="hljs-variable constant_">CONFIG_ENVIRONMENT</span>);
+
+<span class="hljs-comment">// 2. Setup test data</span>
+<span class="hljs-keyword">const</span> testUsers = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">parse</span>(<span class="hljs-title function_">open</span>(<span class="hljs-string">&#x27;../data/users-config.json&#x27;</span>));
+
+<span class="hljs-comment">// 3. Initialize modules</span>
+<span class="hljs-keyword">const</span> authModule = <span class="hljs-title function_">createAuthModule</span>(config);
+<span class="hljs-keyword">const</span> caseModule = <span class="hljs-title function_">createCaseModule</span>(config);
+</code></pre>
+<h3 id="2-setup-phase" tabindex="-1">2. Setup Phase <a class="header-anchor" href="#2-setup-phase" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">setup</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-comment">// 1. Authenticate test users</span>
+    <span class="hljs-keyword">const</span> authData = authModule.<span class="hljs-title function_">authenticate</span>(testUsers[<span class="hljs-number">0</span>]);
+    
+    <span class="hljs-comment">// 2. Prepare test context</span>
+    <span class="hljs-keyword">return</span> {
+        <span class="hljs-attr">authHeaders</span>: authData.<span class="hljs-property">headers</span>,
+        <span class="hljs-attr">config</span>: config,
+        <span class="hljs-attr">startTime</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>()
+    };
+}
+</code></pre>
+<h3 id="3-execution-phase" tabindex="-1">3. Execution Phase <a class="header-anchor" href="#3-execution-phase" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-keyword">function</span>(<span class="hljs-params">data</span>) {
+    <span class="hljs-comment">// 1. Case creation flow</span>
+    <span class="hljs-keyword">const</span> caseResponse = caseModule.<span class="hljs-title function_">createCase</span>(data.<span class="hljs-property">authHeaders</span>);
+    
+    <span class="hljs-comment">// 2. JP creation flow (if enabled)</span>
+    <span class="hljs-keyword">if</span> (<span class="hljs-variable constant_">TEST_TYPE</span>.<span class="hljs-title function_">includes</span>(<span class="hljs-string">&#x27;jp&#x27;</span>)) {
+        <span class="hljs-keyword">const</span> jpResponse = jpModule.<span class="hljs-title function_">createJP</span>(data.<span class="hljs-property">authHeaders</span>, caseResponse.<span class="hljs-property">caseId</span>);
+    }
+    
+    <span class="hljs-comment">// 3. Document upload flow (if enabled)</span>
+    <span class="hljs-keyword">if</span> (<span class="hljs-variable constant_">TEST_TYPE</span>.<span class="hljs-title function_">includes</span>(<span class="hljs-string">&#x27;documents&#x27;</span>)) {
+        <span class="hljs-keyword">const</span> uploadResponse = documentModule.<span class="hljs-title function_">uploadFiles</span>(data.<span class="hljs-property">authHeaders</span>, jpId);
+    }
+}
+</code></pre>
+<h3 id="4-teardown-phase" tabindex="-1">4. Teardown Phase <a class="header-anchor" href="#4-teardown-phase" aria-hidden="true">#</a></h3>
+<pre class="hljs"><code><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">teardown</span>(<span class="hljs-params">data</span>) {
+    <span class="hljs-comment">// 1. Generate verbose report</span>
+    <span class="hljs-keyword">if</span> (__ENV.<span class="hljs-property">ENABLE_VERBOSE_REPORT</span> === <span class="hljs-string">&#x27;true&#x27;</span>) {
+        verboseLogger.<span class="hljs-title function_">generateReport</span>(data);
+    }
+    
+    <span class="hljs-comment">// 2. Calculate performance metrics</span>
+    reportGenerator.<span class="hljs-title function_">generateSummary</span>(data.<span class="hljs-property">startTime</span>);
+    
+    <span class="hljs-comment">// 3. Export results</span>
+    <span class="hljs-title function_">exportReports</span>();
+}
+</code></pre>
+<h2 id="configuration-architecture" tabindex="-1">Configuration Architecture <a class="header-anchor" href="#configuration-architecture" aria-hidden="true">#</a></h2>
+<h3 id="environment-management" tabindex="-1">Environment Management <a class="header-anchor" href="#environment-management" aria-hidden="true">#</a></h3>
+<p><strong>File</strong>: <code>src/config/environments.json</code></p>
+<p>Only connection &amp; descriptive metadata live here (no performance thresholds anymore):</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;autotest&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;baseUrl&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://autotest01.acoscloud.no&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Auto-test environment&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;timeout&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">30000</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 id="scenario-configuration" tabindex="-1">Scenario Configuration <a class="header-anchor" href="#scenario-configuration" aria-hidden="true">#</a></h3>
+<p><strong>File</strong>: <code>src/config/autotest.json</code></p>
+<p>Contains ONLY scenario execution shapes; thresholds resolved dynamically from <code>performance-thresholds.json</code> at runtime:</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;scenarios&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;smoke_test&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;executor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;constant-vus&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;vus&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;30s&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;load_test&quot;</span><span class="hljs-punctuation">:</span>  <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;executor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ramping-vus&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;startVUs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;stages&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1m&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2m&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1m&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;target&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 id="central-performance-threshold-model" tabindex="-1">Central Performance Threshold Model <a class="header-anchor" href="#central-performance-threshold-model" aria-hidden="true">#</a></h3>
+<p><strong>File</strong>: <code>src/config/performance-thresholds.json</code></p>
+<p>Purpose: Single source of truth for both k6 threshold enforcement (SLO/SLA) and UI classification bands shown in HTML reports.</p>
+<p>Structure (abridged):</p>
+<pre class="hljs"><code><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;maxResponseTimeMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5000</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;apdexT&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">500</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;http_req_duration&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;p99&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">6000</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;http_req_failed&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;operations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;Create Case&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;maxResponseTimeMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">4000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;group_duration{group:::Create New Case}&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3000</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;Create Journal Post&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;maxResponseTimeMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">6000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;group_duration{group:::Create Journal Post}&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3500</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;Upload Document&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;maxResponseTimeMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">8000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;k6&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;group_duration{group:::Attach Documents to JP}&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;p95&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5000</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;uiBands&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;latencyMs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">800</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2000</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;errorRate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.01</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.05</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;checkFailureRate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;good&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.0</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;watch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.02</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;investigate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.02</span> <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p>Key Concepts:</p>
+<ol>
+<li>defaults.k6.* define global baseline thresholds (e.g. p95 / p99 for duration)</li>
+<li>operations.* optionally override p95 (or add operation-specific groups) for semantic grouping in k6 metrics</li>
+<li>uiBands.* drive color/status classification in HTML reports (presentation only, not test pass/fail)</li>
+<li>Ordering Rule: For each band object, <code>good &lt;= watch &lt;= investigate</code> (validator warns if violated)</li>
+<li>No inline / scattered thresholds elsewhere – enforced by validation tooling</li>
+</ol>
+<p>Evolution Workflow:</p>
+<ol>
+<li>Propose change (e.g. tighten p95) – edit JSON</li>
+<li>Run <code>npm run validate:perf</code> (schema + inline guard)</li>
+<li>Commit (Husky runs validation automatically pre-commit)</li>
+<li>Observe impact in next report (legend + classification update)</li>
+</ol>
+<h3 id="validation-governance-tooling" tabindex="-1">Validation &amp; Governance Tooling <a class="header-anchor" href="#validation-governance-tooling" aria-hidden="true">#</a></h3>
+<ul>
+<li>Schema Validation: <code>scripts/validate-thresholds.js</code> (Ajv) ensures structure + band ordering</li>
+<li>Inline Threshold Guard: <code>scripts/validate-no-inline-thresholds.js</code> scans test sources to prevent regressions</li>
+<li>Aggregate Command: <code>npm run validate:perf</code> executes both; wired into <code>.husky/pre-commit</code></li>
+<li>Policy: All performance changes MUST go through central JSON + pass validation before commit</li>
+</ul>
+<h3 id="report-classification-flow" tabindex="-1">Report Classification Flow <a class="header-anchor" href="#report-classification-flow" aria-hidden="true">#</a></h3>
+<ol>
+<li>Raw k6 metrics collected</li>
+<li>Operation-level thresholds applied (pass/fail markers)</li>
+<li>uiBands applied to latency/error/check failure aggregates for Good / Watch / Investigate labeling</li>
+<li>HTML legend generated dynamically (no hard-coded numbers in templates)</li>
+</ol>
+<h3 id="migration-notes-v3-0-governance-upgrade-" tabindex="-1">Migration Notes (v3.0 Governance Upgrade) <a class="header-anchor" href="#migration-notes-v3-0-governance-upgrade-" aria-hidden="true">#</a></h3>
+<ul>
+<li>Removed legacy file: <code>performance-thresholds-override.json</code> (now deleted)</li>
+<li>Purged inline <code>thresholds:</code> blocks from test scripts (guard enforces)</li>
+<li>Added <code>uiBands</code> for consistent visual storytelling separate from strict SLOs</li>
+<li>Introduced Husky pre-commit hook invoking <code>validate:perf</code> prior to lint/format</li>
+</ul>
+<h3 id="test-data-management" tabindex="-1">Test Data Management <a class="header-anchor" href="#test-data-management" aria-hidden="true">#</a></h3>
+<p><strong>Files</strong>:</p>
+<ul>
+<li><code>src/data/users-config.json</code> - Test user accounts</li>
+<li><code>src/data/websak-api-config.json</code> - API endpoint configurations</li>
+<li><code>src/data/testDocuments/</code> - Sample files for upload testing</li>
+</ul>
+<h2 id="reporting-architecture" tabindex="-1">Reporting Architecture <a class="header-anchor" href="#reporting-architecture" aria-hidden="true">#</a></h2>
+<h3 id="1-verbose-reporting-system" tabindex="-1">1. Verbose Reporting System <a class="header-anchor" href="#1-verbose-reporting-system" aria-hidden="true">#</a></h3>
+<p><strong>Smart Content Detection</strong>:</p>
+<ul>
+<li>Analyzes test execution flow</li>
+<li>Detects case-only vs JP vs document workflows</li>
+<li>Generates appropriate activity descriptions</li>
+<li>Provides detailed error analysis</li>
+</ul>
+<h3 id="2-performance-metrics" tabindex="-1">2. Performance Metrics <a class="header-anchor" href="#2-performance-metrics" aria-hidden="true">#</a></h3>
+<p><strong>Collected Metrics</strong>:</p>
+<ul>
+<li>Response times (p50, p95, p99)</li>
+<li>Success/failure rates</li>
+<li>Request throughput</li>
+<li>Error categorization</li>
+<li>Resource utilization</li>
+</ul>
+<h3 id="3-report-formats" tabindex="-1">3. Report Formats <a class="header-anchor" href="#3-report-formats" aria-hidden="true">#</a></h3>
+<p><strong>HTML Dashboard</strong>:</p>
+<ul>
+<li>Visual performance charts</li>
+<li>Threshold compliance indicators</li>
+<li>Error highlighting</li>
+<li>Benchmark comparisons</li>
+</ul>
+<p><strong>JSON Summary</strong>:</p>
+<ul>
+<li>Raw performance data</li>
+<li>Test configuration metadata</li>
+<li>Error details</li>
+<li>Timeline information</li>
+</ul>
+<h2 id="scalability-considerations" tabindex="-1">Scalability Considerations <a class="header-anchor" href="#scalability-considerations" aria-hidden="true">#</a></h2>
+<h3 id="1-horizontal-scaling" tabindex="-1">1. Horizontal Scaling <a class="header-anchor" href="#1-horizontal-scaling" aria-hidden="true">#</a></h3>
+<ul>
+<li>Tests can run on multiple K6 instances</li>
+<li>Configuration supports distributed execution</li>
+<li>Reports can be aggregated across instances</li>
+</ul>
+<h3 id="2-performance-optimization" tabindex="-1">2. Performance Optimization <a class="header-anchor" href="#2-performance-optimization" aria-hidden="true">#</a></h3>
+<ul>
+<li>Lazy loading of test data</li>
+<li>Efficient memory management</li>
+<li>Optimized API call patterns</li>
+<li>Connection pooling</li>
+</ul>
+<h3 id="3-extensibility" tabindex="-1">3. Extensibility <a class="header-anchor" href="#3-extensibility" aria-hidden="true">#</a></h3>
+<ul>
+<li>Plugin architecture for new test types</li>
+<li>Configurable thresholds and scenarios</li>
+<li>Modular utility system</li>
+<li>Environment-specific customizations</li>
+</ul>
+<h2 id="security-architecture" tabindex="-1">Security Architecture <a class="header-anchor" href="#security-architecture" aria-hidden="true">#</a></h2>
+<h3 id="1-credential-management" tabindex="-1">1. Credential Management <a class="header-anchor" href="#1-credential-management" aria-hidden="true">#</a></h3>
+<ul>
+<li>Separate user configuration files</li>
+<li>Environment-specific credential isolation</li>
+<li>No hardcoded credentials in test files</li>
+<li>Secure token handling</li>
+</ul>
+<h3 id="2-environment-isolation" tabindex="-1">2. Environment Isolation <a class="header-anchor" href="#2-environment-isolation" aria-hidden="true">#</a></h3>
+<ul>
+<li>Separate configurations per environment</li>
+<li>Production environment safeguards</li>
+<li>Access control through configuration</li>
+<li>Audit trail for test executions</li>
+</ul>
+<h2 id="maintenance-operations" tabindex="-1">Maintenance &amp; Operations <a class="header-anchor" href="#maintenance-operations" aria-hidden="true">#</a></h2>
+<h3 id="1-configuration-updates" tabindex="-1">1. Configuration Updates <a class="header-anchor" href="#1-configuration-updates" aria-hidden="true">#</a></h3>
+<p><strong>Adding New Environment</strong>:</p>
+<ol>
+<li>Add entry to <code>environments.json</code></li>
+<li>Create environment-specific config file</li>
+<li>Update npm scripts if needed</li>
+<li>Test configuration validation</li>
+</ol>
+<p><strong>Adding New Test Type</strong>:</p>
+<ol>
+<li>Create test file in appropriate directory</li>
+<li>Add business logic module if needed</li>
+<li>Update verbose logger for new test type</li>
+<li>Add npm scripts for new test scenarios</li>
+</ol>
+<h3 id="2-monitoring-alerting" tabindex="-1">2. Monitoring &amp; Alerting <a class="header-anchor" href="#2-monitoring-alerting" aria-hidden="true">#</a></h3>
+<ul>
+<li>Performance threshold violations</li>
+<li>Test failure notifications</li>
+<li>Environment availability checks</li>
+<li>Configuration validation alerts</li>
+</ul>
+<h3 id="3-version-management" tabindex="-1">3. Version Management <a class="header-anchor" href="#3-version-management" aria-hidden="true">#</a></h3>
+<ul>
+<li>Semantic versioning for releases</li>
+<li>Configuration schema versioning</li>
+<li>Backward compatibility maintenance</li>
+<li>Migration guides for updates</li>
+</ul>
+<h2 id="best-practices" tabindex="-1">Best Practices <a class="header-anchor" href="#best-practices" aria-hidden="true">#</a></h2>
+<h3 id="1-test-design" tabindex="-1">1. Test Design <a class="header-anchor" href="#1-test-design" aria-hidden="true">#</a></h3>
+<ul>
+<li>Single responsibility per test file</li>
+<li>Modular business logic</li>
+<li>Comprehensive error handling</li>
+<li>Performance-focused implementation</li>
+</ul>
+<h3 id="2-configuration-management-1" tabindex="-1">2. Configuration Management <a class="header-anchor" href="#2-configuration-management-1" aria-hidden="true">#</a></h3>
+<ul>
+<li>Environment-specific settings</li>
+<li>Centralized configuration</li>
+<li>Validation at startup</li>
+<li>Documentation of all parameters</li>
+</ul>
+<h3 id="3-reporting" tabindex="-1">3. Reporting <a class="header-anchor" href="#3-reporting" aria-hidden="true">#</a></h3>
+<ul>
+<li>Meaningful metric collection</li>
+<li>Clear threshold definitions</li>
+<li>Actionable error messages</li>
+<li>Comprehensive test coverage reporting</li>
+</ul>
+<p>This architecture ensures maintainability, scalability, and reliability while providing comprehensive performance testing capabilities for WebSak Plus applications.</p>
+
+<div class="meta">Generated from <code>documents/ARCHITECTURE.md</code> on 2025-10-10T11:24:15.243Z</div>
+</body>
+</html>
